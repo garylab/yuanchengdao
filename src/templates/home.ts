@@ -94,7 +94,7 @@ interface CountryFilter {
   job_count: number;
 }
 
-export function homePage(jobs: Job[], countries: CountryFilter[], page: number, totalJobs: number, query?: string, countrySlug?: string, gaId?: string, siteUrl?: string): string {
+export function homePage(jobs: Job[], countries: CountryFilter[], page: number, totalJobs: number, query?: string, countrySlug?: string, gaId?: string, siteUrl?: string, staticUrl?: string): string {
   const totalPages = Math.ceil(totalJobs / 30);
   const activeCountry = countrySlug ? countries.find(c => c.slug === countrySlug) : null;
 
@@ -171,5 +171,5 @@ export function homePage(jobs: Job[], countries: CountryFilter[], page: number, 
     query,
   ].filter(Boolean).join(',');
 
-  return layout(pageTitle, jobList + pagination, { gaId, description: pageDesc, canonical, keywords });
+  return layout(pageTitle, jobList + pagination, { gaId, description: pageDesc, canonical, keywords, staticUrl });
 }

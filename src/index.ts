@@ -60,7 +60,7 @@ app.notFound((c) => {
     <!DOCTYPE html>
     <html lang="zh-CN">
     <head><meta charset="UTF-8"><title>404 | 远程岛</title>
-    <script src="https://cdn.tailwindcss.com"></script></head>
+    <script src="${c.env.STATIC_URL}/js/tailwindcss.js"></script></head>
     <body class="bg-stone-50 flex items-center justify-center min-h-screen">
       <div class="text-center">
         <p class="text-6xl mb-4">🏝️</p>

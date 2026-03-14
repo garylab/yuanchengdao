@@ -53,7 +53,7 @@ function buildJobJsonLd(job: Job, siteUrl?: string): string {
   return JSON.stringify(ld);
 }
 
-export function jobDetailPage(job: Job, gaId?: string, siteUrl?: string): string {
+export function jobDetailPage(job: Job, gaId?: string, siteUrl?: string, staticUrl?: string): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(job.posted_at || job.created_at);
 
@@ -163,5 +163,6 @@ export function jobDetailPage(job: Job, gaId?: string, siteUrl?: string): string
     jsonLd,
     ogImage: job.company_thumbnail || undefined,
     keywords: [job.title, job.company_name, locationLabel, '远程工作', 'remote job'].filter(Boolean).join(','),
+    staticUrl,
   });
 }

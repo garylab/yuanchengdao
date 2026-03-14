@@ -65,7 +65,7 @@ pages.get('/', async (c) => {
   }));
   const countries = (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>;
 
-  const html = homePage(jobs, countries, page, total, query, countrySlug, c.env.GA_ID, c.env.SITE_URL);
+  const html = homePage(jobs, countries, page, total, query, countrySlug, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL);
   return c.html(html);
 });
 
@@ -92,11 +92,11 @@ pages.get('/job/:slug', async (c) => {
   }
 
   job.company_thumbnail = resolveThumbnail(job.company_thumbnail, c.env.STATIC_URL) as string;
-  return c.html(jobDetailPage(job, c.env.GA_ID, c.env.SITE_URL));
+  return c.html(jobDetailPage(job, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
 
 pages.get('/about', (c) => {
-  return c.html(aboutPage(c.env.GA_ID));
+  return c.html(aboutPage(c.env.GA_ID, c.env.STATIC_URL));
 });
 
 export default pages;

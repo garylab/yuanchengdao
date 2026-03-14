@@ -5,12 +5,13 @@ export interface LayoutOptions {
   ogImage?: string;
   jsonLd?: string;
   keywords?: string;
+  staticUrl?: string;
 }
 
 export function layout(title: string, content: string, options?: LayoutOptions): string {
   const desc = options?.description || '远程岛 - 华人全球远程工作机会平台，精选海外远程岗位';
   const fullTitle = title;
-  const ga = options?.gaId ? `
+  const ga = options?.gaId?.trim() ? `
   <script async src="https://www.googletagmanager.com/gtag/js?id=${options.gaId}"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${options.gaId}');</script>` : '';
   const canonical = options?.canonical ? `\n  <link rel="canonical" href="${options.canonical}">` : '';
@@ -35,7 +36,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   <meta name="twitter:title" content="${fullTitle}">
   <meta name="twitter:description" content="${desc}">${canonical}${ga}${jsonLd}
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏝️</text></svg>">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="${options?.staticUrl || ''}/js/tailwindcss.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -49,7 +50,13 @@ export function layout(title: string, content: string, options?: LayoutOptions):
     }
   </script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+    @font-face {
+      font-family: 'Noto Sans SC';
+      font-style: normal;
+      font-weight: 400 700;
+      font-display: swap;
+      src: url('${options?.staticUrl || ''}/fonts/noto-sans-sc.woff2') format('woff2');
+    }
     body { font-family: 'Noto Sans SC', system-ui, sans-serif; }
     .job-row-header:hover { background-color: #fef3ec; }
     .job-row-header { transition: background-color 0.15s ease; }
@@ -82,8 +89,8 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   <!-- Footer -->
   <footer class="border-t border-surface-200 bg-white mt-16">
     <div class="max-w-5xl mx-auto px-4 py-8 text-center text-sm text-surface-400">
-      <p class="mb-2">🏝️ 远程岛 — 为中国人提供全球远程工作机会</p>
-      <p class="mt-2">© ${new Date().getFullYear()} yuanchengdao.com</p>
+      <p class="mb-2"><a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition">🏝️ 远程岛</a> — 为中国人提供全球远程工作机会</p>
+      <p class="mt-2">© ${new Date().getFullYear()} <a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition">yuanchengdao.com</a></p>
     </div>
   </footer>
   <script>
