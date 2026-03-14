@@ -34,6 +34,7 @@ export function formatBeijingTime(dateStr: string | null): string {
 }
 
 const CYCLE_LABELS: Record<string, string> = {
+  hour: '/时',
   day: '/天',
   week: '/周',
   month: '/月',

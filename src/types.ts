@@ -149,7 +149,7 @@ export interface TranslationResult {
   salary_lower: number;
   salary_upper: number;
   salary_currency: string;
-  salary_pay_cycle: 'day' | 'week' | 'month' | 'year';
+  salary_pay_cycle: 'hour' | 'day' | 'week' | 'month' | 'year';
   job_highlights_zh: Array<{
     title: string;
     items: string[];

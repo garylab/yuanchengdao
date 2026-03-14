@@ -40,7 +40,7 @@ function buildJobJsonLd(job: Job, siteUrl?: string): string {
         '@type': 'QuantitativeValue',
         ...(job.salary_lower ? { minValue: job.salary_lower } : {}),
         ...(job.salary_upper ? { maxValue: job.salary_upper } : {}),
-        unitText: job.salary_pay_cycle === 'year' ? 'YEAR' : job.salary_pay_cycle === 'month' ? 'MONTH' : job.salary_pay_cycle === 'week' ? 'WEEK' : job.salary_pay_cycle === 'day' ? 'DAY' : 'YEAR',
+        unitText: job.salary_pay_cycle === 'year' ? 'YEAR' : job.salary_pay_cycle === 'month' ? 'MONTH' : job.salary_pay_cycle === 'week' ? 'WEEK' : job.salary_pay_cycle === 'day' ? 'DAY' : job.salary_pay_cycle === 'hour' ? 'HOUR' : 'YEAR',
       },
     };
   }
