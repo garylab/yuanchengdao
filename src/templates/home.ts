@@ -41,7 +41,6 @@ function renderJobRow(job: Job): string {
           <div class="text-xs text-surface-400 hidden sm:block text-right">
             ${posted}
           </div>
-          <svg class="job-chevron w-4 h-4 text-surface-300 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </div>
       </div>
 

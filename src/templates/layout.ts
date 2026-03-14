@@ -54,7 +54,6 @@ export function layout(title: string, content: string, options?: LayoutOptions):
     .job-row-header:hover { background-color: #fef3ec; }
     .job-row-header { transition: background-color 0.15s ease; }
     .job-row.expanded .job-row-header { background-color: #fef3ec; }
-    .job-row.expanded .job-chevron { transform: rotate(180deg); }
     .job-row.visited .job-row-header { background-color: #fef3ec; }
     .tag-pill { @apply inline-block px-2 py-0.5 text-xs rounded-full; }
   </style>
