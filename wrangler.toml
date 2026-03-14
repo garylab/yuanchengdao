@@ -18,4 +18,4 @@ bucket_name = "yuanchengdao"
 
 # Cron trigger to fetch new jobs every 6 hours
 [triggers]
-crons = ["0 */6 * * *"]
+crons = ["*/30 * * * *"]
