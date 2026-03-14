@@ -4,6 +4,8 @@ export interface Env {
   SERPAPI_KEY: string;
   OPENAI_API_KEY: string;
   OPENAI_API_BASE?: string;
+  OPENAI_MODEL?: string;
+  CF_AIG_TOKEN?: string;
   SITE_URL: string;
   STATIC_URL: string;
   GA_ID?: string;

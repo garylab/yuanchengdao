@@ -1,8 +1,16 @@
+import OpenAI from 'openai';
 import { TranslationResult, CrawledJob, DecodedJobId } from '../types';
 
 export interface TranslateInput {
   crawled: CrawledJob;
   decoded: DecodedJobId;
+}
+
+export interface TranslateOptions {
+  apiKey: string;
+  apiBase?: string;
+  model?: string;
+  cfAigToken?: string;
 }
 
 function buildJobPayload(input: TranslateInput) {
@@ -26,10 +34,20 @@ function buildJobPayload(input: TranslateInput) {
 
 export async function translateBatch(
   inputs: TranslateInput[],
-  apiKey: string,
-  apiBase?: string
+  options: TranslateOptions
 ): Promise<TranslationResult[]> {
   if (inputs.length === 0) return [];
+
+  const defaultHeaders: Record<string, string> = {};
+  if (options.cfAigToken) {
+    defaultHeaders['cf-aig-authorization'] = `Bearer ${options.cfAigToken}`;
+  }
+
+  const client = new OpenAI({
+    apiKey: options.apiKey,
+    baseURL: options.apiBase || 'https://api.openai.com/v1',
+    defaultHeaders,
+  });
 
   const jobsForPrompt = inputs.map((input, idx) => ({
     index: idx,
@@ -65,35 +83,16 @@ ${JSON.stringify(jobsForPrompt, null, 2)}
 
 Return ONLY a valid JSON array of objects. No markdown, no explanation.`;
 
-  const endpoint = `${(apiBase || 'https://api.openai.com').replace(/\/+$/, '')}/v1/chat/completions`;
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
+  try {
+    const completion = await client.chat.completions.create({
+      model: options.model || 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.2,
       max_tokens: 8000,
       response_format: { type: 'json_object' },
-    }),
-  });
+    });
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    console.error(`OpenAI API error: ${response.status} - ${body.substring(0, 300)}`);
-    return [];
-  }
-
-  const data = await response.json() as {
-    choices: Array<{ message: { content: string } }>;
-  };
-
-  const content = data.choices[0]?.message?.content || '{}';
-
-  try {
+    const content = completion.choices[0]?.message?.content || '{}';
     const parsed = JSON.parse(content);
     const results: TranslationResult[] = Array.isArray(parsed) ? parsed : (parsed.jobs || parsed.results || parsed.data || []);
 
@@ -114,7 +113,7 @@ Return ONLY a valid JSON array of objects. No markdown, no explanation.`;
       job_highlights_zh: Array.isArray(r.job_highlights_zh) ? r.job_highlights_zh : [],
     }));
   } catch (err) {
-    console.error('Failed to parse translation response:', err, content.substring(0, 500));
+    console.error('OpenAI API error:', err instanceof Error ? err.message : err);
     return [];
   }
 }

@@ -171,7 +171,12 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
     return { crawled, decoded };
   });
 
-  const translations = await translateBatch(inputs, env.OPENAI_API_KEY, env.OPENAI_API_BASE);
+  const translations = await translateBatch(inputs, {
+    apiKey: env.OPENAI_API_KEY,
+    apiBase: env.OPENAI_API_BASE,
+    model: env.OPENAI_MODEL,
+    cfAigToken: env.CF_AIG_TOKEN,
+  });
 
   let saved = 0;
   for (const tr of translations) {
