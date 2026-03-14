@@ -5,8 +5,6 @@ export interface Env {
   OPENAI_API_KEY: string;
   SITE_URL: string;
   STATIC_URL: string;
-  JOB_POSITIONS: string;
-  JOB_COUNTRIES: string;
   GA_ID?: string;
 }
 

@@ -95,4 +95,14 @@ CREATE INDEX IF NOT EXISTS idx_jobs_country ON jobs(country_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_slug ON jobs(slug);
 CREATE INDEX IF NOT EXISTS idx_companies_slug ON companies(slug);
 
--- No seed data for countries; they are auto-created by the LLM during job processing
+-- Search terms for job crawling
+CREATE TABLE IF NOT EXISTS search_terms (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  term TEXT NOT NULL UNIQUE,
+  is_active INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_search_terms_active ON search_terms(is_active);
+
+-- No seed data; countries are auto-created by the LLM during job processing

@@ -240,19 +240,16 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
 export async function syncJobs(env: Env): Promise<{ fetched: number; saved: number }> {
   console.log('Starting job sync...');
 
-  const countryRows = await env.DB.prepare(
-    'SELECT code FROM countries WHERE is_active = 1 ORDER BY code'
-  ).all();
+  const [countryRows, termRows] = await Promise.all([
+    env.DB.prepare('SELECT code FROM countries WHERE is_active = 1 ORDER BY code').all(),
+    env.DB.prepare('SELECT term FROM search_terms WHERE is_active = 1 ORDER BY term').all(),
+  ]);
   const countryCodes = (countryRows.results || []).map((r: Record<string, unknown>) => r.code as string);
+  const searchTerms = (termRows.results || []).map((r: Record<string, unknown>) => r.term as string);
 
-  if (countryCodes.length === 0) {
-    const fallback = (env.JOB_COUNTRIES || '').split(',').map(s => s.trim()).filter(Boolean);
-    countryCodes.push(...fallback);
-  }
-
-  const plan = buildSearchPlan(env.JOB_POSITIONS, countryCodes);
+  const plan = buildSearchPlan(searchTerms, countryCodes);
   if (plan.length === 0) {
-    console.error('No search plan — check JOB_POSITIONS and countries table');
+    console.error('No search plan — check search_terms and countries tables');
     return { fetched: 0, saved: 0 };
   }
   console.log(`Search plan: ${plan.length} queries`);

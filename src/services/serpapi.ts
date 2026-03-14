@@ -21,11 +21,6 @@ export function decodeJobId(jobId: string): DecodedJobId | null {
   }
 }
 
-function parseList(raw: string | undefined): string[] {
-  if (!raw) return [];
-  return raw.split(',').map(s => s.trim()).filter(Boolean);
-}
-
 export interface FetchBatchResult {
   jobs: SerpApiJob[];
   query: string;
@@ -33,8 +28,7 @@ export interface FetchBatchResult {
   done: boolean;
 }
 
-export function buildSearchPlan(jobPositions: string, countries: string[]): Array<{ position: string; country: string }> {
-  const positions = parseList(jobPositions);
+export function buildSearchPlan(positions: string[], countries: string[]): Array<{ position: string; country: string }> {
   const plan: Array<{ position: string; country: string }> = [];
   for (const position of positions) {
     for (const country of countries) {
