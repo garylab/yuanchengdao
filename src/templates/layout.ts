@@ -50,14 +50,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
     }
   </script>
   <style>
-    @font-face {
-      font-family: 'Inter';
-      font-style: normal;
-      font-weight: 400 700;
-      font-display: swap;
-      src: url('${options?.staticUrl || ''}/fonts/inter.woff2') format('woff2');
-    }
-    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
     .job-row-header:hover { background-color: #fef3ec; }
     .job-row-header { transition: background-color 0.15s ease; }
     .job-row.expanded .job-row-header { background-color: #fef3ec; }
