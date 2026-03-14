@@ -1,0 +1,143 @@
+import { Job } from '../types';
+import { layout } from './layout';
+import { timeAgo, formatSalary, escapeHtml, rewriteUtm } from '../utils/helpers';
+
+function renderJobRow(job: Job): string {
+  const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
+  const posted = timeAgo(job.posted_at || job.created_at);
+  const logo = job.company_thumbnail
+    ? `<img src="${escapeHtml(job.company_thumbnail)}" alt="${escapeHtml(job.company_name || '')}" class="w-12 h-12 rounded-lg object-contain bg-surface-100 flex-shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    : '';
+
+  const locationLabel = [job.location_name_cn, job.country_name_cn]
+    .filter(Boolean)
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .join(', ') || '远程';
+
+  const highlights = job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
+  const applyOptions = job.apply_options ? JSON.parse(job.apply_options) as Array<{ title: string; link: string }> : [];
+  const primaryApply = applyOptions[0]?.link ? rewriteUtm(applyOptions[0].link) : null;
+
+  return `
+    <div class="job-row border-b border-surface-100" data-job-id="${job.id}">
+      <div class="job-row-header flex items-center gap-4 px-4 py-4 cursor-pointer select-none">
+        <div class="flex-shrink-0 w-12 h-12">
+          ${logo}
+          <div class="${job.company_thumbnail ? 'hidden' : 'flex'} w-12 h-12 rounded-lg bg-brand-50 items-center justify-center text-xl">💼</div>
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <a href="/job/${escapeHtml(job.slug)}" class="job-title font-semibold text-surface-900 text-sm sm:text-base hover:text-brand-500 transition no-underline">${escapeHtml(job.title)}</a>
+            <span class="text-sm text-surface-500 flex-shrink-0">${escapeHtml(job.company_name || '')}</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 mt-1.5">
+            ${salary ? `<span class="tag-pill bg-green-50 text-green-700">💰 ${salary}</span>` : ''}
+            <span class="text-xs text-surface-400 flex-shrink-0">📍 ${escapeHtml(locationLabel)}</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <div class="text-xs text-surface-400 hidden sm:block text-right">
+            ${posted}
+          </div>
+          <svg class="job-chevron w-4 h-4 text-surface-300 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+      </div>
+
+      <div class="job-expand hidden px-4 pb-4">
+        <div class="ml-16 border-t border-surface-100 pt-4">
+          <div class="text-sm text-surface-600 leading-relaxed mb-4 whitespace-pre-line">${escapeHtml(job.description)}</div>
+
+          ${highlights.length > 0 ? `
+            <div class="mb-4 space-y-3">
+              ${highlights.map(h => `
+                <div>
+                  <h4 class="text-xs font-semibold text-surface-500 uppercase mb-1">${escapeHtml(h.title)}</h4>
+                  <ul class="list-disc list-inside text-sm text-surface-600 space-y-0.5">
+                    ${h.items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+                  </ul>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              ${primaryApply ? `
+                <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
+                  class="inline-block bg-brand-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-600 transition no-underline">
+                  申请
+                </a>
+              ` : ''}
+              <a href="/job/${escapeHtml(job.slug)}" class="text-sm text-brand-500 hover:text-brand-600 transition no-underline">
+                详情 →
+              </a>
+            </div>
+            <button class="job-collapse p-2 rounded-full hover:bg-surface-100 transition text-surface-400 hover:text-surface-600" title="收起">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+interface CountryFilter {
+  id: number;
+  code: string;
+  name: string;
+  name_cn: string;
+  slug: string;
+  job_count: number;
+}
+
+export function homePage(jobs: Job[], countries: CountryFilter[], page: number, totalJobs: number, query?: string, countrySlug?: string, gaId?: string): string {
+  const totalPages = Math.ceil(totalJobs / 30);
+
+  const countryBar = countries.length > 0 ? `
+    <div class="overflow-x-auto px-4 py-3 flex gap-2 text-sm whitespace-nowrap border-b border-surface-200">
+      <a href="/${query ? '?q=' + encodeURIComponent(query) : ''}" class="px-3 py-1.5 rounded-full transition ${!countrySlug ? 'bg-brand-500 text-white' : 'bg-surface-100 text-surface-600 hover:bg-surface-200'}">🌍 全部</a>
+      ${countries.map(c => `
+        <a href="/?country=${c.slug}${query ? '&q=' + encodeURIComponent(query) : ''}" class="px-3 py-1.5 rounded-full transition ${countrySlug === c.slug ? 'bg-brand-500 text-white' : 'bg-surface-100 text-surface-600 hover:bg-surface-200'}">
+          ${escapeHtml(c.name_cn)} <span class="text-xs opacity-60">${c.job_count}</span>
+        </a>
+      `).join('')}
+    </div>` : '';
+
+  const jobStats = query ? `
+    <div class="px-4 py-3 border-b border-surface-200">
+      <p class="text-sm text-surface-500">搜索 "${escapeHtml(query)}" 的结果</p>
+    </div>` : '';
+
+  const jobList = jobs.length > 0
+    ? `<div class="max-w-5xl mx-auto mt-4 bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden">
+        ${countryBar}
+        ${jobStats}
+        ${jobs.map(renderJobRow).join('')}
+       </div>`
+    : `<div class="max-w-5xl mx-auto mt-4 bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden">
+        ${countryBar}
+        ${jobStats}
+        <div class="text-center py-20 text-surface-400">
+          <p class="text-4xl mb-4">🔍</p>
+          <p class="text-lg">暂无匹配的职位</p>
+          <p class="text-sm mt-2">试试其他关键词或地区</p>
+        </div>
+       </div>`;
+
+  const filterSuffix = [
+    query ? `q=${encodeURIComponent(query)}` : '',
+    countrySlug ? `country=${countrySlug}` : '',
+  ].filter(Boolean).join('&');
+  const paginationSuffix = filterSuffix ? '&' + filterSuffix : '';
+
+  const pagination = totalPages > 1 ? `
+    <div class="max-w-5xl mx-auto px-4 py-6 flex justify-center gap-2">
+      ${page > 1 ? `<a href="/?page=${page - 1}${paginationSuffix}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition">← 上一页</a>` : ''}
+      <span class="px-4 py-2 text-sm text-surface-500">${page} / ${totalPages}</span>
+      ${page < totalPages ? `<a href="/?page=${page + 1}${paginationSuffix}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition">下一页 →</a>` : ''}
+    </div>` : '';
+
+  return layout('远程工作机会 - 远程岛', jobList + pagination, { gaId });
+}

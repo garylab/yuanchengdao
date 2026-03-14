@@ -1,0 +1,97 @@
+import { Hono } from 'hono';
+import { Env, Job } from '../types';
+import { homePage } from '../templates/home';
+import { jobDetailPage } from '../templates/jobDetail';
+import { aboutPage } from '../templates/about';
+
+const pages = new Hono<{ Bindings: Env }>();
+
+pages.get('/', async (c) => {
+  const url = new URL(c.req.url);
+  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const query = url.searchParams.get('q')?.trim() || '';
+  const countrySlug = url.searchParams.get('country') || '';
+  const limit = 30;
+  const offset = (page - 1) * limit;
+
+  let countSql = 'SELECT COUNT(*) as total FROM jobs j WHERE j.is_active = 1';
+  let jobSql = `
+    SELECT j.*,
+      co.name as company_name, co.thumbnail as company_thumbnail,
+      lo.name as location_name, lo.name_cn as location_name_cn,
+      ct.code as country_code, ct.name_cn as country_name_cn
+    FROM jobs j
+    LEFT JOIN companies co ON j.company_id = co.id
+    LEFT JOIN locations lo ON j.location_id = lo.id
+    LEFT JOIN countries ct ON j.country_id = ct.id
+    WHERE j.is_active = 1`;
+  const params: (string | number)[] = [];
+  const countParams: (string | number)[] = [];
+
+  if (query) {
+    jobSql += ' AND (j.title LIKE ? OR co.name LIKE ? OR j.description LIKE ?)';
+    countSql += ' AND (j.title LIKE ? OR j.description LIKE ?)';
+    const wildcard = `%${query}%`;
+    params.push(wildcard, wildcard, wildcard);
+    countParams.push(wildcard, wildcard);
+  }
+
+  if (countrySlug) {
+    jobSql += ' AND ct.slug = ?';
+    countSql += ' AND j.country_id = (SELECT id FROM countries WHERE slug = ?)';
+    params.push(countrySlug);
+    countParams.push(countrySlug);
+  }
+
+  jobSql += ' ORDER BY j.posted_at DESC LIMIT ? OFFSET ?';
+  params.push(limit, offset);
+
+  const [countResult, jobsResult, countriesResult] = await Promise.all([
+    c.env.DB.prepare(countSql).bind(...countParams).first<{ total: number }>(),
+    c.env.DB.prepare(jobSql).bind(...params).all(),
+    c.env.DB.prepare(
+      `SELECT ct.*, COUNT(j.id) as job_count FROM countries ct
+       JOIN jobs j ON j.country_id = ct.id AND j.is_active = 1
+       WHERE ct.is_active = 1
+       GROUP BY ct.id HAVING job_count > 0 ORDER BY job_count DESC`
+    ).all(),
+  ]);
+
+  const total = countResult?.total || 0;
+  const jobs = (jobsResult.results || []) as unknown as Job[];
+  const countries = (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>;
+
+  const html = homePage(jobs, countries, page, total, query, countrySlug, c.env.GA_ID);
+  return c.html(html);
+});
+
+pages.get('/job/:slug', async (c) => {
+  const slug = c.req.param('slug');
+
+  const job = await c.env.DB.prepare(`
+    SELECT j.*,
+      co.name as company_name, co.thumbnail as company_thumbnail,
+      lo.name as location_name, lo.name_cn as location_name_cn,
+      ct.code as country_code, ct.name_cn as country_name_cn
+    FROM jobs j
+    LEFT JOIN companies co ON j.company_id = co.id
+    LEFT JOIN locations lo ON j.location_id = lo.id
+    LEFT JOIN countries ct ON j.country_id = ct.id
+    WHERE j.slug = ?
+  `).bind(slug).first<Job>();
+
+  if (!job) {
+    return c.html(
+      `<div class="text-center py-20"><h1 class="text-2xl">404 - 职位未找到</h1><a href="/" class="text-brand-500">返回首页</a></div>`,
+      404
+    );
+  }
+
+  return c.html(jobDetailPage(job, c.env.GA_ID));
+});
+
+pages.get('/about', (c) => {
+  return c.html(aboutPage(c.env.GA_ID));
+});
+
+export default pages;

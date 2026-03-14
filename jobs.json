@@ -1,0 +1,977 @@
+{
+    "search_metadata": {
+      "id": "69b51d574de49a0d063bbd89",
+      "status": "Success",
+      "json_endpoint": "https://serpapi.com/searches/I58TUnU2yLjsLNTSbloW2A/69b51d574de49a0d063bbd89.json",
+      "created_at": "2026-03-14 08:33:27 UTC",
+      "processed_at": "2026-03-14 08:33:27 UTC",
+      "google_jobs_url": "https://www.google.com/search?q=backend+engineer&uule=w+CAIQICINVW5pdGVkIFN0YXRlcw&hl=en&gl=us&udm=8",
+      "raw_html_file": "https://serpapi.com/searches/I58TUnU2yLjsLNTSbloW2A/69b51d574de49a0d063bbd89.html",
+      "total_time_taken": 4.45
+    },
+    "search_parameters": {
+      "q": "backend engineer",
+      "engine": "google_jobs",
+      "location_requested": "United States",
+      "location_used": "United States",
+      "google_domain": "google.com",
+      "hl": "en",
+      "gl": "us"
+    },
+    "filters": [
+      {
+        "name": "Remote",
+        "parameters": {
+          "uds": "ALYpb_ncDc7jTlmw6Mmq7NjuX5c-tkkJiZqJAbxvy_jWTSL6VufVP75GUJBfyaVhF4rcaaZ_yeDKfeC-EmmqI5c0tsv5z8v5cpRmSjvP8AWFl4-6JEwziRXq6RbAJeV7iCY26QcG1-dSez2S6ml3LqfJ_Afk9cVWUeqVCNIK2q6RuM7Gor59_3c",
+          "q": "backend engineer remote"
+        },
+        "link": "https://www.google.com/search?sca_esv=6e72ffa629272dce&hl=en&gl=us&q=backend+engineer+remote&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-tkkJiZqJAbxvy_jWTSL6VufVP75GUJBfyaVhF4rcaaZ_yeDKfeC-EmmqI5c0tsv5z8v5cpRmSjvP8AWFl4-6JEwziRXq6RbAJeV7iCY26QcG1-dSez2S6ml3LqfJ_Afk9cVWUeqVCNIK2q6RuM7Gor59_3c&udm=8&sa=X&ved=2ahUKEwjVrtu5_Z6TAxWWFmIAHXckCDEQxKsJKAB6BAgUEAE&ictx=0",
+        "serpapi_link": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&q=backend+engineer+remote&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-tkkJiZqJAbxvy_jWTSL6VufVP75GUJBfyaVhF4rcaaZ_yeDKfeC-EmmqI5c0tsv5z8v5cpRmSjvP8AWFl4-6JEwziRXq6RbAJeV7iCY26QcG1-dSez2S6ml3LqfJ_Afk9cVWUeqVCNIK2q6RuM7Gor59_3c"
+      },
+      {
+        "name": "No degree",
+        "parameters": {
+          "uds": "ALYpb_ncDc7jTlmw6Mmq7NjuX5c-f25gdLpl4tMcN47beDKn9YGZDO7gsKOf1XiW9bz-yajVx4OpMck2AuuoWHbYad7SBkisPrA7rMwcAqnFDRGeUIDwHiKYJ8Xmbl3zVBQGE-op2d-Abhz_vm0sV244CYM8GuDG27gxkNJK9wfH1Z6bKEJc-hI",
+          "q": "backend engineer no degree"
+        },
+        "link": "https://www.google.com/search?sca_esv=6e72ffa629272dce&hl=en&gl=us&q=backend+engineer+no+degree&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-f25gdLpl4tMcN47beDKn9YGZDO7gsKOf1XiW9bz-yajVx4OpMck2AuuoWHbYad7SBkisPrA7rMwcAqnFDRGeUIDwHiKYJ8Xmbl3zVBQGE-op2d-Abhz_vm0sV244CYM8GuDG27gxkNJK9wfH1Z6bKEJc-hI&udm=8&sa=X&ved=2ahUKEwjVrtu5_Z6TAxWWFmIAHXckCDEQxKsJKAF6BAgXEAE&ictx=0",
+        "serpapi_link": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&q=backend+engineer+no+degree&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-f25gdLpl4tMcN47beDKn9YGZDO7gsKOf1XiW9bz-yajVx4OpMck2AuuoWHbYad7SBkisPrA7rMwcAqnFDRGeUIDwHiKYJ8Xmbl3zVBQGE-op2d-Abhz_vm0sV244CYM8GuDG27gxkNJK9wfH1Z6bKEJc-hI"
+      },
+      {
+        "name": "No degree",
+        "parameters": {
+          "uds": "ALYpb_ncDc7jTlmw6Mmq7NjuX5c-f25gdLpl4tMcN47beDKn9YGZDO7gsKOf1XiW9bz-yajVx4OpMck2AuuoWHbYad7SBkisPrA7rMwcAqnFDRGeUIDwHiKYJ8Xmbl3zVBQGE-op2d-Abhz_vm0sV244CYM8GuDG27gxkNJK9wfH1Z6bKEJc-hI",
+          "q": "backend engineer no degree"
+        },
+        "link": "https://www.google.com/search?sca_esv=6e72ffa629272dce&hl=en&gl=us&q=backend+engineer+no+degree&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-f25gdLpl4tMcN47beDKn9YGZDO7gsKOf1XiW9bz-yajVx4OpMck2AuuoWHbYad7SBkisPrA7rMwcAqnFDRGeUIDwHiKYJ8Xmbl3zVBQGE-op2d-Abhz_vm0sV244CYM8GuDG27gxkNJK9wfH1Z6bKEJc-hI&udm=8&sa=X&ved=2ahUKEwjVrtu5_Z6TAxWWFmIAHXckCDEQxKsJKAJ6BAgSEAE&ictx=0",
+        "serpapi_link": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&q=backend+engineer+no+degree&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-f25gdLpl4tMcN47beDKn9YGZDO7gsKOf1XiW9bz-yajVx4OpMck2AuuoWHbYad7SBkisPrA7rMwcAqnFDRGeUIDwHiKYJ8Xmbl3zVBQGE-op2d-Abhz_vm0sV244CYM8GuDG27gxkNJK9wfH1Z6bKEJc-hI"
+      },
+      {
+        "name": "Remote",
+        "parameters": {
+          "uds": "ALYpb_ncDc7jTlmw6Mmq7NjuX5c-tkkJiZqJAbxvy_jWTSL6VufVP75GUJBfyaVhF4rcaaZ_yeDKfeC-EmmqI5c0tsv5z8v5cpRmSjvP8AWFl4-6JEwziRXq6RbAJeV7iCY26QcG1-dSez2S6ml3LqfJ_Afk9cVWUeqVCNIK2q6RuM7Gor59_3c",
+          "q": "backend engineer remote"
+        },
+        "link": "https://www.google.com/search?sca_esv=6e72ffa629272dce&hl=en&gl=us&q=backend+engineer+remote&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-tkkJiZqJAbxvy_jWTSL6VufVP75GUJBfyaVhF4rcaaZ_yeDKfeC-EmmqI5c0tsv5z8v5cpRmSjvP8AWFl4-6JEwziRXq6RbAJeV7iCY26QcG1-dSez2S6ml3LqfJ_Afk9cVWUeqVCNIK2q6RuM7Gor59_3c&udm=8&sa=X&ved=2ahUKEwjVrtu5_Z6TAxWWFmIAHXckCDEQxKsJKAN6BAgWEAE&ictx=0",
+        "serpapi_link": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&q=backend+engineer+remote&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-tkkJiZqJAbxvy_jWTSL6VufVP75GUJBfyaVhF4rcaaZ_yeDKfeC-EmmqI5c0tsv5z8v5cpRmSjvP8AWFl4-6JEwziRXq6RbAJeV7iCY26QcG1-dSez2S6ml3LqfJ_Afk9cVWUeqVCNIK2q6RuM7Gor59_3c"
+      },
+      {
+        "name": "Date posted",
+        "options": [
+          {
+            "name": "Yesterday",
+            "parameters": {
+              "uds": "ALYpb_ncDc7jTlmw6Mmq7NjuX5c-1SdGVRtEQV4bTBLR6AHJURxZ017_W3Pj8Z5Wf_eSaPSXTvpVqZel1ULhr4tpS4lFbj30IOvl7onGk-eMnyNsTG_Vxu9g2IOENFQetojcKsC8sPWqLH92aZzOGOsQq54mhqf2kSweIdO0hVOxR1-LNcbex-kFELgO_i9TvMhA_XzEgcamSDtQWBpUrhmMTQ0Y1a6LNCZADzu4TtXkhhKiF1z5tTKBf5Ail2Gu-iNKu8MGXPVtud-IYgqm6agGw5aV27BQ7AquJq7J05x1lahqnivznSPkBhO9jlUZET4etz328epWo7LZYwtuC5X3myfTL0jBy9IJTMcCYmI9oqen_N_FR-o",
+              "q": "backend engineer since yesterday"
+            },
+            "link": "https://www.google.com/search?sca_esv=6e72ffa629272dce&hl=en&gl=us&q=backend+engineer+since+yesterday&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-1SdGVRtEQV4bTBLR6AHJURxZ017_W3Pj8Z5Wf_eSaPSXTvpVqZel1ULhr4tpS4lFbj30IOvl7onGk-eMnyNsTG_Vxu9g2IOENFQetojcKsC8sPWqLH92aZzOGOsQq54mhqf2kSweIdO0hVOxR1-LNcbex-kFELgO_i9TvMhA_XzEgcamSDtQWBpUrhmMTQ0Y1a6LNCZADzu4TtXkhhKiF1z5tTKBf5Ail2Gu-iNKu8MGXPVtud-IYgqm6agGw5aV27BQ7AquJq7J05x1lahqnivznSPkBhO9jlUZET4etz328epWo7LZYwtuC5X3myfTL0jBy9IJTMcCYmI9oqen_N_FR-o&udm=8&sa=X&ved=2ahUKEwjVrtu5_Z6TAxWWFmIAHXckCDEQkbEKegQIFRAC",
+            "serpapi_link": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&q=backend+engineer+since+yesterday&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-1SdGVRtEQV4bTBLR6AHJURxZ017_W3Pj8Z5Wf_eSaPSXTvpVqZel1ULhr4tpS4lFbj30IOvl7onGk-eMnyNsTG_Vxu9g2IOENFQetojcKsC8sPWqLH92aZzOGOsQq54mhqf2kSweIdO0hVOxR1-LNcbex-kFELgO_i9TvMhA_XzEgcamSDtQWBpUrhmMTQ0Y1a6LNCZADzu4TtXkhhKiF1z5tTKBf5Ail2Gu-iNKu8MGXPVtud-IYgqm6agGw5aV27BQ7AquJq7J05x1lahqnivznSPkBhO9jlUZET4etz328epWo7LZYwtuC5X3myfTL0jBy9IJTMcCYmI9oqen_N_FR-o"
+          },
+          {
+            "name": "Last 3 days",
+            "parameters": {
+              "uds": "ALYpb_ncDc7jTlmw6Mmq7NjuX5c-xqL6Il24wBcbqeE2E9mB6H1pMz5XzA6j4Ega8U5CY5HyMlINoGR5KoZSpDfVwUUDwscNoEsDvEDuwucot_xkjA_h1LsgtzG9Obkshx1gt9gwa5V_oHOb9XtIxIth_6PETd2jcyXXBG6gDr4EFEqCxJmdvLQjbe4QDs3sgY_M6Wj1AiVQ7cGB3y9sa0po-6cmb-C6t5xrK6iu8hV_LzXNTdHYowc-iwhHUg7NnCYx9ToNySjOYqjKjx8YPSEKrB8mTHwtWr_a07Oc8YuXpoPb7NMnJAgC-EbNm-0s6DNo_Q4iRU2870fm33lk3xjbqohWlm-66iruAcDlRzMkRNkrNDZTFwY",
+              "q": "backend engineer in the last 3 days"
+            },
+            "link": "https://www.google.com/search?sca_esv=6e72ffa629272dce&hl=en&gl=us&q=backend+engineer+in+the+last+3+days&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-xqL6Il24wBcbqeE2E9mB6H1pMz5XzA6j4Ega8U5CY5HyMlINoGR5KoZSpDfVwUUDwscNoEsDvEDuwucot_xkjA_h1LsgtzG9Obkshx1gt9gwa5V_oHOb9XtIxIth_6PETd2jcyXXBG6gDr4EFEqCxJmdvLQjbe4QDs3sgY_M6Wj1AiVQ7cGB3y9sa0po-6cmb-C6t5xrK6iu8hV_LzXNTdHYowc-iwhHUg7NnCYx9ToNySjOYqjKjx8YPSEKrB8mTHwtWr_a07Oc8YuXpoPb7NMnJAgC-EbNm-0s6DNo_Q4iRU2870fm33lk3xjbqohWlm-66iruAcDlRzMkRNkrNDZTFwY&udm=8&sa=X&ved=2ahUKEwjVrtu5_Z6TAxWWFmIAHXckCDEQkbEKegQIFRAD",
+            "serpapi_link": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&q=backend+engineer+in+the+last+3+days&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-xqL6Il24wBcbqeE2E9mB6H1pMz5XzA6j4Ega8U5CY5HyMlINoGR5KoZSpDfVwUUDwscNoEsDvEDuwucot_xkjA_h1LsgtzG9Obkshx1gt9gwa5V_oHOb9XtIxIth_6PETd2jcyXXBG6gDr4EFEqCxJmdvLQjbe4QDs3sgY_M6Wj1AiVQ7cGB3y9sa0po-6cmb-C6t5xrK6iu8hV_LzXNTdHYowc-iwhHUg7NnCYx9ToNySjOYqjKjx8YPSEKrB8mTHwtWr_a07Oc8YuXpoPb7NMnJAgC-EbNm-0s6DNo_Q4iRU2870fm33lk3xjbqohWlm-66iruAcDlRzMkRNkrNDZTFwY"
+          },
+          {
+            "name": "Last week",
+            "parameters": {
+              "uds": "ALYpb_ncDc7jTlmw6Mmq7NjuX5c-8OhgyMpMFL-XOABm_4OIup0DlDDupJVs-3v-RMaDFOgv2p3Q_Lkem9i4yxbh1LrZDYRDU8g8-yWiZljmwlq7FyMMNCm5Se5g9OkIYOugoFLWA8GDynT3mkOJXtBaKJAt_U5DtIWsDZF5PBpyVld4_S7yoyy7lgRcXo7YH9hM8Yj1xbkAqc3oN8XL5-ij4wPRTZINS3hHk_Q0Hs3jvxMfIMxX4kXHOXBBLmLSQ_kVorW-aLEjwMSiB2IQbg6EYPE3xdeue2XtwYqiJpMJMg2QQ89AC8Xftw9t1KFdhBK36aYJfnwx0vWluXIz7Tig_VSvfK41FVTAjZDY8s9ZZRnoCC1bV34",
+              "q": "backend engineer in the last week"
+            },
+            "link": "https://www.google.com/search?sca_esv=6e72ffa629272dce&hl=en&gl=us&q=backend+engineer+in+the+last+week&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-8OhgyMpMFL-XOABm_4OIup0DlDDupJVs-3v-RMaDFOgv2p3Q_Lkem9i4yxbh1LrZDYRDU8g8-yWiZljmwlq7FyMMNCm5Se5g9OkIYOugoFLWA8GDynT3mkOJXtBaKJAt_U5DtIWsDZF5PBpyVld4_S7yoyy7lgRcXo7YH9hM8Yj1xbkAqc3oN8XL5-ij4wPRTZINS3hHk_Q0Hs3jvxMfIMxX4kXHOXBBLmLSQ_kVorW-aLEjwMSiB2IQbg6EYPE3xdeue2XtwYqiJpMJMg2QQ89AC8Xftw9t1KFdhBK36aYJfnwx0vWluXIz7Tig_VSvfK41FVTAjZDY8s9ZZRnoCC1bV34&udm=8&sa=X&ved=2ahUKEwjVrtu5_Z6TAxWWFmIAHXckCDEQkbEKegQIFRAE",
+            "serpapi_link": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&q=backend+engineer+in+the+last+week&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-8OhgyMpMFL-XOABm_4OIup0DlDDupJVs-3v-RMaDFOgv2p3Q_Lkem9i4yxbh1LrZDYRDU8g8-yWiZljmwlq7FyMMNCm5Se5g9OkIYOugoFLWA8GDynT3mkOJXtBaKJAt_U5DtIWsDZF5PBpyVld4_S7yoyy7lgRcXo7YH9hM8Yj1xbkAqc3oN8XL5-ij4wPRTZINS3hHk_Q0Hs3jvxMfIMxX4kXHOXBBLmLSQ_kVorW-aLEjwMSiB2IQbg6EYPE3xdeue2XtwYqiJpMJMg2QQ89AC8Xftw9t1KFdhBK36aYJfnwx0vWluXIz7Tig_VSvfK41FVTAjZDY8s9ZZRnoCC1bV34"
+          },
+          {
+            "name": "Last month",
+            "parameters": {
+              "uds": "ALYpb_ncDc7jTlmw6Mmq7NjuX5c-_K-x0bUGF5wub8k0cRcI5k7aXxLRgeVabdeXcYlwtiwINH6TUwr4b5Vzls51oFHVKlCApzP8ArxNJAH05uDgzrjUU-aMDleCtV5KiOWGsIhb0s4UFH7CsWPhF1iuWIaze7Ph-T8Hj8Yc_k5R9-jkRwqzAtbgzJsUl3CY1c4bBFBhYKpd2DQMtMP5uraOgh1EjiMmWL0RvL_8j5AKu3VTRUfg0DRQoDWevnxGpRJ-dPHzV4mMIy8zzKYbBbUj9gpSsSRvELgi5lH0NFSPbSKxgOFG4dN27v9RO1hWACd4IBtrfd-hdUZOncqAgswaCr53M_wnI5RX8R4sxlxsiBZ8Zg-m6oU",
+              "q": "backend engineer in the last month"
+            },
+            "link": "https://www.google.com/search?sca_esv=6e72ffa629272dce&hl=en&gl=us&q=backend+engineer+in+the+last+month&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-_K-x0bUGF5wub8k0cRcI5k7aXxLRgeVabdeXcYlwtiwINH6TUwr4b5Vzls51oFHVKlCApzP8ArxNJAH05uDgzrjUU-aMDleCtV5KiOWGsIhb0s4UFH7CsWPhF1iuWIaze7Ph-T8Hj8Yc_k5R9-jkRwqzAtbgzJsUl3CY1c4bBFBhYKpd2DQMtMP5uraOgh1EjiMmWL0RvL_8j5AKu3VTRUfg0DRQoDWevnxGpRJ-dPHzV4mMIy8zzKYbBbUj9gpSsSRvELgi5lH0NFSPbSKxgOFG4dN27v9RO1hWACd4IBtrfd-hdUZOncqAgswaCr53M_wnI5RX8R4sxlxsiBZ8Zg-m6oU&udm=8&sa=X&ved=2ahUKEwjVrtu5_Z6TAxWWFmIAHXckCDEQkbEKegQIFRAF",
+            "serpapi_link": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&q=backend+engineer+in+the+last+month&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-_K-x0bUGF5wub8k0cRcI5k7aXxLRgeVabdeXcYlwtiwINH6TUwr4b5Vzls51oFHVKlCApzP8ArxNJAH05uDgzrjUU-aMDleCtV5KiOWGsIhb0s4UFH7CsWPhF1iuWIaze7Ph-T8Hj8Yc_k5R9-jkRwqzAtbgzJsUl3CY1c4bBFBhYKpd2DQMtMP5uraOgh1EjiMmWL0RvL_8j5AKu3VTRUfg0DRQoDWevnxGpRJ-dPHzV4mMIy8zzKYbBbUj9gpSsSRvELgi5lH0NFSPbSKxgOFG4dN27v9RO1hWACd4IBtrfd-hdUZOncqAgswaCr53M_wnI5RX8R4sxlxsiBZ8Zg-m6oU"
+          }
+        ]
+      },
+      {
+        "name": "Date posted",
+        "options": [
+          {
+            "name": "Yesterday",
+            "parameters": {
+              "uds": "ALYpb_ncDc7jTlmw6Mmq7NjuX5c-1SdGVRtEQV4bTBLR6AHJURxZ017_W3Pj8Z5Wf_eSaPSXTvpVqZel1ULhr4tpS4lFbj30IOvl7onGk-eMnyNsTG_Vxu9g2IOENFQetojcKsC8sPWqLH92aZzOGOsQq54mhqf2kSweIdO0hVOxR1-LNcbex-kFELgO_i9TvMhA_XzEgcamSDtQWBpUrhmMTQ0Y1a6LNCZADzu4TtXkhhKiF1z5tTKBf5Ail2Gu-iNKu8MGXPVtud-IYgqm6agGw5aV27BQ7AquJq7J05x1lahqnivznSPkBhO9jlUZET4etz328epWo7LZYwtuC5X3myfTL0jBy9IJTMcCYmI9oqen_N_FR-o",
+              "q": "backend engineer since yesterday"
+            },
+            "link": "https://www.google.com/search?sca_esv=6e72ffa629272dce&hl=en&gl=us&q=backend+engineer+since+yesterday&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-1SdGVRtEQV4bTBLR6AHJURxZ017_W3Pj8Z5Wf_eSaPSXTvpVqZel1ULhr4tpS4lFbj30IOvl7onGk-eMnyNsTG_Vxu9g2IOENFQetojcKsC8sPWqLH92aZzOGOsQq54mhqf2kSweIdO0hVOxR1-LNcbex-kFELgO_i9TvMhA_XzEgcamSDtQWBpUrhmMTQ0Y1a6LNCZADzu4TtXkhhKiF1z5tTKBf5Ail2Gu-iNKu8MGXPVtud-IYgqm6agGw5aV27BQ7AquJq7J05x1lahqnivznSPkBhO9jlUZET4etz328epWo7LZYwtuC5X3myfTL0jBy9IJTMcCYmI9oqen_N_FR-o&udm=8&sa=X&ved=2ahUKEwjVrtu5_Z6TAxWWFmIAHXckCDEQkbEKegQIFRAC",
+            "serpapi_link": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&q=backend+engineer+since+yesterday&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-1SdGVRtEQV4bTBLR6AHJURxZ017_W3Pj8Z5Wf_eSaPSXTvpVqZel1ULhr4tpS4lFbj30IOvl7onGk-eMnyNsTG_Vxu9g2IOENFQetojcKsC8sPWqLH92aZzOGOsQq54mhqf2kSweIdO0hVOxR1-LNcbex-kFELgO_i9TvMhA_XzEgcamSDtQWBpUrhmMTQ0Y1a6LNCZADzu4TtXkhhKiF1z5tTKBf5Ail2Gu-iNKu8MGXPVtud-IYgqm6agGw5aV27BQ7AquJq7J05x1lahqnivznSPkBhO9jlUZET4etz328epWo7LZYwtuC5X3myfTL0jBy9IJTMcCYmI9oqen_N_FR-o"
+          },
+          {
+            "name": "Last 3 days",
+            "parameters": {
+              "uds": "ALYpb_ncDc7jTlmw6Mmq7NjuX5c-xqL6Il24wBcbqeE2E9mB6H1pMz5XzA6j4Ega8U5CY5HyMlINoGR5KoZSpDfVwUUDwscNoEsDvEDuwucot_xkjA_h1LsgtzG9Obkshx1gt9gwa5V_oHOb9XtIxIth_6PETd2jcyXXBG6gDr4EFEqCxJmdvLQjbe4QDs3sgY_M6Wj1AiVQ7cGB3y9sa0po-6cmb-C6t5xrK6iu8hV_LzXNTdHYowc-iwhHUg7NnCYx9ToNySjOYqjKjx8YPSEKrB8mTHwtWr_a07Oc8YuXpoPb7NMnJAgC-EbNm-0s6DNo_Q4iRU2870fm33lk3xjbqohWlm-66iruAcDlRzMkRNkrNDZTFwY",
+              "q": "backend engineer in the last 3 days"
+            },
+            "link": "https://www.google.com/search?sca_esv=6e72ffa629272dce&hl=en&gl=us&q=backend+engineer+in+the+last+3+days&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-xqL6Il24wBcbqeE2E9mB6H1pMz5XzA6j4Ega8U5CY5HyMlINoGR5KoZSpDfVwUUDwscNoEsDvEDuwucot_xkjA_h1LsgtzG9Obkshx1gt9gwa5V_oHOb9XtIxIth_6PETd2jcyXXBG6gDr4EFEqCxJmdvLQjbe4QDs3sgY_M6Wj1AiVQ7cGB3y9sa0po-6cmb-C6t5xrK6iu8hV_LzXNTdHYowc-iwhHUg7NnCYx9ToNySjOYqjKjx8YPSEKrB8mTHwtWr_a07Oc8YuXpoPb7NMnJAgC-EbNm-0s6DNo_Q4iRU2870fm33lk3xjbqohWlm-66iruAcDlRzMkRNkrNDZTFwY&udm=8&sa=X&ved=2ahUKEwjVrtu5_Z6TAxWWFmIAHXckCDEQkbEKegQIFRAD",
+            "serpapi_link": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&q=backend+engineer+in+the+last+3+days&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-xqL6Il24wBcbqeE2E9mB6H1pMz5XzA6j4Ega8U5CY5HyMlINoGR5KoZSpDfVwUUDwscNoEsDvEDuwucot_xkjA_h1LsgtzG9Obkshx1gt9gwa5V_oHOb9XtIxIth_6PETd2jcyXXBG6gDr4EFEqCxJmdvLQjbe4QDs3sgY_M6Wj1AiVQ7cGB3y9sa0po-6cmb-C6t5xrK6iu8hV_LzXNTdHYowc-iwhHUg7NnCYx9ToNySjOYqjKjx8YPSEKrB8mTHwtWr_a07Oc8YuXpoPb7NMnJAgC-EbNm-0s6DNo_Q4iRU2870fm33lk3xjbqohWlm-66iruAcDlRzMkRNkrNDZTFwY"
+          },
+          {
+            "name": "Last week",
+            "parameters": {
+              "uds": "ALYpb_ncDc7jTlmw6Mmq7NjuX5c-8OhgyMpMFL-XOABm_4OIup0DlDDupJVs-3v-RMaDFOgv2p3Q_Lkem9i4yxbh1LrZDYRDU8g8-yWiZljmwlq7FyMMNCm5Se5g9OkIYOugoFLWA8GDynT3mkOJXtBaKJAt_U5DtIWsDZF5PBpyVld4_S7yoyy7lgRcXo7YH9hM8Yj1xbkAqc3oN8XL5-ij4wPRTZINS3hHk_Q0Hs3jvxMfIMxX4kXHOXBBLmLSQ_kVorW-aLEjwMSiB2IQbg6EYPE3xdeue2XtwYqiJpMJMg2QQ89AC8Xftw9t1KFdhBK36aYJfnwx0vWluXIz7Tig_VSvfK41FVTAjZDY8s9ZZRnoCC1bV34",
+              "q": "backend engineer in the last week"
+            },
+            "link": "https://www.google.com/search?sca_esv=6e72ffa629272dce&hl=en&gl=us&q=backend+engineer+in+the+last+week&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-8OhgyMpMFL-XOABm_4OIup0DlDDupJVs-3v-RMaDFOgv2p3Q_Lkem9i4yxbh1LrZDYRDU8g8-yWiZljmwlq7FyMMNCm5Se5g9OkIYOugoFLWA8GDynT3mkOJXtBaKJAt_U5DtIWsDZF5PBpyVld4_S7yoyy7lgRcXo7YH9hM8Yj1xbkAqc3oN8XL5-ij4wPRTZINS3hHk_Q0Hs3jvxMfIMxX4kXHOXBBLmLSQ_kVorW-aLEjwMSiB2IQbg6EYPE3xdeue2XtwYqiJpMJMg2QQ89AC8Xftw9t1KFdhBK36aYJfnwx0vWluXIz7Tig_VSvfK41FVTAjZDY8s9ZZRnoCC1bV34&udm=8&sa=X&ved=2ahUKEwjVrtu5_Z6TAxWWFmIAHXckCDEQkbEKegQIFRAE",
+            "serpapi_link": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&q=backend+engineer+in+the+last+week&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-8OhgyMpMFL-XOABm_4OIup0DlDDupJVs-3v-RMaDFOgv2p3Q_Lkem9i4yxbh1LrZDYRDU8g8-yWiZljmwlq7FyMMNCm5Se5g9OkIYOugoFLWA8GDynT3mkOJXtBaKJAt_U5DtIWsDZF5PBpyVld4_S7yoyy7lgRcXo7YH9hM8Yj1xbkAqc3oN8XL5-ij4wPRTZINS3hHk_Q0Hs3jvxMfIMxX4kXHOXBBLmLSQ_kVorW-aLEjwMSiB2IQbg6EYPE3xdeue2XtwYqiJpMJMg2QQ89AC8Xftw9t1KFdhBK36aYJfnwx0vWluXIz7Tig_VSvfK41FVTAjZDY8s9ZZRnoCC1bV34"
+          },
+          {
+            "name": "Last month",
+            "parameters": {
+              "uds": "ALYpb_ncDc7jTlmw6Mmq7NjuX5c-_K-x0bUGF5wub8k0cRcI5k7aXxLRgeVabdeXcYlwtiwINH6TUwr4b5Vzls51oFHVKlCApzP8ArxNJAH05uDgzrjUU-aMDleCtV5KiOWGsIhb0s4UFH7CsWPhF1iuWIaze7Ph-T8Hj8Yc_k5R9-jkRwqzAtbgzJsUl3CY1c4bBFBhYKpd2DQMtMP5uraOgh1EjiMmWL0RvL_8j5AKu3VTRUfg0DRQoDWevnxGpRJ-dPHzV4mMIy8zzKYbBbUj9gpSsSRvELgi5lH0NFSPbSKxgOFG4dN27v9RO1hWACd4IBtrfd-hdUZOncqAgswaCr53M_wnI5RX8R4sxlxsiBZ8Zg-m6oU",
+              "q": "backend engineer in the last month"
+            },
+            "link": "https://www.google.com/search?sca_esv=6e72ffa629272dce&hl=en&gl=us&q=backend+engineer+in+the+last+month&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-_K-x0bUGF5wub8k0cRcI5k7aXxLRgeVabdeXcYlwtiwINH6TUwr4b5Vzls51oFHVKlCApzP8ArxNJAH05uDgzrjUU-aMDleCtV5KiOWGsIhb0s4UFH7CsWPhF1iuWIaze7Ph-T8Hj8Yc_k5R9-jkRwqzAtbgzJsUl3CY1c4bBFBhYKpd2DQMtMP5uraOgh1EjiMmWL0RvL_8j5AKu3VTRUfg0DRQoDWevnxGpRJ-dPHzV4mMIy8zzKYbBbUj9gpSsSRvELgi5lH0NFSPbSKxgOFG4dN27v9RO1hWACd4IBtrfd-hdUZOncqAgswaCr53M_wnI5RX8R4sxlxsiBZ8Zg-m6oU&udm=8&sa=X&ved=2ahUKEwjVrtu5_Z6TAxWWFmIAHXckCDEQkbEKegQIFRAF",
+            "serpapi_link": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&q=backend+engineer+in+the+last+month&uds=ALYpb_ncDc7jTlmw6Mmq7NjuX5c-_K-x0bUGF5wub8k0cRcI5k7aXxLRgeVabdeXcYlwtiwINH6TUwr4b5Vzls51oFHVKlCApzP8ArxNJAH05uDgzrjUU-aMDleCtV5KiOWGsIhb0s4UFH7CsWPhF1iuWIaze7Ph-T8Hj8Yc_k5R9-jkRwqzAtbgzJsUl3CY1c4bBFBhYKpd2DQMtMP5uraOgh1EjiMmWL0RvL_8j5AKu3VTRUfg0DRQoDWevnxGpRJ-dPHzV4mMIy8zzKYbBbUj9gpSsSRvELgi5lH0NFSPbSKxgOFG4dN27v9RO1hWACd4IBtrfd-hdUZOncqAgswaCr53M_wnI5RX8R4sxlxsiBZ8Zg-m6oU"
+          }
+        ]
+      },
+      {
+        "name": "Date posted",
+        "options": []
+      },
+      {
+        "name": "Job type",
+        "options": []
+      },
+      {
+        "name": "Job type",
+        "options": []
+      }
+    ],
+    "jobs_results": [
+      {
+        "title": "Lead Software Engineer - Backend",
+        "company_name": "McGraw Hill LLC.",
+        "location": "United States",
+        "via": "McGraw Hill Careers",
+        "share_link": "https://www.google.com/search?ibp=htl;jobs&q=backend+engineer&htidocid=SCBh-sc_ryeZhQBdAAAAAA%3D%3D&hl=en-US&shndl=37&shmd=H4sIAAAAAAAA_xWOsQrCMBBAce0nOJ2rYCKCCLopUpE6iXNJ0zOJxruSC7S_4t8al8ebHq_6zqpdg6aHOz_zaBLCmVwgxAQrOBr7RuqLXbkDQZOsByaomV3E-cHnPMhea5GonGSTg1WWP5oJO570izv5oxVfwkM0GdvNdj2pgdxycbN1MiNcQozQNCcFgeBBIWN5KSmUHyaUF2GcAAAA&shmds=v1_ATWGeePAZTb7MihTfyDSMLLseqicDobARYZ-KupycS1O7zluIg&source=sh/x/job/li/m1/1#fpstate=tldetail&htivrt=jobs&htiq=backend+engineer&htidocid=SCBh-sc_ryeZhQBdAAAAAA%3D%3D",
+        "thumbnail": "https://serpapi.com/searches/69b51d574de49a0d063bbd89/images/UtjqNQLiQDk9aZV9JZlVdxFsQbhSiraPdW46lD9qxBM.png",
+        "extensions": [
+          "Full-time",
+          "Health insurance"
+        ],
+        "detected_extensions": {
+          "schedule_type": "Full-time",
+          "health_insurance": true
+        },
+        "description": "Overview\n\nBuild the Future\nAt McGraw Hill, we are dedicated to delivering digital learning experiences that transform education for learners and educators. Our focus is on creating seamless, impactful products that truly benefit our users while supporting growth and collaboration across teams. We foster a culture that values innovation, teamwork, and a balance between career growth and personal well-being.\n\nHow can you make an impact?\n\nWe are a passionate, fast-growing team within McGraw Hill, a global education technology company that is transforming the way students learn and succeed. Our new product has scaled from Minimum Loveable Product to hundreds of thousands of users, has been featured on the App Store, and has paying customers in its first year of launch.\n\nWe are seeking a Lead Back End Engineer to architect and implement scalable, high-performance, and secure server-side solutions for our platform. In this role, you will define the technical direction of our back-end systems, collaborate with cross-functional teams to deliver impactful solutions, and mentor a team of developers. This position requires deep technical expertise, strategic thinking, and leadership experience to drive innovation and excellence in back-end development.\n\nWhat You'll Do:\n• Architecture & Development: Design, develop, and maintain highly scalable, secure, and efficient back-end systems and APIs to support web and mobile applications.\n• Collaboration: Partner with front-end engineers, product managers, and other stakeholders to deliver seamless and robust platform functionality.\n• Leadership: Mentor and lead a team of back-end developers, providing guidance on technical challenges and fostering professional growth within the team.\n• Code Quality: Ensure high-quality, maintainable code through rigorous reviews, automated testing, and adherence to industry best practices.\n• Optimization: Continuously optimize server performance, database queries, and overall system scalability and reliability.\n• Strategic Alignment: Define back-end engineering objectives that align with overall product and engineering strategies, ensuring long-term platform success.\n• Monitoring & Incident Management: Implement and maintain observability tools to monitor system performance and resolve incidents, including off-hours support when needed.\n• Continuous Improvement: Drive the adoption of modern tools, technologies, and methodologies to enhance development efficiency and team productivity.\n\nWhat You Bring:\n• Bachelor's degree in related field or equivalent experience preferred.\n• Minimum of 7+ years of applicable experience.\n• Expertise in server-side programming languages such as Python, Java, Node.js, Ruby, or Go.\n• Proficiency in designing efficient GraphQL APIs & microservices for low latency and high availability systems.\n• Deep understanding of database technologies, both relational (e.g., PostgreSQL, MySQL) and non-relational (e.g., MongoDB, DynamoDB).\n• Experience in cloud environments (e.g., AWS, GCP, or Azure) and infrastructure as code tools like Terraform or CloudFormation.\n• Strong knowledge of system performance optimization, caching strategies, and distributed systems.\n• Experience with observability tools like New Relic, Datadog, or equivalent for performance monitoring.\n• Familiarity with CI/CD pipelines and DevOps practices.\n\nPreferred Experience & Skills:\n• Strong understanding of web security best practices and OWASP guidelines.\n• Experience with SRE practices, including CI/CD pipelines, infrastructure as code, and monitoring.\n• Experience with containerization and orchestration (e.g., Docker, Kubernetes).\n• Familiarity with product analytics and observability tools like: Datadog, NewRelic\n• Experience with modern content management systems (CMS), including integrating and customizing CMS platforms for dynamic content delivery.\n\nThe pay range for this position is between $124,000 - $190,000 annually. However, base pay offered may vary depending on job-related knowledge, skills, experience, and location. An annual bonus plan may be provided as part of the compensation package, in addition to a full range of medical and/or other benefits, depending on the position offered. Click here to learn more about our benefit offerings.\n\nMcGraw Hill recruiters always use a “@mheducation.com or @careers.mheducation.com” email address and/or from our Applicant Tracking System, iCIMS. Any variation of this email domain should be considered suspicious. Additionally, McGraw Hill recruiters and authorized representatives will never request sensitive information in email.\n50294",
+        "job_highlights": [
+          {
+            "title": "Qualifications",
+            "items": [
+              "This position requires deep technical expertise, strategic thinking, and leadership experience to drive innovation and excellence in back-end development",
+              "Minimum of 7+ years of applicable experience",
+              "Expertise in server-side programming languages such as Python, Java, Node.js, Ruby, or Go",
+              "Proficiency in designing efficient GraphQL APIs & microservices for low latency and high availability systems",
+              "Deep understanding of database technologies, both relational (e.g., PostgreSQL, MySQL) and non-relational (e.g., MongoDB, DynamoDB)",
+              "Experience in cloud environments (e.g., AWS, GCP, or Azure) and infrastructure as code tools like Terraform or CloudFormation",
+              "Strong knowledge of system performance optimization, caching strategies, and distributed systems",
+              "Experience with observability tools like New Relic, Datadog, or equivalent for performance monitoring",
+              "Familiarity with CI/CD pipelines and DevOps practices"
+            ]
+          },
+          {
+            "title": "Benefits",
+            "items": [
+              "The pay range for this position is between $124,000 - $190,000 annually",
+              "However, base pay offered may vary depending on job-related knowledge, skills, experience, and location",
+              "An annual bonus plan may be provided as part of the compensation package, in addition to a full range of medical and/or other benefits, depending on the position offered"
+            ]
+          },
+          {
+            "title": "Responsibilities",
+            "items": [
+              "In this role, you will define the technical direction of our back-end systems, collaborate with cross-functional teams to deliver impactful solutions, and mentor a team of developers",
+              "Architecture & Development: Design, develop, and maintain highly scalable, secure, and efficient back-end systems and APIs to support web and mobile applications",
+              "Collaboration: Partner with front-end engineers, product managers, and other stakeholders to deliver seamless and robust platform functionality",
+              "Leadership: Mentor and lead a team of back-end developers, providing guidance on technical challenges and fostering professional growth within the team",
+              "Code Quality: Ensure high-quality, maintainable code through rigorous reviews, automated testing, and adherence to industry best practices",
+              "Optimization: Continuously optimize server performance, database queries, and overall system scalability and reliability",
+              "Strategic Alignment: Define back-end engineering objectives that align with overall product and engineering strategies, ensuring long-term platform success",
+              "Monitoring & Incident Management: Implement and maintain observability tools to monitor system performance and resolve incidents, including off-hours support when needed",
+              "Continuous Improvement: Drive the adoption of modern tools, technologies, and methodologies to enhance development efficiency and team productivity"
+            ]
+          }
+        ],
+        "apply_options": [
+          {
+            "title": "McGraw Hill Careers",
+            "link": "https://careers.mheducation.com/jobs/6441?lang=en-us&utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Teal",
+            "link": "https://www.tealhq.com/job/lead-software-engineer-backend_7ea1aaee4e6bc604d278dd03c57d588cf4fd4?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Jobright",
+            "link": "https://jobright.ai/jobs/info/697400dc206da320f49e10da?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Remote Jobs USA",
+            "link": "https://wfhbridge.com/job/1367672?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Remote Jobs USA",
+            "link": "https://halvolink.net/job/1006055?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Remote Jobs USA",
+            "link": "https://novexwork.net/job/1006055?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Remote Jobs USA",
+            "link": "https://tgmarinejobs.com/job/1367672?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          }
+        ],
+        "job_id": "eyJqb2JfdGl0bGUiOiJMZWFkIFNvZnR3YXJlIEVuZ2luZWVyIC0gQmFja2VuZCIsImNvbXBhbnlfbmFtZSI6Ik1jR3JhdyBIaWxsIExMQy4iLCJhZGRyZXNzX2NpdHkiOiJVbml0ZWQgU3RhdGVzIiwiaHRpZG9jaWQiOiJTQ0JoLXNjX3J5ZVpoUUJkQUFBQUFBPT0iLCJ1dWxlIjoidytDQUlRSUNJTlZXNXBkR1ZrSUZOMFlYUmxjdyIsImdsIjoidXMiLCJobCI6ImVuIn0="
+      },
+      {
+        "title": "Software Engineer I (Backend)",
+        "company_name": "Abbott Laboratories",
+        "location": "United States (+1 other)",
+        "via": "Abbott Jobs",
+        "share_link": "https://www.google.com/search?ibp=htl;jobs&q=backend+engineer&htidocid=W3KaiZGbqkA18XcTAAAAAA%3D%3D&hl=en-US&shndl=37&shmd=H4sIAAAAAAAA_xXMsQrCQAwAUFz7CU4ZHFSwJ6KLTgoiiltxLrkzXk9rUi4B-yv-rXV54yu-o2JdycM-mAmOHBMTZTjD9IDhRXyfwQIu4kEJc2hAGE4isaXxrjHrdOucaltGNbQUyiBvJ0xeevcUr39qbYa6a9GoXm2WfdlxnE_23osZXNFLRpOcSCEx3DgZ3aEaNtIfQxfhFJwAAAA&shmds=v1_ATWGeeNZw2OzZRkDoPqdOutupjCsHqf-ueHcrZAshSb0wyew0g&source=sh/x/job/li/m1/1#fpstate=tldetail&htivrt=jobs&htiq=backend+engineer&htidocid=W3KaiZGbqkA18XcTAAAAAA%3D%3D",
+        "thumbnail": "https://serpapi.com/searches/69b51d574de49a0d063bbd89/images/-_YBLHQS6mluTYXEja7MrF_RfLllrikfXu-P27GcG6o.png",
+        "extensions": [
+          "1 day ago",
+          "Full-time",
+          "Health insurance"
+        ],
+        "detected_extensions": {
+          "posted_at": "1 day ago",
+          "schedule_type": "Full-time",
+          "health_insurance": true
+        },
+        "description": "Working at Abbott\n\nAt Abbott, you can do work that matters, grow, and learn, care for yourself and your family, be your true self, and live a full life. You’ll also have access to:\n• Career development with an international company where you can grow the career you dream of.\n• Employees can qualify for free medical coverage in our Health Investment Plan (HIP) PPO medical plan in the next calendar year.\n• An excellent retirement savings plan with a high employer contribution.\n• Tuition reimbursement, the Freedom 2 Save student debt program, and FreeU education benefit - an affordable and convenient path to getting a bachelor’s degree.\n• A company recognized as a great place to work in dozens of countries worldwide and named one of the most admired companies in the world by Fortune.\n• A company that is recognized as one of the best big companies to work for as well as the best place to work for diversity, working mothers, female executives, and scientists.\n\nThe Opportunity:\n\nWe are seeking a highly skilled Software Engineer I (Backend) to design and development of scalable, cloud-native applications. This role requires strong expertise in backend microservices (Java), leveraging the Azure technology stack to deliver enterprise-grade solutions. This position works out of Pleasanton, CA or Burlington, MA locations in the Heart Failure Division.\n\nWhat You’ll Work On\n• Design, and implement microservices using Java 11+, Spring Boot, and REST APIs (GraphQL is a plus).\n• Build cloud-native SaaS applications following well-architected principles on Azure Cloud.\n• Work with Azure PaaS services such as Service Bus, Cosmos DB, Blob Storage, Redis Cache, and Identity Manager.\n• Write unit tests using JUnit and Jest; apply static code analysis tools.\n• Conduct load testing using tools like JMeter.\n• Ensure security, performance, and adherence to design patterns and best practices.\n• Collaborate with cross-functional teams in an Agile environment (Scrum/Kanban).\n\nRequired Qualifications:\n• Bachelor’s degree in software engineering, Computer Engineering, Computer Science, or a related field\n• 0-2 years of backend development experience (full stack preferred) with proven ability to lead development\n• Java 11+, Spring Boot, Microservices, REST API development (GraphQL is a plus)\n• Database technologies (PostgreSQL preferred)\n• Testing & Tools: Unit testing (JUnit, Jest), static code analyzers\n• Knowledge of AI Agents in the software development life cycle is a plus.\n• Any Capstone project / internships, GPA Requirement 3.5\n• Familiarity with one or more programming languages (such as Python, Java or similar).\n• Exposure to modern software development practices, including version control (e.g., Git/GitHub) and basic debugging or testing techniques.\n\nPreferred Qualifications\n• 1+ years of relevant work experience.\n• Able to learn concepts and apply that understanding to help troubleshoot issues and complete assigned project tasks.\n• Ability to work within a team and as an individual contributor in a fast-paced, changing environment. \n\nApply Now\n\nLearn more about our health and wellness benefits, which provide the security to help you and your family live full lives: www.abbottbenefits.com\n\nFollow your career aspirations to Abbott for diverse opportunities with a company that can help you build your future and live your best life. Abbott is an Equal Opportunity Employer, committed to employee diversity.\n\nConnect with us at www.abbott.com, on Facebook at www.facebook.com/Abbott, and on Twitter @AbbottNews.\n\nThe base pay for this position is $50,700.00 – $101,300.00. In specific locations, the pay range may vary from the range posted.",
+        "job_highlights": [
+          {
+            "title": "Qualifications",
+            "items": [
+              "We are seeking a highly skilled Software Engineer I (Backend) to design and development of scalable, cloud-native applications",
+              "This role requires strong expertise in backend microservices (Java), leveraging the Azure technology stack to deliver enterprise-grade solutions",
+              "Bachelor’s degree in software engineering, Computer Engineering, Computer Science, or a related field",
+              "Testing & Tools: Unit testing (JUnit, Jest), static code analyzers",
+              "Any Capstone project / internships, GPA Requirement 3.5",
+              "Familiarity with one or more programming languages (such as Python, Java or similar)",
+              "Exposure to modern software development practices, including version control (e.g., Git/GitHub) and basic debugging or testing techniques"
+            ]
+          },
+          {
+            "title": "Benefits",
+            "items": [
+              "Career development with an international company where you can grow the career you dream of",
+              "Employees can qualify for free medical coverage in our Health Investment Plan (HIP) PPO medical plan in the next calendar year",
+              "An excellent retirement savings plan with a high employer contribution",
+              "Tuition reimbursement, the Freedom 2 Save student debt program, and FreeU education benefit - an affordable and convenient path to getting a bachelor’s degree",
+              "The base pay for this position is $50,700.00 – $101,300.00",
+              "In specific locations, the pay range may vary from the range posted"
+            ]
+          },
+          {
+            "title": "Responsibilities",
+            "items": [
+              "Design, and implement microservices using Java 11+, Spring Boot, and REST APIs (GraphQL is a plus)",
+              "Build cloud-native SaaS applications following well-architected principles on Azure Cloud",
+              "Work with Azure PaaS services such as Service Bus, Cosmos DB, Blob Storage, Redis Cache, and Identity Manager",
+              "Write unit tests using JUnit and Jest; apply static code analysis tools",
+              "Conduct load testing using tools like JMeter",
+              "Ensure security, performance, and adherence to design patterns and best practices",
+              "Collaborate with cross-functional teams in an Agile environment (Scrum/Kanban)"
+            ]
+          }
+        ],
+        "apply_options": [
+          {
+            "title": "Abbott Jobs",
+            "link": "https://www.jobs.abbott/us/en/job/31143106/Software-Engineer-I-Backend?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Glassdoor",
+            "link": "https://www.glassdoor.com/job-listing/software-engineer-i-backend-abbott-JV_IC1154543_KO0,27_KE28,34.htm?jl=1010053343721&utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "LocalJobs.com",
+            "link": "https://www.localjobs.com/job/burlington-ma-software-engineer-i-backend?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "LinkedIn",
+            "link": "https://www.linkedin.com/jobs/view/software-engineer-i-backend-at-abbott-4380538109?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Lensa",
+            "link": "https://lensa.com/job-v1/abbott/burlington-ma/software-engineer/4ea6c5e80011449bd713bf41f4e0b27b?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "FactoryFix",
+            "link": "https://jobs.factoryfix.com/jobs/software-engineer-i-backend--burlington--ma--2046981384--V2?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Pharmacy500 Career Center - RXinsider",
+            "link": "https://careercenter.rxinsider.com/jobs/359420707-software-engineer-i-backend?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Talentify",
+            "link": "https://www.talentify.io/job/software-engineer-i-backend-burlington-massachusetts-us-abbott-31143106?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          }
+        ],
+        "job_id": "eyJqb2JfdGl0bGUiOiJTb2Z0d2FyZSBFbmdpbmVlciBJIChCYWNrZW5kKSIsImNvbXBhbnlfbmFtZSI6IkFiYm90dCBMYWJvcmF0b3JpZXMiLCJhZGRyZXNzX2NpdHkiOiJVbml0ZWQgU3RhdGVzIiwiaHRpZG9jaWQiOiJXM0thaVpHYnFrQTE4WGNUQUFBQUFBPT0iLCJ1dWxlIjoidytDQUlRSUNJTlZXNXBkR1ZrSUZOMFlYUmxjdyIsImdsIjoidXMiLCJobCI6ImVuIn0="
+      },
+      {
+        "title": "Backend & Tooling Engineer (Rust)",
+        "company_name": "Alignerr",
+        "location": "Anywhere",
+        "via": "LinkedIn",
+        "share_link": "https://www.google.com/search?ibp=htl;jobs&q=backend+engineer&htidocid=Hl5Z8PtaUsAgXfKLAAAAAA%3D%3D&hl=en-US&shndl=37&shmd=H4sIAAAAAAAA_xXEOwoCMRAAUGz3ABZWU4mKJiIIopU_BBtB7JckDkk0zoRMlL2FVxZf8Zpvr1ntjHsi3WEIN-YUycORfCTEAqPrW-oYZnBmC4KmuABMcGL2CQebUGuWtdYiSXmppkanHL80E1ru9IOt_GslmII5mYrtYjnvVCY_6W9T9ISlQCQ4IH2wTGF_-QHVue75kgAAAA&shmds=v1_ATWGeeMZ2LjfGxPfxTOkxzfrX-h8Mz54KUBAu38duNFaF-Qrjw&source=sh/x/job/li/m1/1#fpstate=tldetail&htivrt=jobs&htiq=backend+engineer&htidocid=Hl5Z8PtaUsAgXfKLAAAAAA%3D%3D",
+        "thumbnail": "https://serpapi.com/searches/69b51d574de49a0d063bbd89/images/g6cspnKaGe5U5tbY0DYdtC-IapMXu3UJ_j-lS5VgpVM.jpeg",
+        "extensions": [
+          "3 days ago",
+          "50–75 an hour",
+          "Work from home",
+          "Contractor"
+        ],
+        "detected_extensions": {
+          "posted_at": "3 days ago",
+          "salary": "50–75 an hour",
+          "work_from_home": true,
+          "schedule_type": "Contractor"
+        },
+        "description": "About The Job\n\nAlignerr connects top technical experts with leading AI labs to build, evaluate, and improve next-generation models. We work on real production systems and high-impact research workflows across data, tooling, and infrastructure.\n\nPosition\n\nSenior Rust Full-Stack Engineer — AI Data & Infrastructure\n\nType: Contract, Remote Commitment: 20–40 hours/week Compensation: Competitive, hourly (based on experience)\n\nRole Responsibilities\n• Design, build, and optimize high-performance systems in Rust supporting AI data pipelines and evaluation workflows\n• Develop full-stack tooling and backend services for large-scale data annotation, validation, and quality control\n• Improve reliability, performance, and safety across existing Rust codebases\n• Collaborate with data, research, and engineering teams to support model training and evaluation workflows\n• Identify bottlenecks and edge cases in data and system behavior, and implement scalable fixes\n• Participate in synchronous reviews to iterate on system design and implementation decisions\n\nQualifications\n\nMust-Have\n• Native or fluent English speaker\n• 5+ years of professional experience writing production Rust.\n• Proficiency building high-performance backend web services and robust, user-friendly command-line interface (CLI) tools.\n• Experience with type-safe database interactions and connection pooling for handling large-scale data.\n• Clear written and verbal communication skills.\n• Ability to commit 20–40 hours per week.\n\nPreferred\n• Prior experience with data annotation, data quality, or evaluation systems\n• Familiarity with AI/ML workflows, model training, or benchmarking pipelines\n• Experience with distributed systems or developer tooling\n\nApplication Process\n• Submit your resume\n• Complete a short technical screening\n• Project matching and onboarding",
+        "job_highlights": [
+          {
+            "title": "Qualifications",
+            "items": [
+              "Native or fluent English speaker",
+              "5+ years of professional experience writing production Rust",
+              "Proficiency building high-performance backend web services and robust, user-friendly command-line interface (CLI) tools",
+              "Experience with type-safe database interactions and connection pooling for handling large-scale data",
+              "Clear written and verbal communication skills",
+              "Ability to commit 20–40 hours per week"
+            ]
+          },
+          {
+            "title": "Benefits",
+            "items": [
+              "Type: Contract, Remote Commitment: 20–40 hours/week Compensation: Competitive, hourly (based on experience)"
+            ]
+          },
+          {
+            "title": "Responsibilities",
+            "items": [
+              "Design, build, and optimize high-performance systems in Rust supporting AI data pipelines and evaluation workflows",
+              "Develop full-stack tooling and backend services for large-scale data annotation, validation, and quality control",
+              "Improve reliability, performance, and safety across existing Rust codebases",
+              "Collaborate with data, research, and engineering teams to support model training and evaluation workflows",
+              "Identify bottlenecks and edge cases in data and system behavior, and implement scalable fixes",
+              "Participate in synchronous reviews to iterate on system design and implementation decisions"
+            ]
+          }
+        ],
+        "apply_options": [
+          {
+            "title": "LinkedIn",
+            "link": "https://www.linkedin.com/jobs/view/backend-tooling-engineer-rust-at-alignerr-4384117604?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Jobright",
+            "link": "https://jobright.ai/jobs/info/69a6a34ef707784310afff7d?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "JobLeads",
+            "link": "https://www.jobleads.com/us/job/backend-tooling-engineer-rust--new-york--eb64d8c206d06c897219bec584124c82c?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          }
+        ],
+        "job_id": "eyJqb2JfdGl0bGUiOiJCYWNrZW5kIFx1MDAyNiBUb29saW5nIEVuZ2luZWVyIChSdXN0KSIsImNvbXBhbnlfbmFtZSI6IkFsaWduZXJyIiwiYWRkcmVzc19jaXR5IjoiRGVudmVyLCBDTyIsImh0aWRvY2lkIjoiSGw1WjhQdGFVc0FnWGZLTEFBQUFBQT09IiwidXVsZSI6IncrQ0FJUUlDSU5WVzVwZEdWa0lGTjBZWFJsY3ciLCJnbCI6InVzIiwiaGwiOiJlbiJ9"
+      },
+      {
+        "title": "Sr, Backend Engineer.",
+        "company_name": "SWITS DIGITAL Private Limited",
+        "location": "United States",
+        "via": "ZipRecruiter",
+        "share_link": "https://www.google.com/search?ibp=htl;jobs&q=backend+engineer&htidocid=DrjSALW_QSV2kPOUAAAAAA%3D%3D&hl=en-US&shndl=37&shmd=H4sIAAAAAAAA_x2MsQrCMBBAce0nON0sNRHBRSdFKZUOQiqOJW2PNNrelVyQ_os_a3V5PHjwks8iSU1I4WSbF1ILF3KeEIOCNVy5BkEbmg6YIGN2PS4PXYyj7LUW6ZWTaKNvVMODZsKaJ_3kWn6opLMBx95GrLa7zaRGcitlHnlp4JxneXks4Bb8e-5Q-MFHbMET3OlvZv6ifAHjjtYQngAAAA&shmds=v1_ATWGeeO4mOgyIsc83KvQ-WEk9QwCO8_uHGMwIC_yBEt5-F3pxQ&source=sh/x/job/li/m1/1#fpstate=tldetail&htivrt=jobs&htiq=backend+engineer&htidocid=DrjSALW_QSV2kPOUAAAAAA%3D%3D",
+        "extensions": [
+          "2 days ago",
+          "Full-time",
+          "No degree mentioned"
+        ],
+        "detected_extensions": {
+          "posted_at": "2 days ago",
+          "schedule_type": "Full-time",
+          "qualifications": "No degree mentioned"
+        },
+        "description": "Greetings from Smart Work IT Services\n\nJob Title: Senior Backend Engineer\nLocation: Remote\nJob Description\n\nWe are seeking an experienced Senior Backend Engineer to build and scale backend systems and platform infrastructure using modern cloud technologies. The ideal candidate will have strong expertise in Python and Django, experience building data management platforms, and a solid understanding of cloud infrastructure on AWS.\n\nThis role involves working closely with product managers, designers, data scientists, and engineering teams to design and implement reliable backend services that support scalable product delivery.\nKey Responsibilities\n• Design, develop, and maintain scalable backend services using Python and Django.\n• Collaborate with product managers, designers, data scientists, and engineers to translate product requirements into robust backend solutions.\n• Develop high-quality, low-defect code following best engineering practices.\n• Build and maintain data management platforms and backend infrastructure.\n• Work with AWS services such as Lambda, RDS, and S3 to support cloud-based applications.\n• Manage and optimize PostgreSQL databases for performance and reliability.\n• Implement CI/CD pipelines using CircleCI to support automated deployment processes.\n• Perform unit testing, system testing, and regression testing to ensure software quality and reliability.\n• Research and adopt new technologies and methodologies to improve system architecture and development processes.\n• Troubleshoot and resolve backend performance and system issues.\nRequired Skills\n• 5+ years of experience in Python backend development\n• Strong expertise in Python and Django frameworks\n• Experience building data management platforms\n• Hands-on experience with AWS cloud infrastructure (Lambda, RDS, S3)\n• Strong experience with PostgreSQL databases\n• Experience with CI/CD tools such as CircleCI\n• Experience working in Agile development environments\n• Ability to work independently and manage multiple technical priorities\n• Strong problem-solving and analytical skills",
+        "job_highlights": [
+          {
+            "title": "Qualifications",
+            "items": [
+              "We are seeking an experienced Senior Backend Engineer to build and scale backend systems and platform infrastructure using modern cloud technologies",
+              "The ideal candidate will have strong expertise in Python and Django, experience building data management platforms, and a solid understanding of cloud infrastructure on AWS",
+              "5+ years of experience in Python backend development",
+              "Strong expertise in Python and Django frameworks",
+              "Experience building data management platforms",
+              "Hands-on experience with AWS cloud infrastructure (Lambda, RDS, S3)",
+              "Strong experience with PostgreSQL databases",
+              "Experience with CI/CD tools such as CircleCI",
+              "Experience working in Agile development environments",
+              "Ability to work independently and manage multiple technical priorities",
+              "Strong problem-solving and analytical skills"
+            ]
+          },
+          {
+            "title": "Responsibilities",
+            "items": [
+              "This role involves working closely with product managers, designers, data scientists, and engineering teams to design and implement reliable backend services that support scalable product delivery",
+              "Design, develop, and maintain scalable backend services using Python and Django",
+              "Collaborate with product managers, designers, data scientists, and engineers to translate product requirements into robust backend solutions",
+              "Develop high-quality, low-defect code following best engineering practices",
+              "Build and maintain data management platforms and backend infrastructure",
+              "Work with AWS services such as Lambda, RDS, and S3 to support cloud-based applications",
+              "Manage and optimize PostgreSQL databases for performance and reliability",
+              "Implement CI/CD pipelines using CircleCI to support automated deployment processes",
+              "Perform unit testing, system testing, and regression testing to ensure software quality and reliability",
+              "Research and adopt new technologies and methodologies to improve system architecture and development processes",
+              "Troubleshoot and resolve backend performance and system issues"
+            ]
+          }
+        ],
+        "apply_options": [
+          {
+            "title": "ZipRecruiter",
+            "link": "https://www.ziprecruiter.com/c/SWITS-DIGITAL-Private/Job/Sr,-Backend-Engineer./-in-Remote,US?jid=86bccf48a684d310&utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          }
+        ],
+        "job_id": "eyJqb2JfdGl0bGUiOiJTciwgQmFja2VuZCBFbmdpbmVlci4iLCJjb21wYW55X25hbWUiOiJTV0lUUyBESUdJVEFMIFByaXZhdGUgTGltaXRlZCIsImFkZHJlc3NfY2l0eSI6IlVuaXRlZCBTdGF0ZXMiLCJodGlkb2NpZCI6IkRyalNBTFdfUVNWMmtQT1VBQUFBQUE9PSIsInV1bGUiOiJ3K0NBSVFJQ0lOVlc1cGRHVmtJRk4wWVhSbGN3IiwiZ2wiOiJ1cyIsImhsIjoiZW4ifQ=="
+      },
+      {
+        "title": "Backend Engineer - Data Management Services",
+        "company_name": "Loft Orbital Solutions",
+        "location": "Golden, CO",
+        "via": "Indeed",
+        "share_link": "https://www.google.com/search?ibp=htl;jobs&q=backend+engineer&htidocid=YI8nyX3CgunV3Vd0AAAAAA%3D%3D&hl=en-US&shndl=37&shmd=H4sIAAAAAAAA_xXMMQrCQBBAUWxzBKsprEQTEWy0i4ogSoocQCbruFndzISdUXIjr6lpfvPgZ99JVpboXsR3OLIPTJRgCQc0hCsyeuqIDWpKn-BI_3SWBpQwuRaE4STiI013rVmv26JQjblXQwsud9IVwtTIUDyl0TE3bTFRH9Hott6shrxnP59d5GFQpSYYRqglvi0IK4RxH-_EC9hXP_1H3ESqAAAA&shmds=v1_ATWGeeNqFiw_mGU3G4FLtuZA2dPIUDaGoKPcNSU87DPoPMQWGg&source=sh/x/job/li/m1/1#fpstate=tldetail&htivrt=jobs&htiq=backend+engineer&htidocid=YI8nyX3CgunV3Vd0AAAAAA%3D%3D",
+        "thumbnail": "https://serpapi.com/searches/69b51d574de49a0d063bbd89/images/7-68tPNX79YidHjYBbq85izNAhFitKY0Kl_BK12c0Dg.jpeg",
+        "extensions": [
+          "16 days ago",
+          "140K–190K a year",
+          "Full-time",
+          "No degree mentioned"
+        ],
+        "detected_extensions": {
+          "posted_at": "16 days ago",
+          "salary": "140K–190K a year",
+          "schedule_type": "Full-time",
+          "qualifications": "No degree mentioned"
+        },
+        "description": "Loft Orbital is looking for a Backend Engineer to join our Data Management Services (DMS) team.\n\nDMS owns the Cockpit backend services that move payload data from our satellites to our customers. The team builds and maintains the services that ingest data from ground stations, process and categorize it, track it end‑to‑end, and deliver it reliably to internal tools and external endpoints.\n\nYou’ll help design and scale the microservices and data pipelines that sit between ground segment, satellite operations, and customer deliveries - turning raw on‑orbit data into usable products. You’ll work closely with backend, ground software, flight software, space infrastructure, and customer operations teams, and you’ll have a direct impact on how quickly and reliably customers receive their data. We also offer SatDevOps training, so you don’t just write the tools - you actually use them to operate spacecraft.\n\nIf you’re excited about building backend systems that move and transform satellite data at scale - and you like the idea of both shipping code and seeing how it performs in real operations - we’d love to hear from you.\n\nAbout this Role:\n• * Design and build backend services for data ingest, processing, and delivery that move payload data from ground stations and other sources into Cockpit and out to customer endpoints.\n• Implement and improve data pipelines and APIs with a strong focus on data correctness, traceability, performance, and reliability.\n• Own and evolve backend components such as connectors, processing jobs, and delivery services that other Cockpit teams and customer‑facing tools depend on.\n• Collaborate with other Cockpit teams and stakeholders (mission management, mission operations, space infrastructure, customer operations) to make sure on‑orbit tasking and ground data flows work smoothly together.\n• Support internal users of Cockpit’s data services by improving APIs, debugging tricky data issues, and strengthening observability (metrics, logs, dashboards).\n• Have the opportunity to take part in spacecraft operations through SatDevOps rotations, occasionally helping investigate data‑related anomalies and supporting real‑time incident response when needed.\n\nMust Haves:\n• * Strong Python development experience in a production environment.\n• Experience with Docker and container‑based development.\n• Hands‑on experience with backend web development frameworks (e.g., Django, Flask, FastAPI, etc.).\n• Proven API design skills (designing, documenting, and maintaining HTTP/GraphQL/REST‑style APIs).\n• Practical experience working with databases and data‑centric backend services.\n\nNice to Haves:\n• * Experience with Django and/or GraphQL.\n• Strong database fundamentals and experience with PostgreSQL or similar relational databases.\n• Exposure to message-oriented middleware or event streaming systems (e.g., NATS, NATS JetStream).\n• Experience building or maintaining event-driven data pipelines, ETLs, or stream processing systems.\n• Familiarity with metrics computation, data transformation, and/or time-series data stores (e.g., MongoDB time-series collections, InfluxDB, TimescaleDB).\n• Exposure to Kubernetes and cloud-native deployments in production (GCP and/or AWS).\n• Background in mission-critical, distributed, or real-time systems, especially data-intensive ones (space or otherwise).\n• Experience collaborating with international, distributed teams across time zones and cultures.\n\n$140,000 - $190,000 a year\n\nState law requires us to share the posted base compensation range for this role. Final compensation will be determined based on your education, experience, knowledge, skills, and abilities. The salary range is intentionally broad to account for differences in experience and scope, as well as geographic market variations in pay. We evaluate each candidate individually to ensure alignment between their background, the role’s responsibilities, and local market benchmarks. Most importantly, we are excited to meet you, and see if you are a great fit for our team. What we can’t quantify for you are the exciting challenges, supportive team, and amazing culture we enjoy.\n\nWho We Are: Founded in 2017, Loft provides governments, companies, and research institutions with a fast, reliable, and simple way to deploy missions in orbit.\n\nWe integrate, launch, and operate spacecraft, offering end-to-end missions as a service across Earth observation, IoT connectivity, on-orbit AI, national security missions, and more. Leveraging our existing space infrastructure and an extensive inventory of satellite buses, Loft is reducing years-long integration and launch timelines to months. With more than 30 missions flown, Loft’s flight heritage and proven technologies enable customers to focus on their mission objectives.\n\nWith a growing fleet on track to reach 30 satellites by 2027, we are scaling up quickly across our offices in San Francisco, CA | Golden, CO | and Toulouse, France to meet accelerating demand for space infrastructure.",
+        "job_highlights": [
+          {
+            "title": "Qualifications",
+            "items": [
+              "Strong Python development experience in a production environment",
+              "Experience with Docker and container‑based development",
+              "Hands‑on experience with backend web development frameworks (e.g., Django, Flask, FastAPI, etc.)",
+              "Proven API design skills (designing, documenting, and maintaining HTTP/GraphQL/REST‑style APIs)",
+              "Practical experience working with databases and data‑centric backend services",
+              "Experience with Django and/or GraphQL",
+              "Strong database fundamentals and experience with PostgreSQL or similar relational databases",
+              "Exposure to message-oriented middleware or event streaming systems (e.g., NATS, NATS JetStream)",
+              "Experience building or maintaining event-driven data pipelines, ETLs, or stream processing systems",
+              "Familiarity with metrics computation, data transformation, and/or time-series data stores (e.g., MongoDB time-series collections, InfluxDB, TimescaleDB)",
+              "Exposure to Kubernetes and cloud-native deployments in production (GCP and/or AWS)",
+              "Background in mission-critical, distributed, or real-time systems, especially data-intensive ones (space or otherwise)",
+              "Experience collaborating with international, distributed teams across time zones and cultures"
+            ]
+          },
+          {
+            "title": "Benefits",
+            "items": [
+              "$140,000 - $190,000 a year",
+              "State law requires us to share the posted base compensation range for this role",
+              "Final compensation will be determined based on your education, experience, knowledge, skills, and abilities",
+              "The salary range is intentionally broad to account for differences in experience and scope, as well as geographic market variations in pay"
+            ]
+          },
+          {
+            "title": "Responsibilities",
+            "items": [
+              "DMS owns the Cockpit backend services that move payload data from our satellites to our customers",
+              "The team builds and maintains the services that ingest data from ground stations, process and categorize it, track it end‑to‑end, and deliver it reliably to internal tools and external endpoints",
+              "You’ll help design and scale the microservices and data pipelines that sit between ground segment, satellite operations, and customer deliveries - turning raw on‑orbit data into usable products",
+              "You’ll work closely with backend, ground software, flight software, space infrastructure, and customer operations teams, and you’ll have a direct impact on how quickly and reliably customers receive their data",
+              "Design and build backend services for data ingest, processing, and delivery that move payload data from ground stations and other sources into Cockpit and out to customer endpoints",
+              "Implement and improve data pipelines and APIs with a strong focus on data correctness, traceability, performance, and reliability",
+              "Own and evolve backend components such as connectors, processing jobs, and delivery services that other Cockpit teams and customer‑facing tools depend on",
+              "Collaborate with other Cockpit teams and stakeholders (mission management, mission operations, space infrastructure, customer operations) to make sure on‑orbit tasking and ground data flows work smoothly together",
+              "Support internal users of Cockpit’s data services by improving APIs, debugging tricky data issues, and strengthening observability (metrics, logs, dashboards)",
+              "Have the opportunity to take part in spacecraft operations through SatDevOps rotations, occasionally helping investigate data‑related anomalies and supporting real‑time incident response when needed"
+            ]
+          }
+        ],
+        "apply_options": [
+          {
+            "title": "Indeed",
+            "link": "https://www.indeed.com/viewjob?jk=f51af87bb5cd93f3&utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "ZipRecruiter",
+            "link": "https://www.ziprecruiter.com/c/Loft-Orbital-Solutions/Job/Backend-Engineer-Data-Management-Services/-in-Golden,CO?jid=945f5531ee299368&utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Space Crew",
+            "link": "https://spacecrew.com/space-jobs/mm4kkm36-loft-orbital-backend-engineer-data-management-services?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "SimplyHired",
+            "link": "https://www.simplyhired.com/job/qPPlMxA1oTQYDFKr-5NgLs5RrQtWMSV_mk-ZhlbTdwIkw1h5EFvXQw?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Career.io",
+            "link": "https://career.io/job/backend-engineer-data-management-services-golden-loft-orbital-solutions-b1622a5a9851c9e547c77324d559ca72?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Ladders",
+            "link": "https://www.theladders.com/job/backend-engineer-data-management-services-loftorbitalsolutions-golden-co_85884523?ir=1&utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Qureos",
+            "link": "https://app.qureos.com/jobs/backend-engineer-data-management-services-1772659463371?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Lensa",
+            "link": "https://lensa.com/job-v1/loft-orbital/golden-co/backend-engineer/7c128abdace4d13bafc7b46af19813a7?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          }
+        ],
+        "job_id": "eyJqb2JfdGl0bGUiOiJCYWNrZW5kIEVuZ2luZWVyIC0gRGF0YSBNYW5hZ2VtZW50IFNlcnZpY2VzIiwiY29tcGFueV9uYW1lIjoiTG9mdCBPcmJpdGFsIFNvbHV0aW9ucyIsImFkZHJlc3NfY2l0eSI6IkdvbGRlbiwgQ08iLCJodGlkb2NpZCI6IllJOG55WDNDZ3VuVjNWZDBBQUFBQUE9PSIsInV1bGUiOiJ3K0NBSVFJQ0lOVlc1cGRHVmtJRk4wWVhSbGN3IiwiZ2wiOiJ1cyIsImhsIjoiZW4ifQ=="
+      },
+      {
+        "title": "Senior Backend Engineer",
+        "company_name": "Kovo",
+        "location": "Anywhere",
+        "via": "Jobs",
+        "share_link": "https://www.google.com/search?ibp=htl;jobs&q=backend+engineer&htidocid=joew9LxbRNDlM2KsAAAAAA%3D%3D&hl=en-US&shndl=37&shmd=H4sIAAAAAAAA_xXLsQrCMBAAUFy7uzjdLJiI4KKbIEI7FueSpEcSjXchd0g_wA9Xl7e97rPqzIiUucHFhSfSDFeKmRAb7KBnD4KuhQRMcGOOBTfnpFrlZK1IMVHUaQ4m8MsyoefFPtjLn0mSa1iLU5wOx_1iKsXteuA3Qya4U1acYfx1lC8I9XRKhwAAAA&shmds=v1_ATWGeeP1SZtn4Jv-KP2xDiaAt1dxutwqWwmd6AuvrU6_bCRskQ&source=sh/x/job/li/m1/1#fpstate=tldetail&htivrt=jobs&htiq=backend+engineer&htidocid=joew9LxbRNDlM2KsAAAAAA%3D%3D",
+        "thumbnail": "https://serpapi.com/searches/69b51d574de49a0d063bbd89/images/_WJvGodnRrpQoonSkU4oJ7lOYHsNZ6SyQPj71N2GXzY.jpeg",
+        "extensions": [
+          "150K–250K a year",
+          "Work from home",
+          "Full-time",
+          "No degree mentioned"
+        ],
+        "detected_extensions": {
+          "salary": "150K–250K a year",
+          "work_from_home": true,
+          "schedule_type": "Full-time",
+          "qualifications": "No degree mentioned"
+        },
+        "description": "Join an early-stage startup.\nUnlock access to credit.\nAccelerate economic opportunity.\n\nJoin us as a senior backend engineer! If you have experience building performant and stable systems at scale, we'd love to chat. We're looking for someone who can continue meaningfully contributing to our codebase as our business scales. Our backend stack is Node (Typescript) on AWS.\n\nAbout us\n• Kovo is transforming financial access for underserved Americans. We believe everyone deserves the opportunity for economic independence. Our innovative financial empowerment platform creates pathways to credit and financial inclusion, empowering individuals traditionally excluded from financial opportunities.\n• We've scaled revenue 20x over the past three years, and our revenue efficiency (revenue per employee) is benchmarked at the 99th percentile. This is a venture-scale company that has started generating positive free cash flow early in its lifecycle, resulting in less dilution for our employees as we accelerate momentum without being dependent on venture funding to stay alive. We're seeking exceptional individuals eager to help us scale another 20x and beyond.\n• Kovo is backed by Inspired Capital and Homebrew, along with founders and leaders from Plaid, Column, Ramp, Affirm, Cash App, NerdWallet, Alloy, MoonPay, Uber, Etsy, LendingClub, Grindr, and more.\n\nWhy you might be excited about us\n• Direct impact on millions of people’s ability to access credit\n• High ownership with minimal bureaucracy\n• Speed, learning, and impact are core values\n\nWhy you might not be excited about us\n• Roles and priorities evolve quickly\n• Some systems and processes are still being built\n• The pace of execution and career growth is intense (not optimized for work-life balance)\n\nWhat you'll do\n• A little bit of everything! We're a small company, and you'll be expected to pick up many different things. You'll be an early backend hire, so you'll have input in long-term architectural and technical design decisions. You'll help establish the technical foundation for the entire company.\n\nAbout you\n• Energized by building software for a business focused on financial empowerment for millions of underserved individuals\n• Comfortable in a high-intensity role and seeking an ambitious workload. We are looking for engineers with a strong sense of ownership and willingness to deliver on tight deadlines. This takes many of our engineers more than 50 hours a week\n• Thrive in a remote work environment\n• Prior experience (5+ years) in a professional software engineering role\n• Motivated to use AI, automation, and data tools in your day-to-day work to push the boundaries of what a single individual can do\n• Self-starter who thrives in ambiguity, handles shifting priorities fluidly, and interfaces effectively between backend and frontend\n• Worked with Node and AWS in a production setting\n• Proficient with Typescript (bonus)",
+        "job_highlights": [
+          {
+            "title": "Qualifications",
+            "items": [
+              "Energized by building software for a business focused on financial empowerment for millions of underserved individuals",
+              "Comfortable in a high-intensity role and seeking an ambitious workload",
+              "We are looking for engineers with a strong sense of ownership and willingness to deliver on tight deadlines",
+              "This takes many of our engineers more than 50 hours a week",
+              "Prior experience (5+ years) in a professional software engineering role",
+              "Motivated to use AI, automation, and data tools in your day-to-day work to push the boundaries of what a single individual can do",
+              "Self-starter who thrives in ambiguity, handles shifting priorities fluidly, and interfaces effectively between backend and frontend",
+              "Worked with Node and AWS in a production setting",
+              "Proficient with Typescript (bonus)"
+            ]
+          },
+          {
+            "title": "Benefits",
+            "items": [
+              "Unlock access to credit",
+              "Direct impact on millions of people’s ability to access credit",
+              "High ownership with minimal bureaucracy",
+              "Speed, learning, and impact are core values",
+              "Roles and priorities evolve quickly",
+              "Some systems and processes are still being built",
+              "The pace of execution and career growth is intense (not optimized for work-life balance)",
+              "Thrive in a remote work environment"
+            ]
+          },
+          {
+            "title": "Responsibilities",
+            "items": [
+              "A little bit of everything!",
+              "You'll be an early backend hire, so you'll have input in long-term architectural and technical design decisions",
+              "You'll help establish the technical foundation for the entire company"
+            ]
+          }
+        ],
+        "apply_options": [
+          {
+            "title": "Jobs",
+            "link": "https://jobs.ashbyhq.com/kovo/76d39a04-fbd9-42a4-915b-044bf9284aec?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Jobgether",
+            "link": "https://jobgether.com/offer/69611f1c96ae97ba4acdfbce-senior-hire-backend-engineering?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Teal",
+            "link": "https://www.tealhq.com/job/backend-engineering_7ea1aff05c805162251b78e6fd84db66d5e13?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Inspired Capital Job Board",
+            "link": "https://jobs.inspiredcapital.com/companies/kovo/jobs/64879743-senior-hire-backend-engineering?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Startup Jobs",
+            "link": "https://startup.jobs/senior-hire-backend-engineering-kovo-7622772?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Homebrew Job Board",
+            "link": "https://careers.homebrew.co/companies/kovo/jobs/64879743-senior-hire-backend-engineering?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "HiringCafe",
+            "link": "https://hiring.cafe/viewjob/kaxkxnn8wfbjxr9p?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "ApplyBlast",
+            "link": "https://applyblast.com/j/senior-hire-backend-engineering/69605cfb91bd1135884361ec?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          }
+        ],
+        "job_id": "eyJqb2JfdGl0bGUiOiJTZW5pb3IgQmFja2VuZCBFbmdpbmVlciIsImNvbXBhbnlfbmFtZSI6Iktvdm8iLCJhZGRyZXNzX2NpdHkiOiJVbml0ZWQgU3RhdGVzIiwiaHRpZG9jaWQiOiJqb2V3OUx4YlJORGxNMktzQUFBQUFBPT0iLCJ1dWxlIjoidytDQUlRSUNJTlZXNXBkR1ZrSUZOMFlYUmxjdyIsImdsIjoidXMiLCJobCI6ImVuIn0="
+      },
+      {
+        "title": "Backend Engineer, Multi-cloud Inference Platform",
+        "company_name": "Modular",
+        "location": "Anywhere",
+        "via": "Gem",
+        "share_link": "https://www.google.com/search?ibp=htl;jobs&q=backend+engineer&htidocid=luFnFdMP3eCj1LQPAAAAAA%3D%3D&hl=en-US&shndl=37&shmd=H4sIAAAAAAAA_xXMsQrCMBAAUFz7BeJ0s9hGBBfdBCkKBUGcS5pck2h6V3Ip9HP8VOvyxld8V0V90eaDZOFKLhBi2kEzxRxKE3mycKMeE5JBeESde04DlHDnDgR1Mh6YoGZ2ETdnn_MoJ6VEYuUk6xxMZXhQTNjxrN7cyZ9WvE44Lhu2h-N-rkZy23XDdoo6QSB4Ucho4bkMKD8MtTXpowAAAA&shmds=v1_ATWGeePXxBe60H_mheQVBQST4P41fioF5_Pyuug1kPhjy2xJ5A&source=sh/x/job/li/m1/1#fpstate=tldetail&htivrt=jobs&htiq=backend+engineer&htidocid=luFnFdMP3eCj1LQPAAAAAA%3D%3D",
+        "extensions": [
+          "Work from home",
+          "Full-time",
+          "No degree mentioned",
+          "Health insurance",
+          "Paid time off"
+        ],
+        "detected_extensions": {
+          "work_from_home": true,
+          "schedule_type": "Full-time",
+          "qualifications": "No degree mentioned",
+          "health_insurance": true,
+          "paid_time_off": true
+        },
+        "description": "About the role:\n\nIn the Cloud Inference team, we are focused on building end to end distributed LLM inference deployments and a repeatable, observable, productive, low toil platform for managing these deployments.\nOur goal is to make inference both the fastest and most scalable while also building an easiest platform for deploying and scaling models for enterprises and developers alike. We're seeking engineers who are passionate about pushing the boundaries of distributed inference systems and enjoy working at the intersection of large-scale systems and machine learning. We are looking for candidates based on their breadth and depth of experience in backend engineering, AI inference, and distributed systems development. If this sounds exciting, we invite you to join our world-leading AI infrastructure team and help drive our industry forward!\n\nLOCATION: Candidates based in the US or Canada are welcome to apply. You can work out of our office in Los Altos, CA or remotely from home. To support growth and collaboration, those in earlier career stages work in a hybrid capacity at our Los Altos, CA office (minimum 2 days per week on-site) with relocation assistance provided for out-of-state candidates. Senior members have both in office or remote flexibility. Onboarding for new hires is conducted in-person in our Los Altos, CA office.\n\nWhat you will do:\n• Build the multi-cloud, multi-tenant platform powering Modular’s inference services.\n• Build fault-tolerant, low toil services able to make use of resources in a variety of hardware platforms Clouds (Tier 1 Cloud Providers & neoclouds)\n• Push the envelope for operational excellence with request-to-kernel observability, multi-cloud deployments, cold-start optimizations, and more.\n• Build helm charts, kubernetes operators, and more to make a create simple, effective, maintainable deployments.\n\nWhat you bring to the table:\n• 5+ years of experience working in backend engineering\n• Experience with service oriented architecture and distributed systems\n• Experience with Cloud Providers (AWS, GCP, Azure, neoclouds)\n• Experience with kubernetes and operating your own services\n• A passion for building and operating high performance, low toil, observable systems.\n• Experience in machine learning technologies and use cases\n• Creativity and curiosity for solving complex problems, a team-oriented attitude that enables you to work well with others, and alignment with our culture\n• Strongly identifies with our core company cultural values.\n\nHelpful but not required:\n• Practical experience implementing & maintaining security in multi-tenancy environments\n• Experience working on high scale ML inference infrastructure (traditional AI or genAI)\n• Familiarity with golang\n\nWhat Modular brings to the table:\n• Amazing Team. We are a progressive and agile team with some of the industry’s best engineering and product leaders.\n• World-class Benefits. In order to attract the best, we need to offer the best. Premier insurance plans, up to 5% 401k matching, flexible paid time off, and more are available to you! Please note that specific benefit packages may vary based on your location.\n• Competitive Compensation. We offer very strong compensation packages, including stock options. We want people to be focused on their best work and believe in tailoring compensation plans to meet the needs of our workforce.\n• Team Building Events. We organize regular team onsites and local meetups in Los Altos, CA as well as different cities. Traveling 2-4 times a year is expected for all roles.\n\nWorking at Modular will enable you to grow quickly as you work alongside incredibly motivated and talented people who have high standards, possess a growth mindset, and a purpose to truly change the world.\n\nThe estimated base salary range for this role to be performed in the US, regardless of the state, is $167,000.00 - $286,000.00 USD.\nThe estimated base salary range for this role to be performed in Canada, regardless of the province, is $164,000.00 - $280,000.00 CAD.\nThe salary for the successful applicant will depend on a variety of permissible, non-discriminatory job-related factors, which include but are not limited to education, training, work experience, business needs, or market demands. This range may be modified in the future. The total compensation for a candidate will also include annual target bonus, equity, and benefits, with equity making up a significant portion of your total compensation.\nFor candidates who fall outside of the listed requirements, we nevertheless encourage you to apply as we may have openings that are lower/higher level than the ones advertised.",
+        "job_highlights": [
+          {
+            "title": "Qualifications",
+            "items": [
+              "5+ years of experience working in backend engineering",
+              "Experience with service oriented architecture and distributed systems",
+              "Experience with Cloud Providers (AWS, GCP, Azure, neoclouds)",
+              "Experience with kubernetes and operating your own services",
+              "A passion for building and operating high performance, low toil, observable systems",
+              "Experience in machine learning technologies and use cases",
+              "Creativity and curiosity for solving complex problems, a team-oriented attitude that enables you to work well with others, and alignment with our culture",
+              "Strongly identifies with our core company cultural values",
+              "Practical experience implementing & maintaining security in multi-tenancy environments",
+              "Experience working on high scale ML inference infrastructure (traditional AI or genAI)",
+              "Familiarity with golang"
+            ]
+          },
+          {
+            "title": "Benefits",
+            "items": [
+              "World-class Benefits",
+              "Premier insurance plans, up to 5% 401k matching, flexible paid time off, and more are available to you!",
+              "Please note that specific benefit packages may vary based on your location",
+              "Competitive Compensation",
+              "We offer very strong compensation packages, including stock options",
+              "We organize regular team onsites and local meetups in Los Altos, CA as well as different cities",
+              "The estimated base salary range for this role to be performed in the US, regardless of the state, is $167,000.00 - $286,000.00 USD",
+              "The estimated base salary range for this role to be performed in Canada, regardless of the province, is $164,000.00 - $280,000.00 CAD",
+              "The total compensation for a candidate will also include annual target bonus, equity, and benefits, with equity making up a significant portion of your total compensation"
+            ]
+          },
+          {
+            "title": "Responsibilities",
+            "items": [
+              "Build the multi-cloud, multi-tenant platform powering Modular’s inference services",
+              "Build fault-tolerant, low toil services able to make use of resources in a variety of hardware platforms Clouds (Tier 1 Cloud Providers & neoclouds)",
+              "Push the envelope for operational excellence with request-to-kernel observability, multi-cloud deployments, cold-start optimizations, and more",
+              "Build helm charts, kubernetes operators, and more to make a create simple, effective, maintainable deployments",
+              "Traveling 2-4 times a year is expected for all roles"
+            ]
+          }
+        ],
+        "apply_options": [
+          {
+            "title": "Gem",
+            "link": "https://jobs.gem.com/modular/4632994005?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Teal",
+            "link": "https://www.tealhq.com/job/senior-backend-engineer-postman-insights_7ea1a18f81fa8bebf47f2d215b5a3246fc92c?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "JobLeads",
+            "link": "https://www.jobleads.com/us/job/backend-engineer-marketplace-platform-remote--san-francisco--ec48b996b2da8afa876a2de259d535773?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Jobs.weekday.works",
+            "link": "https://jobs.weekday.works/modular-backend-engineer%2C-multi-cloud-inference-platform?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Remote Jobs USA",
+            "link": "https://hiringremotejobs.net/job/1029841?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "BeBee",
+            "link": "https://us.bebee.com/job/28fffc48ffe6bf63ac146f91f9e74dc0?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Learn4Good",
+            "link": "https://www.learn4good.com/jobs/online_remote/software_development/4791904695/e/?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          }
+        ],
+        "job_id": "eyJqb2JfdGl0bGUiOiJCYWNrZW5kIEVuZ2luZWVyLCBNdWx0aS1jbG91ZCBJbmZlcmVuY2UgUGxhdGZvcm0iLCJjb21wYW55X25hbWUiOiJNb2R1bGFyIiwiYWRkcmVzc19jaXR5IjoiVW5pdGVkIFN0YXRlcyIsImh0aWRvY2lkIjoibHVGbkZkTVAzZUNqMUxRUEFBQUFBQT09IiwidXVsZSI6IncrQ0FJUUlDSU5WVzVwZEdWa0lGTjBZWFJsY3ciLCJnbCI6InVzIiwiaGwiOiJlbiJ9"
+      },
+      {
+        "title": "Backend Engineer (Remote)",
+        "company_name": "Reteam",
+        "location": "United States",
+        "via": "ZipRecruiter",
+        "share_link": "https://www.google.com/search?ibp=htl;jobs&q=backend+engineer&htidocid=YNm_zlqbueUAM0vzAAAAAA%3D%3D&hl=en-US&shndl=37&shmd=H4sIAAAAAAAA_xXMMQrCQBAFUGxzAcFqShXMBsFGO0EEy4h12Gw-m43JTNiZIkfw2Grzyld8VkV19eEN7ujGMTGQaVtjEsOODvSQlhQ-h56E6S4SR2wuvdmsZ-dUxzKqeUuhDDI5YbSyuEFa_dNo7zPm0Rua46laypnjfl3D4CdKTC9Oho6evwD6BRLy3buLAAAA&shmds=v1_ATWGeeOWRdnSN9kJXLkJna3A0-me7TI3k6Wswd0_ZhXhy7vVcw&source=sh/x/job/li/m1/1#fpstate=tldetail&htivrt=jobs&htiq=backend+engineer&htidocid=YNm_zlqbueUAM0vzAAAAAA%3D%3D",
+        "extensions": [
+          "3 days ago",
+          "Full-time",
+          "No degree mentioned"
+        ],
+        "detected_extensions": {
+          "posted_at": "3 days ago",
+          "schedule_type": "Full-time",
+          "qualifications": "No degree mentioned"
+        },
+        "description": "[TEST TEST TEST] This is a test job board, used for internal testing. Applications received here will not be received.\n\nJob post description opening\n\nTest\n\n[TEST TEST TEST] This is a test job board, used for internal testing. Applications received here will not be received.\n\nJob post description closed",
+        "apply_options": [
+          {
+            "title": "ZipRecruiter",
+            "link": "https://www.ziprecruiter.com/c/Reteam/Job/Backend-Engineer-(Remote)/-in-Remote,US?jid=5bae102f553a4d9a&utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Monster",
+            "link": "https://www.monster.com/job-openings/backend-engineer-remote-san-francisco-ca--fd3297b9-434d-4d2b-8546-bb30772bd98e?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Built In Chicago",
+            "link": "https://www.builtinchicago.org/job/backend-rails-engineer-remote/1903174?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Built In",
+            "link": "https://builtin.com/job/backend-rails-engineer-remote/1903174?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "MySmartPros",
+            "link": "https://www.mysmartpros.com/tuition/job/backend-engineer-remote/?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Scala Jobs",
+            "link": "https://scalajobs.com/jobs/vidIQ-Scala-Backend-Engineer-Remote-3RjTNLlviBBy1LYBn1G7?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Pangian",
+            "link": "https://pangian.com/remote/job/backend-engineer-remote-191?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Talents By Vaia",
+            "link": "https://talents.vaia.com/companies/allscripts/expert-backend-engineer-remote-30943723/?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          }
+        ],
+        "job_id": "eyJqb2JfdGl0bGUiOiJCYWNrZW5kIEVuZ2luZWVyIChSZW1vdGUpIiwiY29tcGFueV9uYW1lIjoiUmV0ZWFtIiwiYWRkcmVzc19jaXR5IjoiVW5pdGVkIFN0YXRlcyIsImh0aWRvY2lkIjoiWU5tX3pscWJ1ZVVBTTB2ekFBQUFBQT09IiwidXVsZSI6IncrQ0FJUUlDSU5WVzVwZEdWa0lGTjBZWFJsY3ciLCJnbCI6InVzIiwiaGwiOiJlbiJ9"
+      },
+      {
+        "title": "Remote Backend Engineer",
+        "company_name": "Make",
+        "location": "Colorado Springs, CO",
+        "via": "Lensa",
+        "share_link": "https://www.google.com/search?ibp=htl;jobs&q=backend+engineer&htidocid=aDIaSIx2k77xzMvjAAAAAA%3D%3D&hl=en-US&shndl=37&shmd=H4sIAAAAAAAA_xXEsQrCMBAAUFz7CeJws2gigotuLSIIIugHlGt6JLHpXchl6D_40-IbXvNdNeZFs1SCFt1EPMKVfWSiAnu4ywBKWFwAYbiJ-ETrS6g169la1WS8VqzRGSezFaZBFvuRQf_1GrBQTlipP54Oi8nst5sHTgSRoZMkBUeBdy6Rve6ge_4AYR4PE44AAAA&shmds=v1_ATWGeePHn1bYm-H7JZqxH_-8HajBMoYv9rPeMXE2aUUXViKIvQ&source=sh/x/job/li/m1/1#fpstate=tldetail&htivrt=jobs&htiq=backend+engineer&htidocid=aDIaSIx2k77xzMvjAAAAAA%3D%3D",
+        "extensions": [
+          "6 days ago",
+          "Full-time",
+          "No degree mentioned"
+        ],
+        "detected_extensions": {
+          "posted_at": "6 days ago",
+          "schedule_type": "Full-time",
+          "qualifications": "No degree mentioned"
+        },
+        "description": "Location: Remote (Work from Anywhere)\n\nDate: The expected start window for this position is as soon as possible\n\nWorking Hours: You should overlap with Central Time Zone at least 2 hours a day, and be available to attend several weekly video meetings within that time zone\n\nAre you a Backend Engineer looking to craft large-scale software that drives business growth and users love?\n\nAt Make, we're proud to have created award-winning software that's been used by billions of people, with 25+ featured placements in the App Store and Google Play. Our clients have real end users and real challenges, and they view us as trusted advisors and thought leaders. Beyond APIs and pull requests, this role is about owning backend systems end to end, building them thoughtfully, keeping them reliable as they scale, and collaborating closely with a remote team in an AI-first engineering environment.\n\nIf you have a genuine enthusiasm for software, and thrive in environments that encourage creativity, self-management, and a strong focus on culture, we want to hear from you!\n\nWhat You'll Do\n• Join a team of AI-first engineers\n• Build and maintain backend services using Node.js and TypeScript\n• Implement APIs and business logic based on product and technical requirements.\n• Write clean, readable, and well-tested code.\n• Use AI tools daily to streamline development, debugging, refactoring, and documentation workflows without compromising quality\n• Work closely with other engineers in a remote-first environment, proactively communicating progress, blockers, and risks\n• Identify issues proactively, spotting bugs, performance bottlenecks, or architectural risks early and taking ownership of solutions.\nWhat You'll Bring\n• An AI-first mindset\n• Hands-on experience using Cursor, Claude Code, or Codex\n• Hands-on experience building at least one large-scale backend system from scratch\n• Experience integrating 3rd party services into a system architecture\n• +5 years of backend experience\n• +2 years of Node.js experience\n• Excellent communication skills and comfort working in an asynchronous, remote environment\n• A proactive, ownership-driven mindset: you see problems, raise them early, and help solve them\n• Comfort operating in a 100% operational role, managing priorities and complexity independently\nBonus Skills (Nice to Have)\n• Serverless experience with Firestore Cloud Functions (or AWS Lambdas)\n• Microservices experience\n• Experience working at a custom software agency like Make\nAbout Make (letsMake.com)\n\nMake is a design and engineering agency based in Texas, with team members worldwide. We're proud to have created award-winning software that has been featured in TechCrunch, Mashable, US Weekly, CBS News, Texas Monthly, and The Today Show. A multi-disciplinary team of engineers and designers, we are passionate about creating world-class software that people enjoy using. At the end of the day, more than our work life, it's our life's work ♥.\n\nWe are a team of talented individuals who take ownership of the entire project beyond their own craft. We value proactive communication, autonomy, and initiative. You'll be joining a team of 'Managers of One'-people who set their own direction, identify what needs to be done, and dive in without waiting for permission .\n\nWe're not only passionate about our craft but also about our culture. We deeply believe that work is purposeful, and that culture is one of the most important parts of any team. Our culture informs our decisions, sets our standards, and guides our interactions .\n\nWhy Make?\n• Be part of a world-class digital studio with an international team\n• Work-from-anywhere policy\n• Eligibility for annual bonus",
+        "job_highlights": [
+          {
+            "title": "Qualifications",
+            "items": [
+              "An AI-first mindset",
+              "Hands-on experience using Cursor, Claude Code, or Codex",
+              "Hands-on experience building at least one large-scale backend system from scratch",
+              "Experience integrating 3rd party services into a system architecture",
+              "+5 years of backend experience",
+              "+2 years of Node.js experience",
+              "Excellent communication skills and comfort working in an asynchronous, remote environment",
+              "A proactive, ownership-driven mindset: you see problems, raise them early, and help solve them",
+              "Comfort operating in a 100% operational role, managing priorities and complexity independently",
+              "Serverless experience with Firestore Cloud Functions (or AWS Lambdas)",
+              "Microservices experience",
+              "Experience working at a custom software agency like Make"
+            ]
+          },
+          {
+            "title": "Benefits",
+            "items": [
+              "Be part of a world-class digital studio with an international team",
+              "Work-from-anywhere policy",
+              "Eligibility for annual bonus"
+            ]
+          },
+          {
+            "title": "Responsibilities",
+            "items": [
+              "Working Hours: You should overlap with Central Time Zone at least 2 hours a day, and be available to attend several weekly video meetings within that time zone",
+              "Join a team of AI-first engineers",
+              "Build and maintain backend services using Node.js and TypeScript",
+              "Implement APIs and business logic based on product and technical requirements",
+              "Write clean, readable, and well-tested code",
+              "Use AI tools daily to streamline development, debugging, refactoring, and documentation workflows without compromising quality",
+              "Work closely with other engineers in a remote-first environment, proactively communicating progress, blockers, and risks",
+              "Identify issues proactively, spotting bugs, performance bottlenecks, or architectural risks early and taking ownership of solutions",
+              "You'll be joining a team of 'Managers of One'-people who set their own direction, identify what needs to be done, and dive in without waiting for permission "
+            ]
+          }
+        ],
+        "apply_options": [
+          {
+            "title": "Lensa",
+            "link": "https://lensa.com/job-v1/make/colorado-springs-co/backend-engineer/a7b92d88b2dfa0702b9eab2324f2523b?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Jobilize",
+            "link": "https://www.jobilize.com/job/us-co-colorado-springs-remote-backend-engineer-make-hiring-now-job?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          }
+        ],
+        "job_id": "eyJqb2JfdGl0bGUiOiJSZW1vdGUgQmFja2VuZCBFbmdpbmVlciIsImNvbXBhbnlfbmFtZSI6Ik1ha2UiLCJhZGRyZXNzX2NpdHkiOiJDb2xvcmFkbyBTcHJpbmdzLCBDTyIsImh0aWRvY2lkIjoiYURJYVNJeDJrNzd4ek12akFBQUFBQT09IiwidXVsZSI6IncrQ0FJUUlDSU5WVzVwZEdWa0lGTjBZWFJsY3ciLCJnbCI6InVzIiwiaGwiOiJlbiJ9"
+      },
+      {
+        "title": "Backend Engineer (Java)",
+        "company_name": "Rushdown Studios",
+        "location": "Anywhere",
+        "via": "Teal",
+        "share_link": "https://www.google.com/search?ibp=htl;jobs&q=backend+engineer&htidocid=Jvb2oq2N4YuAlIgHAAAAAA%3D%3D&hl=en-US&shndl=37&shmd=H4sIAAAAAAAA_xXKsQrCMBCAYVz7CE7npoKJCC66CSJ0VJzLNTmSaLwrvVT7GD6ydfmHj7_6zipzQvck9nDmkJioh2WNb1zBBmppQQl7F0EYLiIh0_wYS-n0YK1qNkELluSMk5cVplZG-5BW_2k0Yk9dxkLNbr8dTcdhvbgOGr18GG5l8EkUEsOdUyE_ybTqDyhP1cWTAAAA&shmds=v1_ATWGeePd8v4vyNDu9R9z34nfBSe1dJwrlrvnsb56Z-wbkSkPtw&source=sh/x/job/li/m1/1#fpstate=tldetail&htivrt=jobs&htiq=backend+engineer&htidocid=Jvb2oq2N4YuAlIgHAAAAAA%3D%3D",
+        "thumbnail": "https://serpapi.com/searches/69b51d574de49a0d063bbd89/images/al7PvI4Ce1iLmaGByky16Rm_PGIVmfJqlzDqkxzaHvI.jpeg",
+        "extensions": [
+          "5 days ago",
+          "Work from home",
+          "Full-time",
+          "No degree mentioned",
+          "Paid time off",
+          "Health insurance",
+          "Dental insurance"
+        ],
+        "detected_extensions": {
+          "posted_at": "5 days ago",
+          "work_from_home": true,
+          "schedule_type": "Full-time",
+          "qualifications": "No degree mentioned",
+          "paid_time_off": true,
+          "health_insurance": true,
+          "dental_coverage": true
+        },
+        "description": "About the position\n\nFounded by games industry veterans, Rushdown was created with a simple philosophy in mind: We believe that when talented developers are consistently challenged and given clear ownership of their work, extraordinary things will happen. As a co-dev game studio, we now focus on solving some of the most difficult problems that face multiplayer games — and we bring our experience working on games like PUBG, League of Legends, and Rocket League with us. We truly love the work we do and we want to funnel our passion and expertise into features and games that billions of players will enjoy worldwide.\nOur Role\nRushdown Studios is looking for an experienced Backend Engineer to join us in support of our partner studio! In this role, you’ll work to build out game backends and encounter a variety of unique technical challenges.\nOur ideal candidate is a self-motivated and demonstrated team player with the ability to juggle and jump between different tasks as necessary. Game development experience is preferred due to the nature of this project, but it’s not mandatory; we encourage you to apply even if you don’t meet all of the requirements listed below!\nWork Location: Rushdown Studios is based in Saratoga Springs, NY and we have a strong preference for local candidates willing to work from our office on a hybrid basis (i.e., Tuesday-Thursday). However, we also support fully remote work for candidates living across New York State or one of the other states in which we're currently registered to conduct business (e.g., CT, DE, GA, KS, MA, MD, NC, OH, PA, TX, WI).\nDisclaimer: Please note that this is not a gameplay engineering role.\n\nResponsibilities\n• Prototype and build online game features and concepts in the backend for a live-service game.\n• Develop new services and author software design documents.\n• General support for live features and releases.\n• Work closely with our partners and take / provide technical feedback.\n• Contribute to a healthy technical culture that encourages engineers to learn and grow.\n• Partner with designers to iterate on features and optimize for a smoother player experience.\n\nRequirements\n• Three (3) years of professional experience using Java, ideally as a backend developer in the game or software development industries.\n• Deep understanding of relational (e.g., MySQL, PostgreSQL, MSSQL) databases.\n• Familiarity with Java-specific build tooling (e.g., Maven, Gradle).\n• Ability to dive into Unreal, Unity, or another game engine to complete a task.\n• Willingness to selflessly put player experiences first — before even your own code and ego.\n• Ability to comfortably navigate and integrate with one or more cloud service providers (e.g., AWS, Azure, GCP).\n• Proactive approach to communication, particularly when it comes to unblocking yourself and navigating obstacles as part of a team.\n\nNice-to-haves\n• At least one (1) year of professional experience with Kotlin, Scala, or Groovy.\n• At least one (1) year of professional experience with C#/.NET, Golang, or Rust.\n• Proficiency with Java Database Connectivity (JDBC).\n• Experience with Unreal, Unity, or proprietary game engines.\n• Familiarity with game server scaling and orchestration frameworks.\n• Experience with PlayFab, Epic Online Services, or other popular backend game services.\n• Experience integrating Steam, PlayStation, Xbox, or Nintendo APIs or adhering to their Technical Requirements Checklists (TRCs).\n\nBenefits\n• Compensation: \\$100,000-150,000/year. Please note that final base pay will ultimately depend upon a combination of factors, including your prior experience, general qualifications, and broader skill set.\n• 9 Paid Holidays plus Flexible PTO and Annual Winter Break Closure\n• Medical, Dental, and Vision Insurance\n• Annual Video Game Budget\n• 401(k) Retirement Plan\n• Paid Parental Leave",
+        "job_highlights": [
+          {
+            "title": "Qualifications",
+            "items": [
+              "Our ideal candidate is a self-motivated and demonstrated team player with the ability to juggle and jump between different tasks as necessary",
+              "Three (3) years of professional experience using Java, ideally as a backend developer in the game or software development industries",
+              "Deep understanding of relational (e.g., MySQL, PostgreSQL, MSSQL) databases",
+              "Familiarity with Java-specific build tooling (e.g., Maven, Gradle)",
+              "Ability to dive into Unreal, Unity, or another game engine to complete a task",
+              "Willingness to selflessly put player experiences first — before even your own code and ego",
+              "Ability to comfortably navigate and integrate with one or more cloud service providers (e.g., AWS, Azure, GCP)",
+              "Proactive approach to communication, particularly when it comes to unblocking yourself and navigating obstacles as part of a team",
+              "At least one (1) year of professional experience with Kotlin, Scala, or Groovy",
+              "At least one (1) year of professional experience with C#/.NET, Golang, or Rust",
+              "Proficiency with Java Database Connectivity (JDBC)",
+              "Experience with Unreal, Unity, or proprietary game engines",
+              "Familiarity with game server scaling and orchestration frameworks",
+              "Experience with PlayFab, Epic Online Services, or other popular backend game services",
+              "Experience integrating Steam, PlayStation, Xbox, or Nintendo APIs or adhering to their Technical Requirements Checklists (TRCs)"
+            ]
+          },
+          {
+            "title": "Benefits",
+            "items": [
+              "Compensation: \\$100,000-150,000/year",
+              "Please note that final base pay will ultimately depend upon a combination of factors, including your prior experience, general qualifications, and broader skill set",
+              "9 Paid Holidays plus Flexible PTO and Annual Winter Break Closure",
+              "Medical, Dental, and Vision Insurance",
+              "Annual Video Game Budget",
+              "401(k) Retirement Plan",
+              "Paid Parental Leave"
+            ]
+          },
+          {
+            "title": "Responsibilities",
+            "items": [
+              "In this role, you’ll work to build out game backends and encounter a variety of unique technical challenges",
+              "Prototype and build online game features and concepts in the backend for a live-service game",
+              "Develop new services and author software design documents",
+              "General support for live features and releases",
+              "Work closely with our partners and take / provide technical feedback",
+              "Contribute to a healthy technical culture that encourages engineers to learn and grow",
+              "Partner with designers to iterate on features and optimize for a smoother player experience"
+            ]
+          }
+        ],
+        "apply_options": [
+          {
+            "title": "Teal",
+            "link": "https://www.tealhq.com/job/backend-engineer-java_7ea1a865e63030a98e43c2eeef88e562b2a3c?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "LinkedIn",
+            "link": "https://www.linkedin.com/jobs/view/backend-engineer-java-at-rushdown-studios-4381772688?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "SonicJobs",
+            "link": "https://www.sonicjobs.com/us/jobs/all-locations/full-time/backend-engineer-java-69b131c7290380db6993a1dd?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Adzuna",
+            "link": "https://www.adzuna.com/details/5586973703?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Jooble",
+            "link": "https://jooble.org/jdp/-5199895695965651248?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "Jobs",
+            "link": "https://fromsjobs.rest/job/senior-ui-designer-meta-applications-associates-bratislava.html?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          },
+          {
+            "title": "AlbanyNYJobs.com",
+            "link": "https://www.albanynyjobs.com/jobs/353120413-backend-engineer-java?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic"
+          }
+        ],
+        "job_id": "eyJqb2JfdGl0bGUiOiJCYWNrZW5kIEVuZ2luZWVyIChKYXZhKSIsImNvbXBhbnlfbmFtZSI6IlJ1c2hkb3duIFN0dWRpb3MiLCJhZGRyZXNzX2NpdHkiOiJVbml0ZWQgU3RhdGVzIiwiaHRpZG9jaWQiOiJKdmIyb3EyTjRZdUFsSWdIQUFBQUFBPT0iLCJ1dWxlIjoidytDQUlRSUNJTlZXNXBkR1ZrSUZOMFlYUmxjdyIsImdsIjoidXMiLCJobCI6ImVuIn0="
+      }
+    ],
+    "serpapi_pagination": {
+      "next_page_token": "eyJmYyI6IkV2Y0VDcmNFUVUxdU15MTVVVm8xUmtoaU5GQlVaekZEVFV0ZmVVVkRSSGxXYjFCU2JuVjZRM05yZVVGR1RERlhhV1owZDBFeU1GTTVjMHBCVFVsalFYUjNiM2RDYkVaS2EzaHZiVkZwWnpWZmMzUlVhMkpaWDFCdFUzaHRiMDFLY2tKclZrMVJhMkZPWDJKbVJHRkpabEJ5ZWxoclRHSkpRbmxRUXpkemFWUnZXamRrTmt3M1dWbE9NV1YxYVVobU9FSjJSQzB4TVdwVVVuTjNWa0puUTFCRlZVVkhOa05uWVVoTk5ESmZkVVk1ZWpBdFpGOUpTVXhZYlRsNE1VZExha1pFZUd4S0xXbFliRmRTV21wQ2NrOVdZbTFyUnpkTFVVSjNlbXRRTUZsSFgwRm1aSGhCUldKS1pYQTVjRGRsVDFSbVdHSXhUR2cxWWs1bFdIUTRSVzlXUWpaeWMyeFZTbXR0TkVaUlJWRkhUbU5UY1d0dVFWUkJXVGR4TlhscWNqRnpUREl6U0U1cWNDMURjVEo2ZVcxNlRGSnhZVnBqY0VKWlJFUm1jWGwwVlVwalMzWmFlRVpFYWxBd2JrNWtTVkpWUm1SRFIwUTNMVmhtZURWTE9FVlJOVlpmUTJzeGJtTktOV2N6YkU5WGRsaFFZekpITjJWcFNqSmlhRkJDTnpkaU5VMU5UalZJU25Oa0xVWnBibGgwTnpGaWMzcE1WbEJ5UVZsUUxUUTNVRXBsVGtReWIzQXRTVXR5YjB0RmJWZDBhVnBaVTFOMFRFTTVNMmhpTWkxelFYRXlSV2hyUldRMVltZGZabUpFVlZRNFJGTm1SQzFtZEUxSGJHTnVPRUZyTVVacExVMWZXbmhCU1U5a1NTMDVZVnAwVldwa2EwOVhZM0Z5VjFBNWIzQlRPSEpKWlY5T2VWaEhPRE5pV0ZnNWNVNVJkall0YUhZMVZ6WmZXbkpSTmtJNFJFbHhja1JsVVhOa2VqTmZSWGh4V1VoR1NIcHRiazFWRWhkWGVESXhZVnBYVmtwS1lYUnBURTFRT1RocFoybEJUUm9pUVVwTFRFWnRTUzFRU1RJNGNETXpWRkJCZFRONGVIcDZWRFZLYlhCdE5IaExadyIsImZjdiI6IjMifQ==",
+      "next": "https://serpapi.com/search.json?engine=google_jobs&gl=us&google_domain=google.com&hl=en&location=United+States&next_page_token=eyJmYyI6IkV2Y0VDcmNFUVUxdU15MTVVVm8xUmtoaU5GQlVaekZEVFV0ZmVVVkRSSGxXYjFCU2JuVjZRM05yZVVGR1RERlhhV1owZDBFeU1GTTVjMHBCVFVsalFYUjNiM2RDYkVaS2EzaHZiVkZwWnpWZmMzUlVhMkpaWDFCdFUzaHRiMDFLY2tKclZrMVJhMkZPWDJKbVJHRkpabEJ5ZWxoclRHSkpRbmxRUXpkemFWUnZXamRrTmt3M1dWbE9NV1YxYVVobU9FSjJSQzB4TVdwVVVuTjNWa0puUTFCRlZVVkhOa05uWVVoTk5ESmZkVVk1ZWpBdFpGOUpTVXhZYlRsNE1VZExha1pFZUd4S0xXbFliRmRTV21wQ2NrOVdZbTFyUnpkTFVVSjNlbXRRTUZsSFgwRm1aSGhCUldKS1pYQTVjRGRsVDFSbVdHSXhUR2cxWWs1bFdIUTRSVzlXUWpaeWMyeFZTbXR0TkVaUlJWRkhUbU5UY1d0dVFWUkJXVGR4TlhscWNqRnpUREl6U0U1cWNDMURjVEo2ZVcxNlRGSnhZVnBqY0VKWlJFUm1jWGwwVlVwalMzWmFlRVpFYWxBd2JrNWtTVkpWUm1SRFIwUTNMVmhtZURWTE9FVlJOVlpmUTJzeGJtTktOV2N6YkU5WGRsaFFZekpITjJWcFNqSmlhRkJDTnpkaU5VMU5UalZJU25Oa0xVWnBibGgwTnpGaWMzcE1WbEJ5UVZsUUxUUTNVRXBsVGtReWIzQXRTVXR5YjB0RmJWZDBhVnBaVTFOMFRFTTVNMmhpTWkxelFYRXlSV2hyUldRMVltZGZabUpFVlZRNFJGTm1SQzFtZEUxSGJHTnVPRUZyTVVacExVMWZXbmhCU1U5a1NTMDVZVnAwVldwa2EwOVhZM0Z5VjFBNWIzQlRPSEpKWlY5T2VWaEhPRE5pV0ZnNWNVNVJkall0YUhZMVZ6WmZXbkpSTmtJNFJFbHhja1JsVVhOa2VqTmZSWGh4V1VoR1NIcHRiazFWRWhkWGVESXhZVnBYVmtwS1lYUnBURTFRT1RocFoybEJUUm9pUVVwTFRFWnRTUzFRU1RJNGNETXpWRkJCZFRONGVIcDZWRFZLYlhCdE5IaExadyIsImZjdiI6IjMifQ%3D%3D&q=backend+engineer"
+    }
+  }
+  

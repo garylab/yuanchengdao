@@ -1,0 +1,23 @@
+{
+  "name": "yuancheng.co",
+  "version": "1.0.0",
+  "description": "远程OK - Remote jobs for Chinese professionals",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create yuancheng-jobs",
+    "db:migrate": "wrangler d1 execute yuancheng-jobs --file=./schema.sql",
+    "db:migrate:local": "wrangler d1 execute yuancheng-jobs --local --file=./schema.sql",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241230.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^4.73.0"
+  },
+  "dependencies": {
+    "hono": "^4.12.7"
+  }
+}

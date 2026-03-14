@@ -1,0 +1,6 @@
+SERPAPI_KEY=your_serpapi_key_here
+OPENAI_API_KEY=your_openai_api_key_here
+JOB_POSITIONS=software engineer,developer,designer,product manager,data scientist
+JOB_COUNTRIES=us,gb,ca,au,de,fr,nl,se,ch,sg,jp,nz
+STATIC_URL=http://localhost:8788/r2
+GA_ID=G-XXXXXXXXXX
