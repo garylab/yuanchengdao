@@ -171,7 +171,7 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
     return { crawled, decoded };
   });
 
-  const translations = await translateBatch(inputs, env.OPENAI_API_KEY);
+  const translations = await translateBatch(inputs, env.OPENAI_API_KEY, env.OPENAI_API_BASE);
 
   let saved = 0;
   for (const tr of translations) {

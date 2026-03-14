@@ -1,7 +1,5 @@
 import { TranslationResult, CrawledJob, DecodedJobId } from '../types';
 
-const OPENAI_API = 'https://api.openai.com/v1/chat/completions';
-
 export interface TranslateInput {
   crawled: CrawledJob;
   decoded: DecodedJobId;
@@ -28,7 +26,8 @@ function buildJobPayload(input: TranslateInput) {
 
 export async function translateBatch(
   inputs: TranslateInput[],
-  apiKey: string
+  apiKey: string,
+  apiBase?: string
 ): Promise<TranslationResult[]> {
   if (inputs.length === 0) return [];
 
@@ -66,7 +65,8 @@ ${JSON.stringify(jobsForPrompt, null, 2)}
 
 Return ONLY a valid JSON array of objects. No markdown, no explanation.`;
 
-  const response = await fetch(OPENAI_API, {
+  const endpoint = `${(apiBase || 'https://api.openai.com').replace(/\/+$/, '')}/v1/chat/completions`;
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

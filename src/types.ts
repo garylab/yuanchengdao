@@ -3,6 +3,7 @@ export interface Env {
   R2: R2Bucket;
   SERPAPI_KEY: string;
   OPENAI_API_KEY: string;
+  OPENAI_API_BASE?: string;
   SITE_URL: string;
   STATIC_URL: string;
   GA_ID?: string;
