@@ -1,15 +1,39 @@
-export function layout(title: string, content: string, options?: { description?: string; gaId?: string }): string {
-  const desc = options?.description || '远程岛 - 为中国人提供全球远程工作岗位';
+export interface LayoutOptions {
+  description?: string;
+  gaId?: string;
+  canonical?: string;
+  ogImage?: string;
+  jsonLd?: string;
+  keywords?: string;
+}
+
+export function layout(title: string, content: string, options?: LayoutOptions): string {
+  const desc = options?.description || '远程岛 - 华人全球远程工作机会平台，精选海外远程岗位';
+  const fullTitle = title;
   const ga = options?.gaId ? `
   <script async src="https://www.googletagmanager.com/gtag/js?id=${options.gaId}"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${options.gaId}');</script>` : '';
+  const canonical = options?.canonical ? `\n  <link rel="canonical" href="${options.canonical}">` : '';
+  const ogImage = options?.ogImage || '';
+  const keywords = options?.keywords || '远程工作,远程岗位,remote jobs,海外远程,远程招聘,在家工作,远程办公,华人远程工作';
+  const jsonLd = options?.jsonLd ? `\n  <script type="application/ld+json">${options.jsonLd}</script>` : '';
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title} | 远程岛 - yuanchengdao.com</title>
-  <meta name="description" content="${desc}">${ga}
+  <title>${fullTitle}</title>
+  <meta name="description" content="${desc}">
+  <meta name="keywords" content="${keywords}">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="${fullTitle}">
+  <meta property="og:description" content="${desc}">
+  <meta property="og:site_name" content="远程岛">
+  <meta property="og:locale" content="zh_CN">${ogImage ? `\n  <meta property="og:image" content="${ogImage}">` : ''}${canonical ? `\n  <meta property="og:url" content="${options?.canonical}">` : ''}
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="${fullTitle}">
+  <meta name="twitter:description" content="${desc}">${canonical}${ga}${jsonLd}
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏝️</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -41,7 +65,7 @@ export function layout(title: string, content: string, options?: { description?:
       <a href="/" class="flex items-center gap-2 no-underline flex-shrink-0">
         <span class="text-2xl">🏝️</span>
         <span class="text-xl font-bold text-surface-900">远程<span class="text-brand-500">岛</span></span>
-        <span class="text-xs text-surface-400 hidden sm:inline ml-1">华人的全球远程工作机会</span>
+        <span class="text-xs text-surface-400 hidden sm:inline ml-1">华人全球远程工作机会平台</span>
       </a>
       <form action="/" method="GET" class="relative flex-1 max-w-md">
         <input type="text" name="q"

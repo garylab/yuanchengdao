@@ -8,16 +8,14 @@ const ALLOWED_TYPES: Record<string, string> = {
 
 export async function uploadThumbnail(
   r2: R2Bucket,
-  staticUrl: string,
   sourceUrl: string,
   companySlug: string,
 ): Promise<string | null> {
   if (!sourceUrl) return null;
 
-  const r2Key = `thumbnails/${companySlug}`;
-
-  const existing = await r2.head(r2Key);
-  if (existing) return `${staticUrl}/${r2Key}`;
+  const now = new Date();
+  const datePrefix = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const r2Key = `${datePrefix}/${companySlug}`;
 
   try {
     const response = await fetch(sourceUrl, {
@@ -39,7 +37,7 @@ export async function uploadThumbnail(
       httpMetadata: { contentType },
     });
 
-    return `${staticUrl}/${finalKey}`;
+    return finalKey;
   } catch (err) {
     console.error(`Failed to upload thumbnail for ${companySlug}:`, err);
     return null;

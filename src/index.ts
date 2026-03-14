@@ -42,13 +42,12 @@ app.get('/sitemap.xml', async (c) => {
   ).all();
 
   const urls = (jobs.results || []).map((j: Record<string, unknown>) =>
-    `<url><loc>${c.env.SITE_URL}/job/${j.slug}</loc><lastmod>${(j.updated_at as string || new Date().toISOString()).split('T')[0]}</lastmod></url>`
+    `<url><loc>${c.env.SITE_URL}/job/${j.slug}</loc><lastmod>${(j.updated_at as string || new Date().toISOString()).split('T')[0]}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`
   ).join('\n');
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${c.env.SITE_URL}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
-  <url><loc>${c.env.SITE_URL}/about</loc><changefreq>monthly</changefreq></url>
   ${urls}
 </urlset>`;
 

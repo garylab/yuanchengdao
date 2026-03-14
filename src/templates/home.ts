@@ -92,8 +92,9 @@ interface CountryFilter {
   job_count: number;
 }
 
-export function homePage(jobs: Job[], countries: CountryFilter[], page: number, totalJobs: number, query?: string, countrySlug?: string, gaId?: string): string {
+export function homePage(jobs: Job[], countries: CountryFilter[], page: number, totalJobs: number, query?: string, countrySlug?: string, gaId?: string, siteUrl?: string): string {
   const totalPages = Math.ceil(totalJobs / 30);
+  const activeCountry = countrySlug ? countries.find(c => c.slug === countrySlug) : null;
 
   const countryBar = countries.length > 0 ? `
     <div class="overflow-x-auto px-4 py-3 flex gap-2 text-sm whitespace-nowrap border-b border-surface-200">
@@ -139,5 +140,34 @@ export function homePage(jobs: Job[], countries: CountryFilter[], page: number, 
       ${page < totalPages ? `<a href="/?page=${page + 1}${paginationSuffix}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition">下一页 →</a>` : ''}
     </div>` : '';
 
-  return layout('远程工作机会 - 远程岛', jobList + pagination, { gaId });
+  const subParts: string[] = [];
+  if (query) subParts.push(`${query} 相关远程工作`);
+  if (activeCountry) subParts.push(`${activeCountry.name_cn}远程岗位`);
+  if (page > 1) subParts.push(`第${page}页`);
+  const pageTitle = subParts.length > 0
+    ? `${subParts.join(' - ')} - 远程岛`
+    : '远程岛 - 华人全球远程工作机会平台';
+
+  const descParts = [
+    activeCountry ? `${activeCountry.name_cn}` : '全球',
+    '远程工作岗位',
+    query ? `，搜索"${query}"` : '',
+    `，共${totalJobs}个职位`,
+  ];
+  const pageDesc = `远程岛 - ${descParts.join('')}。精选海外远程岗位。`;
+
+  const canonicalParams: string[] = [];
+  if (countrySlug) canonicalParams.push(`country=${countrySlug}`);
+  if (query) canonicalParams.push(`q=${encodeURIComponent(query)}`);
+  if (page > 1) canonicalParams.push(`page=${page}`);
+  const canonicalPath = canonicalParams.length > 0 ? `/?${canonicalParams.join('&')}` : '/';
+  const canonical = siteUrl ? `${siteUrl}${canonicalPath}` : undefined;
+
+  const keywords = [
+    '远程工作', '远程岗位', 'remote jobs',
+    activeCountry?.name_cn,
+    query,
+  ].filter(Boolean).join(',');
+
+  return layout(pageTitle, jobList + pagination, { gaId, description: pageDesc, canonical, keywords });
 }

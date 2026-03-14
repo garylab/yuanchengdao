@@ -132,8 +132,8 @@ async function getOrCreateCompany(
 
   let thumbnail = thumbnailUrl;
   if (thumbnailUrl) {
-    const r2Url = await uploadThumbnail(env.R2, env.STATIC_URL, thumbnailUrl, slug);
-    if (r2Url) thumbnail = r2Url;
+    const r2Key = await uploadThumbnail(env.R2, thumbnailUrl, slug);
+    if (r2Key) thumbnail = r2Key;
   }
 
   const result = await env.DB.prepare(

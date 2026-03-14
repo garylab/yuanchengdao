@@ -2,7 +2,58 @@ import { Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, formatSalary, escapeHtml, rewriteUtm } from '../utils/helpers';
 
-export function jobDetailPage(job: Job, gaId?: string): string {
+function buildJobJsonLd(job: Job, siteUrl?: string): string {
+  const location = [job.location_name_cn, job.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || '远程';
+
+  const ld: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: job.title,
+    description: job.description,
+    datePosted: job.posted_at || job.created_at,
+    jobLocationType: 'TELECOMMUTE',
+    employmentType: 'FULL_TIME',
+    jobLocation: {
+      '@type': 'Place',
+      address: { '@type': 'PostalAddress', addressLocality: location },
+    },
+  };
+
+  if (siteUrl && job.slug) {
+    ld.url = `${siteUrl}/job/${job.slug}`;
+  }
+
+  if (job.company_name) {
+    const org: Record<string, unknown> = {
+      '@type': 'Organization',
+      name: job.company_name,
+    };
+    if (job.company_thumbnail) org.logo = job.company_thumbnail;
+    ld.hiringOrganization = org;
+  }
+
+  if (job.salary_lower || job.salary_upper) {
+    ld.baseSalary = {
+      '@type': 'MonetaryAmount',
+      currency: job.salary_currency || 'CNY',
+      value: {
+        '@type': 'QuantitativeValue',
+        ...(job.salary_lower ? { minValue: job.salary_lower } : {}),
+        ...(job.salary_upper ? { maxValue: job.salary_upper } : {}),
+        unitText: job.salary_pay_cycle === 'year' ? 'YEAR' : job.salary_pay_cycle === 'month' ? 'MONTH' : job.salary_pay_cycle === 'week' ? 'WEEK' : job.salary_pay_cycle === 'day' ? 'DAY' : 'YEAR',
+      },
+    };
+  }
+
+  const applyOptions = job.apply_options ? JSON.parse(job.apply_options) as Array<{ title: string; link: string }> : [];
+  if (applyOptions.length > 0) {
+    ld.directApply = true;
+  }
+
+  return JSON.stringify(ld);
+}
+
+export function jobDetailPage(job: Job, gaId?: string, siteUrl?: string): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(job.posted_at || job.created_at);
 
@@ -97,5 +148,20 @@ export function jobDetailPage(job: Job, gaId?: string): string {
       ` : ''}
     </div>`;
 
-  return layout(job.title, content, { description: `${job.title} - ${job.company_name || ''} | 远程岛`, gaId });
+  const locationLabel = [job.location_name_cn, job.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || '远程';
+  const salarySnippet = salary ? ` | ${salary}` : '';
+  const pageDesc = `${job.title} - ${job.company_name || ''}${salarySnippet} | ${locationLabel} | 远程岛`;
+  const canonical = siteUrl ? `${siteUrl}/job/${job.slug}` : undefined;
+  const jsonLd = buildJobJsonLd(job, siteUrl);
+
+  const pageTitle = [job.title, job.company_name ? `${job.company_name} 远程工作` : '远程工作', '远程岛'].filter(Boolean).join(' - ');
+
+  return layout(pageTitle, content, {
+    description: pageDesc,
+    gaId,
+    canonical,
+    jsonLd,
+    ogImage: job.company_thumbnail || undefined,
+    keywords: [job.title, job.company_name, locationLabel, '远程工作', 'remote job'].filter(Boolean).join(','),
+  });
 }

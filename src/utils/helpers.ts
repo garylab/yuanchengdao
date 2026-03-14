@@ -69,6 +69,12 @@ export function truncate(str: string, len: number): string {
   return str.substring(0, len) + '...';
 }
 
+export function resolveThumbnail(thumb: string | null | undefined, staticUrl: string): string | undefined {
+  if (!thumb) return undefined;
+  if (thumb.startsWith('http://') || thumb.startsWith('https://')) return thumb;
+  return `${staticUrl}/${thumb}`;
+}
+
 export function rewriteUtm(url: string): string {
   try {
     const u = new URL(url);

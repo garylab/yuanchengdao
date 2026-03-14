@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Env, Job } from '../types';
 import { syncJobs } from '../services/jobSync';
+import { resolveThumbnail } from '../utils/helpers';
 
 const api = new Hono<{ Bindings: Env }>();
 
@@ -37,7 +38,10 @@ api.get('/api/jobs', async (c) => {
   params.push(limit, offset);
 
   const result = await c.env.DB.prepare(sql).bind(...params).all();
-  const jobs = (result.results || []) as unknown as Job[];
+  const jobs = ((result.results || []) as unknown as Job[]).map(j => ({
+    ...j,
+    company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
+  }));
 
   return c.json({ jobs, page, limit });
 });

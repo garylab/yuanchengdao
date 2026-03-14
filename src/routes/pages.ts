@@ -3,6 +3,7 @@ import { Env, Job } from '../types';
 import { homePage } from '../templates/home';
 import { jobDetailPage } from '../templates/jobDetail';
 import { aboutPage } from '../templates/about';
+import { resolveThumbnail } from '../utils/helpers';
 
 const pages = new Hono<{ Bindings: Env }>();
 
@@ -58,10 +59,13 @@ pages.get('/', async (c) => {
   ]);
 
   const total = countResult?.total || 0;
-  const jobs = (jobsResult.results || []) as unknown as Job[];
+  const jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
+    ...j,
+    company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
+  }));
   const countries = (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>;
 
-  const html = homePage(jobs, countries, page, total, query, countrySlug, c.env.GA_ID);
+  const html = homePage(jobs, countries, page, total, query, countrySlug, c.env.GA_ID, c.env.SITE_URL);
   return c.html(html);
 });
 
@@ -87,7 +91,8 @@ pages.get('/job/:slug', async (c) => {
     );
   }
 
-  return c.html(jobDetailPage(job, c.env.GA_ID));
+  job.company_thumbnail = resolveThumbnail(job.company_thumbnail, c.env.STATIC_URL) as string;
+  return c.html(jobDetailPage(job, c.env.GA_ID, c.env.SITE_URL));
 });
 
 pages.get('/about', (c) => {
