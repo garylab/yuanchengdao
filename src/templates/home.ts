@@ -5,6 +5,9 @@ import { timeAgo, formatSalary, escapeHtml, rewriteUtm } from '../utils/helpers'
 function renderJobRow(job: Job): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(job.posted_at || job.created_at);
+  const firstWord = (job.company_name || '?').split(/\s+/)[0];
+  const logoFontSize = firstWord.length <= 2 ? 'text-lg' : firstWord.length <= 5 ? 'text-xs' : 'text-[10px]';
+  const companyInitial = escapeHtml(firstWord);
   const logo = job.company_thumbnail
     ? `<img src="${escapeHtml(job.company_thumbnail)}" alt="${escapeHtml(job.company_name || '')}" class="w-12 h-12 rounded-lg object-contain bg-surface-100 flex-shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
     : '';
@@ -23,7 +26,7 @@ function renderJobRow(job: Job): string {
       <div class="job-row-header flex items-center gap-4 px-4 py-4 cursor-pointer select-none">
         <div class="flex-shrink-0 w-12 h-12">
           ${logo}
-          <div class="${job.company_thumbnail ? 'hidden' : 'flex'} w-12 h-12 rounded-lg bg-brand-50 items-center justify-center text-xl">💼</div>
+          <div class="${job.company_thumbnail ? 'hidden' : 'flex'} w-12 h-12 rounded-lg bg-brand-50 items-center justify-center ${logoFontSize} font-bold text-brand-500 leading-tight text-center overflow-hidden p-1.5">${companyInitial}</div>
         </div>
 
         <div class="flex-1 min-w-0">

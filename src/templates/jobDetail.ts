@@ -76,7 +76,7 @@ export function jobDetailPage(job: Job, gaId?: string, siteUrl?: string): string
         <div class="flex items-start gap-4">
           ${job.company_thumbnail
             ? `<img src="${escapeHtml(job.company_thumbnail)}" alt="${escapeHtml(job.company_name || '')}" class="w-16 h-16 rounded-xl object-contain bg-surface-100 flex-shrink-0">`
-            : `<div class="w-16 h-16 rounded-xl bg-brand-50 flex items-center justify-center text-2xl flex-shrink-0">💼</div>`
+            : (() => { const fw = (job.company_name || '?').split(/\s+/)[0]; const fs = fw.length <= 2 ? 'text-xl' : fw.length <= 5 ? 'text-sm' : 'text-xs'; return `<div class="w-16 h-16 rounded-xl bg-brand-50 flex items-center justify-center ${fs} font-bold text-brand-500 leading-tight text-center overflow-hidden p-2 flex-shrink-0">${escapeHtml(fw)}</div>`; })()
           }
           <div class="flex-1">
             <h1 class="text-xl sm:text-2xl font-bold text-surface-900 mb-1">${escapeHtml(job.title)}</h1>
