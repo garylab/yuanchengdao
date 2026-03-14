@@ -35,7 +35,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="${fullTitle}">
   <meta name="twitter:description" content="${desc}">${canonical}${ga}${jsonLd}
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏝️</text></svg>">
+  <link rel="icon" href="${options?.staticUrl || ''}/favicon.ico" type="image/x-icon">
   <script src="${options?.staticUrl || ''}/js/tailwindcss.js"></script>
   <script>
     tailwind.config = {
@@ -62,8 +62,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   <header class="bg-white border-b border-surface-200 sticky top-0 z-50">
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
       <a href="/" class="flex items-center gap-2 no-underline flex-shrink-0">
-        <span class="text-2xl">🏝️</span>
-        <span class="text-xl font-bold text-surface-900">远程<span class="text-brand-500">岛</span></span>
+        <img src="${options?.staticUrl || ''}/yuanchengdao.svg" alt="远程岛" class="h-8">
         <span class="text-xs text-surface-400 hidden sm:inline ml-1">华人全球远程工作机会平台</span>
       </a>
       <form action="/" method="GET" class="relative flex-1 max-w-md">
@@ -82,7 +81,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   <!-- Footer -->
   <footer class="border-t border-surface-200 bg-white mt-16">
     <div class="max-w-5xl mx-auto px-4 py-8 text-center text-sm text-surface-400">
-      <p class="mb-2"><a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition">🏝️ 远程岛</a> — 为中国人提供全球远程工作机会</p>
+      <p class="mb-2"><a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition inline-flex items-center gap-1"><img src="${options?.staticUrl || ''}/yuanchengdao.svg" alt="远程岛" class="h-5 inline"></a> — 为中国人提供全球远程工作机会</p>
       <p class="mt-2">© ${new Date().getFullYear()} <a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition">yuanchengdao.com</a></p>
     </div>
   </footer>
