@@ -51,13 +51,13 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   </script>
   <style>
     @font-face {
-      font-family: 'Noto Sans SC';
+      font-family: 'Inter';
       font-style: normal;
       font-weight: 400 700;
       font-display: swap;
-      src: url('${options?.staticUrl || ''}/fonts/noto-sans-sc.woff2') format('woff2');
+      src: url('${options?.staticUrl || ''}/fonts/inter.woff2') format('woff2');
     }
-    body { font-family: 'Noto Sans SC', system-ui, sans-serif; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
     .job-row-header:hover { background-color: #fef3ec; }
     .job-row-header { transition: background-color 0.15s ease; }
     .job-row.expanded .job-row-header { background-color: #fef3ec; }

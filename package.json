@@ -7,9 +7,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "db:create": "wrangler d1 create yuancheng-jobs",
-    "db:migrate": "wrangler d1 execute yuancheng-jobs --file=./schema.sql",
-    "db:migrate:local": "wrangler d1 execute yuancheng-jobs --local --file=./schema.sql",
+    "db:create": "wrangler d1 create yuanchengdao",
+    "db:migrate": "wrangler d1 execute yuanchengdao --file=./schema.sql",
+    "db:migrate:local": "wrangler d1 execute yuanchengdao --local --file=./schema.sql",
     "tail": "wrangler tail"
   },
   "devDependencies": {

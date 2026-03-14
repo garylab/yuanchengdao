@@ -59,6 +59,7 @@ export async function fetchOneQuery(
   if (!response.ok) {
     const body = await response.text().catch(() => '');
     console.error(`SerpAPI error for "${query}" (${country}): ${response.status} - ${body.substring(0, 200)}`);
+    if (response.status === 401 || response.status === 403) throw new Error('INVALID_KEY');
     if (response.status === 429) throw new Error('RATE_LIMIT');
     return [];
   }

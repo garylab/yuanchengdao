@@ -237,8 +237,21 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
   return saved;
 }
 
+function isKeyUrl(key: string): boolean {
+  return key.startsWith('http://') || key.startsWith('https://');
+}
+
+async function fetchKeyFromUrl(url: string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch API key from ${url}: ${res.status}`);
+  return (await res.text()).trim();
+}
+
 export async function syncJobs(env: Env): Promise<{ fetched: number; saved: number }> {
   console.log('Starting job sync...');
+
+  const keyIsUrl = isKeyUrl(env.SERPAPI_KEY);
+  let serpApiKey = keyIsUrl ? await fetchKeyFromUrl(env.SERPAPI_KEY) : env.SERPAPI_KEY;
 
   const [countryRows, termRows] = await Promise.all([
     env.DB.prepare('SELECT code FROM countries WHERE is_active = 1 ORDER BY code').all(),
@@ -257,6 +270,7 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
   const seenIds = new Set<string>();
   let totalFetched = 0;
   let totalSaved = 0;
+  let keyRefreshAttempts = 0;
 
   for (let i = 0; i < plan.length; i++) {
     const { position, country } = plan[i];
@@ -264,7 +278,7 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
     console.log(`[${i + 1}/${plan.length}] "${query}" in ${country}`);
 
     try {
-      const jobs = await fetchOneQuery(env.SERPAPI_KEY, position, country, seenIds);
+      const jobs = await fetchOneQuery(serpApiKey, position, country, seenIds);
       console.log(`  Fetched ${jobs.length} new unique jobs`);
 
       let crawledCount = 0;
@@ -280,6 +294,19 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
       console.log(`  Processed ${processed} jobs (${totalSaved} total saved)`);
 
     } catch (err) {
+      if (err instanceof Error && err.message === 'INVALID_KEY' && keyIsUrl && keyRefreshAttempts < 3) {
+        keyRefreshAttempts++;
+        console.warn(`SerpAPI key invalid, refreshing from URL (attempt ${keyRefreshAttempts}/3)...`);
+        try {
+          serpApiKey = await fetchKeyFromUrl(env.SERPAPI_KEY);
+          console.log('Key refreshed, retrying...');
+          i--;
+          continue;
+        } catch (refreshErr) {
+          console.error('Failed to refresh key:', refreshErr);
+          break;
+        }
+      }
       if (err instanceof Error && err.message === 'RATE_LIMIT') {
         console.error('SerpAPI rate limit hit, stopping fetch. Processing remaining...');
         break;

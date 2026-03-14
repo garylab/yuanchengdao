@@ -8,12 +8,12 @@ STATIC_URL = "https://static.yuanchengdao.com"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "yuancheng-jobs"
-database_id = "placeholder-id"
+database_name = "yuanchengdao"
+database_id = "4950fa7a-ca80-4948-9ec9-7eda9592ea44"
 
 [[r2_buckets]]
 binding = "R2"
-bucket_name = "yuanchengdao-static"
+bucket_name = "yuanchengdao"
 
 # Cron trigger to fetch new jobs every 6 hours
 [triggers]
