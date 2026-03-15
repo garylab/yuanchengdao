@@ -11,6 +11,10 @@ import { resolveThumbnail } from '../utils/helpers';
 
 const pages = new Hono<{ Bindings: Env }>();
 
+function thirtyDaysAgo(): string {
+  return new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
+}
+
 pages.get('/', async (c) => {
   const url = new URL(c.req.url);
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
@@ -21,7 +25,8 @@ pages.get('/', async (c) => {
   const limit = 30;
   const offset = (page - 1) * limit;
 
-  let countSql = 'SELECT COUNT(*) as total FROM jobs j WHERE j.is_active = 1';
+  const cutoff = thirtyDaysAgo();
+  let countSql = 'SELECT COUNT(*) as total FROM jobs j WHERE j.is_active = 1 AND j.posted_at >= ?';
   let jobSql = `
     SELECT j.*,
       co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
@@ -31,13 +36,13 @@ pages.get('/', async (c) => {
     LEFT JOIN companies co ON j.company_id = co.id
     LEFT JOIN locations lo ON j.location_id = lo.id
     LEFT JOIN countries ct ON j.country_id = ct.id
-    WHERE j.is_active = 1`;
-  const params: (string | number)[] = [];
-  const countParams: (string | number)[] = [];
+    WHERE j.is_active = 1 AND j.posted_at >= ?`;
+  const params: (string | number)[] = [cutoff];
+  const countParams: (string | number)[] = [cutoff];
 
   if (query) {
-    jobSql += ' AND j.title LIKE ? AND j.posted_at >= datetime("now", "-30 days")';
-    countSql += ' AND j.title LIKE ? AND j.posted_at >= datetime("now", "-30 days")';
+    jobSql += ' AND j.title LIKE ?';
+    countSql += ' AND j.title LIKE ?';
     params.push(`%${query}%`);
     countParams.push(`%${query}%`);
   }
@@ -201,8 +206,9 @@ pages.get('/company/:slug', async (c) => {
 
   company.thumbnail = resolveThumbnail(company.thumbnail as string | null, c.env.STATIC_URL) as any;
 
+  const cutoff = thirtyDaysAgo();
   const [countResult, jobsResult] = await Promise.all([
-    c.env.DB.prepare('SELECT COUNT(*) as total FROM jobs WHERE company_id = ? AND is_active = 1').bind(company.id).first<{ total: number }>(),
+    c.env.DB.prepare('SELECT COUNT(*) as total FROM jobs WHERE company_id = ? AND is_active = 1 AND posted_at >= ?').bind(company.id, cutoff).first<{ total: number }>(),
     c.env.DB.prepare(`
       SELECT j.*,
         co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
@@ -212,10 +218,10 @@ pages.get('/company/:slug', async (c) => {
       LEFT JOIN companies co ON j.company_id = co.id
       LEFT JOIN locations lo ON j.location_id = lo.id
       LEFT JOIN countries ct ON j.country_id = ct.id
-      WHERE j.company_id = ? AND j.is_active = 1
+      WHERE j.company_id = ? AND j.is_active = 1 AND j.posted_at >= ?
       ORDER BY j.posted_at DESC
       LIMIT ? OFFSET ?
-    `).bind(company.id, limit, offset).all(),
+    `).bind(company.id, cutoff, limit, offset).all(),
   ]);
 
   const totalJobs = countResult?.total || 0;
@@ -257,10 +263,11 @@ pages.get('/category/:slug', async (c) => {
     );
   }
 
+  const cutoff = thirtyDaysAgo();
   const [countResult, jobsResult] = await Promise.all([
     c.env.DB.prepare(
-      'SELECT COUNT(*) as total FROM jobs WHERE is_active = 1 AND search_term_id = ?'
-    ).bind(term.id).first<{ total: number }>(),
+      'SELECT COUNT(*) as total FROM jobs WHERE is_active = 1 AND search_term_id = ? AND posted_at >= ?'
+    ).bind(term.id, cutoff).first<{ total: number }>(),
     c.env.DB.prepare(`
       SELECT j.*,
         co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
@@ -270,10 +277,10 @@ pages.get('/category/:slug', async (c) => {
       LEFT JOIN companies co ON j.company_id = co.id
       LEFT JOIN locations lo ON j.location_id = lo.id
       LEFT JOIN countries ct ON j.country_id = ct.id
-      WHERE j.is_active = 1 AND j.search_term_id = ?
+      WHERE j.is_active = 1 AND j.search_term_id = ? AND j.posted_at >= ?
       ORDER BY j.posted_at DESC
       LIMIT ? OFFSET ?
-    `).bind(term.id, limit, offset).all(),
+    `).bind(term.id, cutoff, limit, offset).all(),
   ]);
 
   const totalJobs = countResult?.total || 0;
