@@ -12,8 +12,7 @@ export function aboutPage(gaId?: string, staticUrl?: string): string {
           </p>
           
           <p>
-            我们收集来自全球的远程工作机会，将职位信息翻译成中文，
-            让你轻松浏览和申请海外远程工作。
+            我们收集来自全球的远程工作机会，让你轻松浏览和申请海外远程工作。
           </p>
 
           <h2 class="text-xl font-bold mt-8 mb-3">平台特色</h2>
