@@ -28,12 +28,27 @@ export interface FetchBatchResult {
   done: boolean;
 }
 
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+}
+
 export function buildSearchPlan(positions: string[], countries: string[]): Array<{ position: string; country: string }> {
   const plan: Array<{ position: string; country: string }> = [];
   for (const position of positions) {
     for (const country of countries) {
       plan.push({ position, country });
     }
+  }
+  const today = new Date();
+  const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  const rand = seededRandom(seed);
+  for (let i = plan.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [plan[i], plan[j]] = [plan[j], plan[i]];
   }
   return plan;
 }
