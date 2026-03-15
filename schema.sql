@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS companies (
   slug TEXT NOT NULL UNIQUE,
   thumbnail TEXT,
   location_id INTEGER REFERENCES locations(id),
+  job_count INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );

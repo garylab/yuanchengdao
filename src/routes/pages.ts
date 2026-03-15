@@ -3,6 +3,8 @@ import { Env, Job } from '../types';
 import { homePage } from '../templates/home';
 import { jobDetailPage } from '../templates/jobDetail';
 import { aboutPage } from '../templates/about';
+import { companiesPage } from '../templates/companies';
+import { companyDetailPage } from '../templates/companyDetail';
 import { resolveThumbnail } from '../utils/helpers';
 
 const pages = new Hono<{ Bindings: Env }>();
@@ -20,7 +22,7 @@ pages.get('/', async (c) => {
   let countSql = 'SELECT COUNT(*) as total FROM jobs j WHERE j.is_active = 1';
   let jobSql = `
     SELECT j.*,
-      co.name as company_name, co.thumbnail as company_thumbnail,
+      co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
       lo.name as location_name, lo.name_cn as location_name_cn,
       ct.code as country_code, ct.name_cn as country_name_cn
     FROM jobs j
@@ -110,7 +112,7 @@ pages.get('/job/:slug', async (c) => {
 
   const job = await c.env.DB.prepare(`
     SELECT j.*,
-      co.name as company_name, co.thumbnail as company_thumbnail,
+      co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
       lo.name as location_name, lo.name_cn as location_name_cn,
       ct.code as country_code, ct.name_cn as country_name_cn
     FROM jobs j
@@ -129,6 +131,93 @@ pages.get('/job/:slug', async (c) => {
 
   job.company_thumbnail = resolveThumbnail(job.company_thumbnail, c.env.STATIC_URL) as string;
   return c.html(jobDetailPage(job, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+});
+
+pages.get('/companies', async (c) => {
+  const url = new URL(c.req.url);
+  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const limit = 30;
+  const offset = (page - 1) * limit;
+
+  const [countResult, result] = await Promise.all([
+    c.env.DB.prepare('SELECT COUNT(*) as total FROM companies WHERE job_count > 0').first<{ total: number }>(),
+    c.env.DB.prepare(`
+      SELECT co.id, co.name, co.slug, co.thumbnail, co.job_count,
+        lo.name_cn as location_name_cn,
+        ct.name_cn as country_name_cn
+      FROM companies co
+      LEFT JOIN locations lo ON co.location_id = lo.id
+      LEFT JOIN countries ct ON lo.country_id = ct.id
+      WHERE co.job_count > 0
+      ORDER BY co.job_count DESC
+      LIMIT ? OFFSET ?
+    `).bind(limit, offset).all(),
+  ]);
+
+  const total = countResult?.total || 0;
+  const totalPages = Math.ceil(total / limit);
+  const companies = (result.results || []).map((r: Record<string, unknown>) => ({
+    ...r,
+    thumbnail: resolveThumbnail(r.thumbnail as string | null, c.env.STATIC_URL),
+  }));
+
+  return c.html(companiesPage(
+    companies as any[], page, totalPages,
+    c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL,
+  ));
+});
+
+pages.get('/company/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  const url = new URL(c.req.url);
+  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const limit = 30;
+  const offset = (page - 1) * limit;
+
+  const company = await c.env.DB.prepare(`
+    SELECT co.id, co.name, co.slug, co.thumbnail,
+      lo.name_cn as location_name_cn,
+      ct.name_cn as country_name_cn
+    FROM companies co
+    LEFT JOIN locations lo ON co.location_id = lo.id
+    LEFT JOIN countries ct ON lo.country_id = ct.id
+    WHERE co.slug = ?
+  `).bind(slug).first<Record<string, unknown>>();
+
+  if (!company) {
+    return c.html(
+      `<div class="text-center py-20"><h1 class="text-2xl">404 - 公司未找到</h1><a href="/companies" class="text-brand-500">返回公司列表</a></div>`,
+      404
+    );
+  }
+
+  company.thumbnail = resolveThumbnail(company.thumbnail as string | null, c.env.STATIC_URL) as any;
+
+  const [countResult, jobsResult] = await Promise.all([
+    c.env.DB.prepare('SELECT COUNT(*) as total FROM jobs WHERE company_id = ? AND is_active = 1').bind(company.id).first<{ total: number }>(),
+    c.env.DB.prepare(`
+      SELECT j.*,
+        co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
+        lo.name as location_name, lo.name_cn as location_name_cn,
+        ct.code as country_code, ct.name_cn as country_name_cn
+      FROM jobs j
+      LEFT JOIN companies co ON j.company_id = co.id
+      LEFT JOIN locations lo ON j.location_id = lo.id
+      LEFT JOIN countries ct ON j.country_id = ct.id
+      WHERE j.company_id = ? AND j.is_active = 1
+      ORDER BY j.posted_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(company.id, limit, offset).all(),
+  ]);
+
+  const totalJobs = countResult?.total || 0;
+  const totalPages = Math.ceil(totalJobs / limit);
+  const jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
+    ...j,
+    company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
+  }));
+
+  return c.html(companyDetailPage(company as any, jobs, page, totalPages, totalJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
 
 pages.get('/about', (c) => {

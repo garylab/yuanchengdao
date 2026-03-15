@@ -225,6 +225,10 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
       const slug = await generateJobSlug(env.DB, crawled.title, crawled.company_name, newJobId);
       await env.DB.prepare('UPDATE jobs SET slug = ? WHERE id = ?').bind(slug, newJobId).run();
 
+      if (companyId) {
+        await env.DB.prepare('UPDATE companies SET job_count = job_count + 1 WHERE id = ?').bind(companyId).run();
+      }
+
       await env.DB.prepare(
         'UPDATE jobs_crawled SET process_status = 1 WHERE id = ?'
       ).bind(crawled.id).run();

@@ -101,6 +101,7 @@ export interface Company {
   slug: string;
   thumbnail: string | null;
   location_id: number | null;
+  job_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -128,6 +129,7 @@ export interface Job {
   updated_at: string;
   // joined fields
   company_name?: string;
+  company_slug?: string;
   company_thumbnail?: string;
   location_name?: string;
   location_name_cn?: string;

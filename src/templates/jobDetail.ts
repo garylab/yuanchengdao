@@ -81,7 +81,10 @@ export function jobDetailPage(job: Job, gaId?: string, siteUrl?: string, staticU
           <div class="flex-1">
             <h1 class="text-xl sm:text-2xl font-bold text-surface-900 mb-1">${escapeHtml(job.title)}</h1>
             <div class="flex flex-wrap items-center gap-3 text-sm text-surface-500 mt-1">
-              <span class="font-medium text-surface-700">${escapeHtml(job.company_name || '')}</span>
+              ${job.company_slug
+                ? `<a href="/company/${escapeHtml(job.company_slug)}" class="font-medium text-surface-700 hover:text-brand-500 transition no-underline">${escapeHtml(job.company_name || '')}</a>`
+                : `<span class="font-medium text-surface-700">${escapeHtml(job.company_name || '')}</span>`
+              }
               <span>📍 ${escapeHtml([job.location_name_cn, job.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || '远程')}</span>
               ${salary ? `<span class="text-green-600 font-medium">💰 ${salary}</span>` : ''}
               <span>${posted}</span>
