@@ -36,15 +36,15 @@ function buildPrompt(job: Record<string, unknown>): string {
   return `You are a professional translator and data extractor. Process the following job listing.
 
 The job has these location-related fields:
-- "location": from the job listing (e.g. "San Francisco, CA", "Anywhere", "Remote")
-- "address_city": decoded from Google's job ID (e.g. "United States", "Denver, CO", "London")
-- "gl": the 2-letter country code from Google's job ID (e.g. "us", "gb", "de")
-- "search_country": the country code used to search (e.g. "us", "gb")
+- "location": from the job listing (e.g. "San Francisco, CA", "Anywhere", "Remote", "United Arab Emirates")
+- "address_city": decoded from Google's job ID (e.g. "United States", "Denver, CO", "London", "United Arab Emirates")
+- "gl": the 2-letter country code used for the Google search — this is NOT necessarily the job's country, just the search locale
+- "search_country": same as gl, the search locale, NOT the job's actual location
 
 Return a JSON object with:
 - "title_zh": Chinese translation of the job title. Keep technical terms (React, Python, AWS, etc.) and company names in English.
 - "description_zh": Full Chinese translation of the job description. Translate ALL content completely — do NOT summarize or truncate. Keep technical terms in English.
-- "country_code": 2-letter lowercase country code (ISO 3166-1 alpha-2) for this job. Determine from "gl" first, then "address_city", then "search_country". Examples: "us", "gb", "de", "ca", "au", "sg", "jp".
+- "country_code": 2-letter lowercase country code (ISO 3166-1 alpha-2) for the ACTUAL job location. Determine from "location" first, then "address_city". Only fall back to "gl" if both "location" and "address_city" are generic (e.g. "Anywhere", "Remote"). Examples: "us", "gb", "de", "ca", "au", "sg", "jp", "ae".
 - "country_name": The English name of the country. Examples: "United States", "United Kingdom", "Germany", "Japan", "Singapore".
 - "country_name_cn": The Chinese name of the country. Examples: "美国", "英国", "德国", "日本", "新加坡".
 - "country_timezone": IANA timezone string for the country's primary/capital timezone. Examples: "America/New_York" (US), "Europe/London" (UK), "Europe/Berlin" (Germany), "Asia/Tokyo" (Japan), "Asia/Singapore" (Singapore), "Australia/Sydney" (Australia), "America/Toronto" (Canada).
