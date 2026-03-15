@@ -1,6 +1,6 @@
 import { Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, formatSalary, escapeHtml, rewriteUtm } from '../utils/helpers';
+import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb } from '../utils/helpers';
 
 function buildJobJsonLd(job: Job, siteUrl?: string): string {
   const location = [job.location_name_cn, job.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || '远程';
@@ -65,12 +65,15 @@ export function jobDetailPage(job: Job, gaId?: string, siteUrl?: string, staticU
     .replace(/\n\n/g, '</p><p class="mb-3">')
     .replace(/\n/g, '<br>');
 
-  const content = `
-    <div class="max-w-3xl mx-auto px-4 py-8">
-      <a href="/" class="inline-flex items-center gap-1 text-sm text-surface-500 hover:text-brand-500 mb-6 transition">
-        ← 返回职位列表
-      </a>
+  const bc = breadcrumb([
+    { label: '首页', href: '/' },
+    { label: job.company_name || '', href: job.company_slug ? `/company/${job.company_slug}` : undefined },
+    { label: job.title },
+  ]);
 
+  const content = `
+    ${bc}
+    <div class="max-w-3xl mx-auto px-4 py-6">
       <!-- Header -->
       <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-6 mb-6">
         <div class="flex items-start gap-4">

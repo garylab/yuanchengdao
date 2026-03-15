@@ -1,5 +1,5 @@
 import { layout } from './layout';
-import { escapeHtml } from '../utils/helpers';
+import { escapeHtml, breadcrumb } from '../utils/helpers';
 
 interface CompanyItem {
   id: number;
@@ -44,9 +44,15 @@ export function companiesPage(companies: CompanyItem[], page: number, totalPages
       ${page < totalPages ? `<a href="/companies?page=${page + 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
     </div>` : '';
 
+  const bc = breadcrumb([
+    { label: '首页', href: '/' },
+    { label: '企业' },
+  ]);
+
   const content = `
-    <div class="max-w-5xl mx-auto px-4 mt-6">
-      <h1 class="text-xl font-bold text-surface-900 mb-4">公司列表</h1>
+    ${bc}
+    <div class="max-w-5xl mx-auto px-4 mt-4">
+      <h1 class="text-xl font-bold text-surface-900 mb-4">企业列表</h1>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         ${companyCards}
       </div>

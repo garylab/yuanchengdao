@@ -1,8 +1,15 @@
 import { layout } from './layout';
+import { breadcrumb } from '../utils/helpers';
 
 export function aboutPage(gaId?: string, staticUrl?: string): string {
+  const bc = breadcrumb([
+    { label: '首页', href: '/' },
+    { label: '关于' },
+  ]);
+
   const content = `
-    <div class="max-w-3xl mx-auto px-4 py-12">
+    ${bc}
+    <div class="max-w-3xl mx-auto px-4 py-8">
       <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-8">
         <h1 class="text-3xl font-bold mb-6 flex items-center gap-2"><img src="${staticUrl || ''}/yuanchengdao.svg" alt="远程岛" class="h-8"> 关于远程岛</h1>
         

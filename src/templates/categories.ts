@@ -1,5 +1,5 @@
 import { layout } from './layout';
-import { escapeHtml } from '../utils/helpers';
+import { escapeHtml, breadcrumb } from '../utils/helpers';
 
 interface SearchTermItem {
   id: number;
@@ -10,8 +10,14 @@ interface SearchTermItem {
 }
 
 export function categoriesPage(terms: SearchTermItem[], gaId?: string, siteUrl?: string, staticUrl?: string): string {
+  const bc = breadcrumb([
+    { label: '首页', href: '/' },
+    { label: '分类' },
+  ]);
+
   const content = `
-    <div class="max-w-5xl mx-auto px-4 mt-6">
+    ${bc}
+    <div class="max-w-5xl mx-auto px-4 mt-4">
       <h1 class="text-xl font-bold text-surface-900 mb-4">职位分类</h1>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         ${terms.map(t => `

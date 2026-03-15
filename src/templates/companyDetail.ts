@@ -1,6 +1,6 @@
 import { Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, formatSalary, escapeHtml, rewriteUtm } from '../utils/helpers';
+import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb } from '../utils/helpers';
 
 interface CompanyInfo {
   id: number;
@@ -87,8 +87,15 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
     ? `<img src="${escapeHtml(company.thumbnail)}" alt="${escapeHtml(company.name)}" class="w-16 h-16 rounded-xl object-contain bg-surface-100 flex-shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
     : '';
 
+  const bc = breadcrumb([
+    { label: '首页', href: '/' },
+    { label: '企业', href: '/companies' },
+    { label: company.name },
+  ]);
+
   const content = `
-    <div class="max-w-5xl mx-auto px-4 mt-6">
+    ${bc}
+    <div class="max-w-5xl mx-auto px-4 mt-4">
       <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-6 mb-4">
         <div class="flex items-center gap-4">
           <div class="flex-shrink-0 w-16 h-16">

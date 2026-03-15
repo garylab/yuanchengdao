@@ -76,6 +76,16 @@ export function resolveThumbnail(thumb: string | null | undefined, staticUrl: st
   return `${staticUrl}/${thumb}`;
 }
 
+export function breadcrumb(items: Array<{ label: string; href?: string }>): string {
+  const parts = items.map((item, i) => {
+    if (i === items.length - 1) {
+      return `<span class="text-surface-500">${escapeHtml(item.label)}</span>`;
+    }
+    return `<a href="${item.href || '/'}" class="text-surface-400 hover:text-brand-500 transition no-underline">${escapeHtml(item.label)}</a>`;
+  });
+  return `<nav class="max-w-5xl mx-auto px-4 mt-4 text-xs flex items-center gap-1.5">${parts.join('<span class="text-surface-300">/</span>')}</nav>`;
+}
+
 export function rewriteUtm(url: string): string {
   try {
     const u = new URL(url);
