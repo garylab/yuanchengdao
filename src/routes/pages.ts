@@ -5,6 +5,8 @@ import { jobDetailPage } from '../templates/jobDetail';
 import { aboutPage } from '../templates/about';
 import { companiesPage } from '../templates/companies';
 import { companyDetailPage } from '../templates/companyDetail';
+import { categoriesPage } from '../templates/categories';
+import { searchTermPage } from '../templates/searchTerm';
 import { resolveThumbnail } from '../utils/helpers';
 
 const pages = new Hono<{ Bindings: Env }>();
@@ -75,7 +77,7 @@ pages.get('/', async (c) => {
   jobSql += ' ORDER BY j.posted_at DESC LIMIT ? OFFSET ?';
   params.push(limit, offset);
 
-  const [countResult, jobsResult, countriesResult, locationsResult] = await Promise.all([
+  const [countResult, jobsResult, countriesResult, locationsResult, topTermsResult] = await Promise.all([
     c.env.DB.prepare(countSql).bind(...countParams).first<{ total: number }>(),
     c.env.DB.prepare(jobSql).bind(...params).all(),
     c.env.DB.prepare(
@@ -90,6 +92,11 @@ pages.get('/', async (c) => {
        WHERE lo.is_active = 1
        GROUP BY lo.id HAVING job_count > 0 ORDER BY job_count DESC`
     ).all(),
+    c.env.DB.prepare(
+      `SELECT term_cn, slug, job_count FROM search_terms
+       WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL
+       ORDER BY job_count DESC LIMIT 3`
+    ).all(),
   ]);
 
   const total = countResult?.total || 0;
@@ -99,10 +106,12 @@ pages.get('/', async (c) => {
   }));
   const countries = (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>;
   const locations = (locationsResult.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_id: number; job_count: number }>;
+  const topSearchTerms = (topTermsResult.results || []) as unknown as Array<{ term_cn: string; slug: string; job_count: number }>;
 
   const html = homePage(jobs, countries, locations, page, total, {
     query, countrySlug, locationSlug, salaryRange,
     gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL,
+    topSearchTerms,
   });
   return c.html(html);
 });
@@ -218,6 +227,64 @@ pages.get('/company/:slug', async (c) => {
   }));
 
   return c.html(companyDetailPage(company as any, jobs, page, totalPages, totalJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+});
+
+pages.get('/categories', async (c) => {
+  const result = await c.env.DB.prepare(
+    `SELECT id, term, term_cn, slug, job_count FROM search_terms
+     WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL
+     ORDER BY job_count DESC`
+  ).all();
+
+  const terms = (result.results || []) as unknown as Array<{ id: number; term: string; term_cn: string; slug: string; job_count: number }>;
+  return c.html(categoriesPage(terms, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+});
+
+pages.get('/category/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  const url = new URL(c.req.url);
+  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const limit = 30;
+  const offset = (page - 1) * limit;
+
+  const term = await c.env.DB.prepare(
+    'SELECT id, term, term_cn, slug FROM search_terms WHERE slug = ? AND is_active = 1 AND term_cn IS NOT NULL AND slug IS NOT NULL'
+  ).bind(slug).first<{ id: number; term: string; term_cn: string; slug: string }>();
+
+  if (!term) {
+    return c.html(
+      `<div class="text-center py-20"><h1 class="text-2xl">404 - 页面未找到</h1><a href="/" class="text-brand-500">返回首页</a></div>`,
+      404
+    );
+  }
+
+  const [countResult, jobsResult] = await Promise.all([
+    c.env.DB.prepare(
+      'SELECT COUNT(*) as total FROM jobs WHERE is_active = 1 AND search_term_id = ?'
+    ).bind(term.id).first<{ total: number }>(),
+    c.env.DB.prepare(`
+      SELECT j.*,
+        co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
+        lo.name as location_name, lo.name_cn as location_name_cn,
+        ct.code as country_code, ct.name_cn as country_name_cn
+      FROM jobs j
+      LEFT JOIN companies co ON j.company_id = co.id
+      LEFT JOIN locations lo ON j.location_id = lo.id
+      LEFT JOIN countries ct ON j.country_id = ct.id
+      WHERE j.is_active = 1 AND j.search_term_id = ?
+      ORDER BY j.posted_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(term.id, limit, offset).all(),
+  ]);
+
+  const totalJobs = countResult?.total || 0;
+  const totalPages = Math.ceil(totalJobs / limit);
+  const jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
+    ...j,
+    company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
+  }));
+
+  return c.html(searchTermPage(term, jobs, page, totalPages, totalJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
 
 pages.get('/about', (c) => {

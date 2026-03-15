@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   company_id INTEGER REFERENCES companies(id),
   location_id INTEGER REFERENCES locations(id),
   country_id INTEGER REFERENCES countries(id),
+  search_term_id INTEGER REFERENCES search_terms(id),
   posted_at TEXT,
   salary_lower INTEGER DEFAULT 0,
   salary_upper INTEGER DEFAULT 0,
@@ -94,16 +95,21 @@ CREATE INDEX IF NOT EXISTS idx_jobs_company ON jobs(company_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_location ON jobs(location_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_country ON jobs(country_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_slug ON jobs(slug);
+CREATE INDEX IF NOT EXISTS idx_jobs_search_term ON jobs(search_term_id);
 CREATE INDEX IF NOT EXISTS idx_companies_slug ON companies(slug);
 
 -- Search terms for job crawling
 CREATE TABLE IF NOT EXISTS search_terms (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   term TEXT NOT NULL UNIQUE,
+  term_cn TEXT,
+  slug TEXT UNIQUE,
+  job_count INTEGER DEFAULT 0,
   is_active INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_search_terms_active ON search_terms(is_active);
+CREATE INDEX IF NOT EXISTS idx_search_terms_slug ON search_terms(slug);
 
 -- No seed data; countries are auto-created by the LLM during job processing

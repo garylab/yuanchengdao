@@ -116,6 +116,7 @@ export interface Job {
   company_id: number | null;
   location_id: number | null;
   country_id: number | null;
+  search_term_id: number | null;
   posted_at: string | null;
   salary_lower: number;
   salary_upper: number;

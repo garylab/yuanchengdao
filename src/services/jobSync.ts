@@ -198,12 +198,19 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
       const postedAt = parsePostedAt(crawled.detected_extensions, country?.timezone || 'UTC');
       const slug = await generateJobSlug(env.DB, crawled.title, crawled.company_name, crawled.id);
 
+      let searchTermId: number | null = null;
+      if (crawled.search_query) {
+        const baseTerm = crawled.search_query.replace(/\s+remote$/i, '');
+        const st = await env.DB.prepare('SELECT id FROM search_terms WHERE term = ?').bind(baseTerm).first<{ id: number }>();
+        if (st) searchTermId = st.id;
+      }
+
       await env.DB.prepare(`
         INSERT INTO jobs
-          (crawled_id, slug, title, description, company_id, location_id, country_id, posted_at,
+          (crawled_id, slug, title, description, company_id, location_id, country_id, search_term_id, posted_at,
            salary_lower, salary_upper, salary_currency, salary_pay_cycle,
            detected_extensions, job_highlights, apply_options)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         crawled.id,
         slug,
@@ -212,6 +219,7 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         companyId,
         locationId,
         countryId,
+        searchTermId,
         postedAt,
         tr.salary_lower,
         tr.salary_upper,
@@ -224,6 +232,10 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
 
       if (companyId) {
         await env.DB.prepare('UPDATE companies SET job_count = job_count + 1 WHERE id = ?').bind(companyId).run();
+      }
+
+      if (searchTermId) {
+        await env.DB.prepare('UPDATE search_terms SET job_count = job_count + 1 WHERE id = ?').bind(searchTermId).run();
       }
 
       await env.DB.prepare(

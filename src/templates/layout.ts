@@ -67,7 +67,8 @@ export function layout(title: string, content: string, options?: LayoutOptions):
       </a>
       <nav class="flex items-center gap-1 sm:gap-4 text-sm">
         <a href="/" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">首页</a>
-        <a href="/companies" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">公司</a>
+        <a href="/companies" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">企业</a>
+        <a href="/categories" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">分类</a>
         <a href="/about" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">关于</a>
       </nav>
     </div>

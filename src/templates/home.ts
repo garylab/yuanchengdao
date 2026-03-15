@@ -104,6 +104,12 @@ interface LocationFilter {
   job_count: number;
 }
 
+interface SearchTermPill {
+  term_cn: string;
+  slug: string;
+  job_count: number;
+}
+
 interface HomePageOptions {
   query?: string;
   countrySlug?: string;
@@ -112,6 +118,7 @@ interface HomePageOptions {
   gaId?: string;
   siteUrl?: string;
   staticUrl?: string;
+  topSearchTerms?: SearchTermPill[];
 }
 
 const SALARY_OPTIONS = [
@@ -130,7 +137,7 @@ const SALARY_OPTIONS = [
 ];
 
 export function homePage(jobs: Job[], countries: CountryFilter[], locations: LocationFilter[], page: number, totalJobs: number, opts: HomePageOptions = {}): string {
-  const { query, countrySlug, locationSlug, salaryRange = '', gaId, siteUrl, staticUrl } = opts;
+  const { query, countrySlug, locationSlug, salaryRange = '', gaId, siteUrl, staticUrl, topSearchTerms = [] } = opts;
   const totalPages = Math.ceil(totalJobs / 30);
   const activeLocation = locationSlug ? locations.find(l => l.slug === locationSlug) : null;
 
@@ -148,7 +155,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
 
   const hasFilters = locationSlug || salaryRange;
   const filterBar = `
-    <div class="px-4 py-3 border-b border-surface-200 flex flex-wrap items-center gap-2">
+    <div class="px-4 py-3 flex flex-wrap items-center gap-2">
       <form action="/" method="GET" class="relative w-48">
         <input type="text" name="q" value="${query ? escapeHtml(query) : ''}"
           placeholder="搜索职位、公司..."
@@ -187,6 +194,14 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
       </div>
 
       ${hasFilters || query ? `<a href="/" class="text-xs text-surface-400 hover:text-brand-500 transition ml-1">清除筛选</a>` : ''}
+
+      ${topSearchTerms.length > 0 ? `
+        <div class="ml-auto flex items-center gap-1.5 flex-shrink-0">
+          ${topSearchTerms.map(t =>
+            `<a href="/category/${escapeHtml(t.slug)}" class="text-xs px-2.5 py-1 rounded-full border border-surface-200 text-surface-500 hover:border-brand-300 hover:text-brand-500 transition no-underline whitespace-nowrap">${escapeHtml(t.term_cn)}</a>`
+          ).join('')}
+        </div>
+      ` : ''}
     </div>`;
 
   const jobStats = query ? `
@@ -196,15 +211,15 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
 
   const jobList = jobs.length > 0
     ? `<div class="max-w-5xl mx-auto mt-4">
-        <div class="bg-white rounded-t-xl border border-b-0 border-surface-200 relative">${filterBar}</div>
-        <div class="bg-white rounded-b-xl shadow-sm border border-surface-200 overflow-hidden">
+        <div class="bg-white rounded-xl border border-surface-200 relative">${filterBar}</div>
+        <div class="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden mt-3">
           ${jobStats}
           ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3, staticUrl)).join('')}
         </div>
        </div>`
     : `<div class="max-w-5xl mx-auto mt-4">
-        <div class="bg-white rounded-t-xl border border-b-0 border-surface-200 relative">${filterBar}</div>
-        <div class="bg-white rounded-b-xl shadow-sm border border-surface-200 overflow-hidden">
+        <div class="bg-white rounded-xl border border-surface-200 relative">${filterBar}</div>
+        <div class="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden mt-3">
           ${jobStats}
           <div class="text-center py-20 text-surface-400">
             <p class="text-4xl mb-4">🔍</p>
