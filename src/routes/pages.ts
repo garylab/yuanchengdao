@@ -36,11 +36,11 @@ pages.get('/', async (c) => {
   const countParams: (string | number)[] = [];
 
   if (query) {
-    jobSql += ' AND (j.title LIKE ? OR co.name LIKE ? OR j.description LIKE ?)';
-    countSql += ' AND (j.title LIKE ? OR j.description LIKE ?)';
-    const wildcard = `%${query}%`;
-    params.push(wildcard, wildcard, wildcard);
-    countParams.push(wildcard, wildcard);
+    const ftsQuery = query.replace(/['"]/g, '').trim();
+    jobSql += ' AND j.id IN (SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ?)';
+    countSql += ' AND j.id IN (SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ?)';
+    params.push(ftsQuery);
+    countParams.push(ftsQuery);
   }
 
   if (countrySlug) {

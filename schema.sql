@@ -98,6 +98,21 @@ CREATE INDEX IF NOT EXISTS idx_jobs_slug ON jobs(slug);
 CREATE INDEX IF NOT EXISTS idx_jobs_search_term ON jobs(search_term_id);
 CREATE INDEX IF NOT EXISTS idx_companies_slug ON companies(slug);
 
+-- Full-text search index for job titles
+CREATE VIRTUAL TABLE IF NOT EXISTS jobs_fts USING fts5(title, content='jobs', content_rowid='id');
+
+-- Triggers to keep FTS in sync
+CREATE TRIGGER IF NOT EXISTS jobs_fts_insert AFTER INSERT ON jobs BEGIN
+  INSERT INTO jobs_fts(rowid, title) VALUES (new.id, new.title);
+END;
+CREATE TRIGGER IF NOT EXISTS jobs_fts_delete AFTER DELETE ON jobs BEGIN
+  INSERT INTO jobs_fts(jobs_fts, rowid, title) VALUES ('delete', old.id, old.title);
+END;
+CREATE TRIGGER IF NOT EXISTS jobs_fts_update AFTER UPDATE OF title ON jobs BEGIN
+  INSERT INTO jobs_fts(jobs_fts, rowid, title) VALUES ('delete', old.id, old.title);
+  INSERT INTO jobs_fts(rowid, title) VALUES (new.id, new.title);
+END;
+
 -- Search terms for job crawling
 CREATE TABLE IF NOT EXISTS search_terms (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
