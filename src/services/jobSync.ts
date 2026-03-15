@@ -260,6 +260,26 @@ async function fetchKeyFromUrl(url: string): Promise<string> {
   return (await res.text()).trim();
 }
 
+const MAX_QUERIES_PER_RUN = 1;
+
+async function getSyncState(db: D1Database): Promise<{ offset: number; planSize: number }> {
+  const row = await db.prepare("SELECT value FROM kv_store WHERE key = 'sync_state'").first<{ value: string }>();
+  if (!row) return { offset: 0, planSize: 0 };
+  try {
+    const parsed = JSON.parse(row.value);
+    return { offset: parsed.offset || 0, planSize: parsed.planSize || 0 };
+  } catch {
+    return { offset: 0, planSize: 0 };
+  }
+}
+
+async function setSyncState(db: D1Database, offset: number, planSize: number): Promise<void> {
+  const value = JSON.stringify({ offset, planSize });
+  await db.prepare(
+    "INSERT INTO kv_store (key, value) VALUES ('sync_state', ?) ON CONFLICT(key) DO UPDATE SET value = ?"
+  ).bind(value, value).run();
+}
+
 export async function syncJobs(env: Env): Promise<{ fetched: number; saved: number }> {
   console.log('Starting job sync...');
 
@@ -280,14 +300,27 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
     console.error('No search plan — check search_terms and countries tables');
     return { fetched: 0, saved: 0 };
   }
-  console.log(`Search plan: ${plan.length} queries`);
+
+  const prevState = await getSyncState(env.DB);
+  let offset = prevState.offset;
+  if (offset >= plan.length || prevState.planSize !== plan.length) {
+    offset = 0;
+    if (prevState.planSize !== plan.length) {
+      console.log(`Plan size changed (${prevState.planSize} → ${plan.length}), resetting offset to 0`);
+    }
+  }
+
+  const endIdx = Math.min(offset + MAX_QUERIES_PER_RUN, plan.length);
+  const nextOffset = endIdx >= plan.length ? 0 : endIdx;
+
+  console.log(`Search plan: ${plan.length} total, running ${offset}..${endIdx - 1} (${endIdx - offset} queries)`);
 
   const seenIds = new Set<string>();
   let totalFetched = 0;
   let totalSaved = 0;
   let keyRefreshAttempts = 0;
 
-  for (let i = 0; i < plan.length; i++) {
+  for (let i = offset; i < endIdx; i++) {
     const { position, country } = plan[i];
     const stId = termIdMap.get(position.toLowerCase()) ?? null;
     console.log(`[${i + 1}/${plan.length}] "${position} remote" in ${country}`);
@@ -341,6 +374,7 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
     }
   }
 
-  console.log(`Sync complete: fetched ${totalFetched}, saved ${totalSaved}`);
+  await setSyncState(env.DB, nextOffset, plan.length);
+  console.log(`Sync complete: fetched ${totalFetched}, saved ${totalSaved}. Next offset: ${nextOffset}/${plan.length}`);
   return { fetched: totalFetched, saved: totalSaved };
 }
