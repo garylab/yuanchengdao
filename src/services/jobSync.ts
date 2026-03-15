@@ -143,7 +143,8 @@ async function getOrCreateCompany(
 }
 
 async function generateJobSlug(db: D1Database, title: string, companyName: string, crawledId: number): Promise<string> {
-  const base = toSlug(`${title}-${companyName}`).substring(0, 80);
+  const slugPart = toSlug(`${title}-${companyName}`).substring(0, 80);
+  const base = slugPart.includes('remote') ? slugPart : `remote-${slugPart}`;
   let candidate = `${base}-${crawledId}`;
   let attempt = 0;
   while (attempt < 5) {
