@@ -36,8 +36,8 @@ pages.get('/', async (c) => {
   const countParams: (string | number)[] = [];
 
   if (query) {
-    jobSql += ' AND j.title LIKE ?';
-    countSql += ' AND j.title LIKE ?';
+    jobSql += ' AND j.title LIKE ? AND j.posted_at >= datetime("now", "-30 days")';
+    countSql += ' AND j.title LIKE ? AND j.posted_at >= datetime("now", "-30 days")';
     params.push(`%${query}%`);
     countParams.push(`%${query}%`);
   }
