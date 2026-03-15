@@ -1,5 +1,5 @@
 import { Env, SerpApiJob, CrawledJob } from '../types';
-import { buildSearchPlan, fetchOneQuery, decodeJobId } from './serpapi';
+import { fetchOneQuery, decodeJobId } from './serpapi';
 import { translateBatch, TranslateInput } from './translate';
 import { uploadThumbnail } from './thumbnail';
 
@@ -260,109 +260,137 @@ async function fetchKeyFromUrl(url: string): Promise<string> {
   return (await res.text()).trim();
 }
 
-const MAX_QUERIES_PER_RUN = 1;
-
-async function getSyncState(db: D1Database): Promise<{ offset: number; planSize: number }> {
-  const row = await db.prepare("SELECT value FROM kv_store WHERE key = 'sync_state'").first<{ value: string }>();
-  if (!row) return { offset: 0, planSize: 0 };
-  try {
-    const parsed = JSON.parse(row.value);
-    return { offset: parsed.offset || 0, planSize: parsed.planSize || 0 };
-  } catch {
-    return { offset: 0, planSize: 0 };
+function shuffle<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
+  return arr;
 }
 
-async function setSyncState(db: D1Database, offset: number, planSize: number): Promise<void> {
-  const value = JSON.stringify({ offset, planSize });
-  await db.prepare(
-    "INSERT INTO kv_store (key, value) VALUES ('sync_state', ?) ON CONFLICT(key) DO UPDATE SET value = ?"
-  ).bind(value, value).run();
+async function ensureCrawlPlan(db: D1Database): Promise<number> {
+  const pending = await db.prepare(
+    'SELECT COUNT(*) as cnt FROM crawl_plan WHERE status = 0'
+  ).first<{ cnt: number }>();
+
+  if (pending && pending.cnt > 0) {
+    return pending.cnt;
+  }
+
+  // No pending entries — generate a fresh plan
+  const [termRows, countryRows] = await Promise.all([
+    db.prepare('SELECT id, term FROM search_terms WHERE is_active = 1').all(),
+    db.prepare('SELECT code FROM countries WHERE is_active = 1').all(),
+  ]);
+  const terms = (termRows.results || []) as unknown as Array<{ id: number; term: string }>;
+  const countries = (countryRows.results || []).map((r: Record<string, unknown>) => r.code as string);
+
+  if (terms.length === 0 || countries.length === 0) return 0;
+
+  const entries: Array<{ termId: number; country: string }> = [];
+  for (const t of terms) {
+    for (const c of countries) {
+      entries.push({ termId: t.id, country: c });
+    }
+  }
+  shuffle(entries);
+
+  // Delete old completed/failed rows, then insert new plan
+  await db.prepare('DELETE FROM crawl_plan').run();
+
+  for (const e of entries) {
+    await db.prepare(
+      'INSERT INTO crawl_plan (search_term_id, country_code) VALUES (?, ?)'
+    ).bind(e.termId, e.country).run();
+  }
+
+  console.log(`Generated new crawl plan: ${entries.length} queries`);
+  return entries.length;
 }
 
 export async function syncJobs(env: Env): Promise<{ fetched: number; saved: number }> {
   console.log('Starting job sync...');
 
-  const keyIsUrl = isKeyUrl(env.SERPAPI_KEY);
-  let serpApiKey = keyIsUrl ? await fetchKeyFromUrl(env.SERPAPI_KEY) : env.SERPAPI_KEY;
-
-  const [countryRows, termRows] = await Promise.all([
-    env.DB.prepare('SELECT code FROM countries WHERE is_active = 1 ORDER BY code').all(),
-    env.DB.prepare('SELECT id, term FROM search_terms WHERE is_active = 1 ORDER BY term').all(),
-  ]);
-  const countryCodes = (countryRows.results || []).map((r: Record<string, unknown>) => r.code as string);
-  const termList = (termRows.results || []) as unknown as Array<{ id: number; term: string }>;
-  const searchTerms = termList.map(t => t.term);
-  const termIdMap = new Map(termList.map(t => [t.term.toLowerCase(), t.id]));
-
-  const plan = buildSearchPlan(searchTerms, countryCodes);
-  if (plan.length === 0) {
-    console.error('No search plan — check search_terms and countries tables');
+  const pendingCount = await ensureCrawlPlan(env.DB);
+  if (pendingCount === 0) {
+    console.log('No crawl plan entries — check search_terms and countries tables');
     return { fetched: 0, saved: 0 };
   }
 
-  const prevState = await getSyncState(env.DB);
-  let offset = prevState.offset;
-  if (offset >= plan.length || prevState.planSize !== plan.length) {
-    offset = 0;
-    if (prevState.planSize !== plan.length) {
-      console.log(`Plan size changed (${prevState.planSize} → ${plan.length}), resetting offset to 0`);
-    }
+  // Pick the next pending entry
+  const task = await env.DB.prepare(
+    `SELECT cp.id, cp.search_term_id, cp.country_code, st.term
+     FROM crawl_plan cp
+     JOIN search_terms st ON cp.search_term_id = st.id
+     WHERE cp.status = 0
+     ORDER BY cp.id
+     LIMIT 1`
+  ).first<{ id: number; search_term_id: number; country_code: string; term: string }>();
+
+  if (!task) {
+    console.log('No pending crawl tasks');
+    return { fetched: 0, saved: 0 };
   }
 
-  const endIdx = Math.min(offset + MAX_QUERIES_PER_RUN, plan.length);
-  const nextOffset = endIdx >= plan.length ? 0 : endIdx;
+  console.log(`[${pendingCount} pending] "${task.term} remote" in ${task.country_code}`);
 
-  console.log(`Search plan: ${plan.length} total, running ${offset}..${endIdx - 1} (${endIdx - offset} queries)`);
+  const keyIsUrl = isKeyUrl(env.SERPAPI_KEY);
+  let serpApiKey = keyIsUrl ? await fetchKeyFromUrl(env.SERPAPI_KEY) : env.SERPAPI_KEY;
 
   const seenIds = new Set<string>();
   let totalFetched = 0;
   let totalSaved = 0;
-  let keyRefreshAttempts = 0;
 
-  for (let i = offset; i < endIdx; i++) {
-    const { position, country } = plan[i];
-    const stId = termIdMap.get(position.toLowerCase()) ?? null;
-    console.log(`[${i + 1}/${plan.length}] "${position} remote" in ${country}`);
+  try {
+    const jobs = await fetchOneQuery(serpApiKey, task.term, task.country_code, seenIds);
+    console.log(`  Fetched ${jobs.length} new unique jobs`);
 
-    try {
-      const jobs = await fetchOneQuery(serpApiKey, position, country, seenIds);
-      console.log(`  Fetched ${jobs.length} new unique jobs`);
+    let crawledCount = 0;
+    for (const job of jobs) {
+      const id = await saveCrawledJob(env.DB, job, task.country_code, task.search_term_id);
+      if (id !== null) crawledCount++;
+    }
+    totalFetched = crawledCount;
+    console.log(`  Saved ${crawledCount} to jobs_crawled`);
 
-      let crawledCount = 0;
-      for (const job of jobs) {
-        const id = await saveCrawledJob(env.DB, job, country, stId);
-        if (id !== null) crawledCount++;
-      }
-      totalFetched += crawledCount;
-      console.log(`  Saved ${crawledCount} to jobs_crawled (${totalFetched} total crawled)`);
+    // Mark as done
+    await env.DB.prepare(
+      "UPDATE crawl_plan SET status = 1, processed_at = datetime('now') WHERE id = ?"
+    ).bind(task.id).run();
 
-      const processed = await processUnprocessedJobs(env);
-      totalSaved += processed;
-      console.log(`  Processed ${processed} jobs (${totalSaved} total saved)`);
-
-    } catch (err) {
-      if (err instanceof Error && err.message === 'INVALID_KEY' && keyIsUrl && keyRefreshAttempts < 3) {
-        keyRefreshAttempts++;
-        console.warn(`SerpAPI key invalid, refreshing from URL (attempt ${keyRefreshAttempts}/3)...`);
-        try {
-          serpApiKey = await fetchKeyFromUrl(env.SERPAPI_KEY);
-          console.log('Key refreshed, retrying...');
-          i--;
-          continue;
-        } catch (refreshErr) {
-          console.error('Failed to refresh key:', refreshErr);
-          break;
+  } catch (err) {
+    if (err instanceof Error && err.message === 'INVALID_KEY' && keyIsUrl) {
+      console.warn('SerpAPI key invalid, refreshing from URL...');
+      try {
+        serpApiKey = await fetchKeyFromUrl(env.SERPAPI_KEY);
+        const jobs = await fetchOneQuery(serpApiKey, task.term, task.country_code, seenIds);
+        let crawledCount = 0;
+        for (const job of jobs) {
+          const id = await saveCrawledJob(env.DB, job, task.country_code, task.search_term_id);
+          if (id !== null) crawledCount++;
         }
+        totalFetched = crawledCount;
+        await env.DB.prepare(
+          "UPDATE crawl_plan SET status = 1, processed_at = datetime('now') WHERE id = ?"
+        ).bind(task.id).run();
+      } catch (retryErr) {
+        console.error('Retry after key refresh failed:', retryErr);
+        await env.DB.prepare(
+          'UPDATE crawl_plan SET status = 2 WHERE id = ?'
+        ).bind(task.id).run();
       }
-      if (err instanceof Error && err.message === 'RATE_LIMIT') {
-        console.error('SerpAPI rate limit hit, stopping fetch. Processing remaining...');
-        break;
-      }
-      console.error(`Error on query "${position} remote" (${country}):`, err);
+    } else if (err instanceof Error && err.message === 'RATE_LIMIT') {
+      console.error('SerpAPI rate limit — will retry this task next run');
+      // Leave status = 0 so it retries next time
+    } else {
+      console.error(`Error crawling "${task.term} remote" (${task.country_code}):`, err);
+      await env.DB.prepare(
+        'UPDATE crawl_plan SET status = 2 WHERE id = ?'
+      ).bind(task.id).run();
     }
   }
 
+  // Process unprocessed crawled jobs
   let remaining = true;
   while (remaining) {
     const processed = await processUnprocessedJobs(env);
@@ -370,11 +398,10 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
       remaining = false;
     } else {
       totalSaved += processed;
-      console.log(`Processed ${processed} more jobs (${totalSaved} total saved)`);
+      console.log(`Processed ${processed} jobs (${totalSaved} total saved)`);
     }
   }
 
-  await setSyncState(env.DB, nextOffset, plan.length);
-  console.log(`Sync complete: fetched ${totalFetched}, saved ${totalSaved}. Next offset: ${nextOffset}/${plan.length}`);
+  console.log(`Sync complete: fetched ${totalFetched}, saved ${totalSaved}, ${pendingCount - 1} pending`);
   return { fetched: totalFetched, saved: totalSaved };
 }

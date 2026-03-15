@@ -113,10 +113,16 @@ CREATE TABLE IF NOT EXISTS search_terms (
 CREATE INDEX IF NOT EXISTS idx_search_terms_active ON search_terms(is_active);
 CREATE INDEX IF NOT EXISTS idx_search_terms_slug ON search_terms(slug);
 
--- Key-value store for sync state
-CREATE TABLE IF NOT EXISTS kv_store (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL
+-- Crawl plan: each row is one (search_term, country) query to execute
+CREATE TABLE IF NOT EXISTS crawl_plan (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  search_term_id INTEGER NOT NULL REFERENCES search_terms(id),
+  country_code TEXT NOT NULL,
+  status INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  processed_at TEXT
 );
+
+CREATE INDEX IF NOT EXISTS idx_crawl_plan_status ON crawl_plan(status);
 
 -- No seed data; countries are auto-created by the LLM during job processing
