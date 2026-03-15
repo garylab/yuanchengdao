@@ -2,7 +2,7 @@ import { Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, formatSalary, escapeHtml, rewriteUtm } from '../utils/helpers';
 
-function renderJobRow(job: Job): string {
+function renderJobRow(job: Job, isNew: boolean = false, staticUrl: string = ''): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(job.posted_at || job.created_at);
   const firstWord = (job.company_name || '?').split(/\s+/)[0];
@@ -33,6 +33,7 @@ function renderJobRow(job: Job): string {
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <a href="/job/${escapeHtml(job.slug)}" class="job-title font-semibold text-surface-900 text-sm sm:text-base hover:text-brand-500 transition no-underline">${escapeHtml(job.title)}</a>
             <span class="text-sm text-surface-500 flex-shrink-0">${escapeHtml(job.company_name || '')}</span>
+            ${isNew ? `<img src="${staticUrl}/new2x.webp" alt="New" class="h-4 flex-shrink-0">` : ''}
           </div>
           <div class="flex flex-wrap items-center gap-2 mt-1.5">
             ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs font-semibold">💰 ${salary}</span>` : ''}
@@ -117,7 +118,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], page: number, 
     ? `<div class="max-w-5xl mx-auto mt-4 bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden">
         ${countryBar}
         ${jobStats}
-        ${jobs.map(renderJobRow).join('')}
+        ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3, staticUrl)).join('')}
        </div>`
     : `<div class="max-w-5xl mx-auto mt-4 bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden">
         ${countryBar}
