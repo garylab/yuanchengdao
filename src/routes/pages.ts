@@ -36,11 +36,10 @@ pages.get('/', async (c) => {
   const countParams: (string | number)[] = [];
 
   if (query) {
-    const ftsQuery = query.replace(/['"]/g, '').trim();
-    jobSql += ' AND j.id IN (SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ?)';
-    countSql += ' AND j.id IN (SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ?)';
-    params.push(ftsQuery);
-    countParams.push(ftsQuery);
+    jobSql += ' AND j.title LIKE ?';
+    countSql += ' AND j.title LIKE ?';
+    params.push(`%${query}%`);
+    countParams.push(`%${query}%`);
   }
 
   if (countrySlug) {
