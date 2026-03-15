@@ -35,7 +35,7 @@ function renderJobRow(job: Job): string {
             <span class="text-sm text-surface-500 flex-shrink-0">${escapeHtml(job.company_name || '')}</span>
           </div>
           <div class="flex flex-wrap items-center gap-2 mt-1.5">
-            ${salary ? `<span class="tag-pill bg-green-50 text-green-700">💰 ${salary}</span>` : ''}
+            ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs font-semibold">💰 ${salary}</span>` : ''}
             <span class="text-xs text-surface-400 flex-shrink-0">📍 ${escapeHtml(locationLabel)}</span>
           </div>
         </div>
