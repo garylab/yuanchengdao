@@ -6,6 +6,7 @@ account_id = "9a429384e601502567594df3cd611836"
 [vars]
 SITE_URL = "https://yuanchengdao.com"
 STATIC_URL = "https://static.yuanchengdao.com"
+GA_ID = "G-MZGV7SFZ9F"
 
 [[d1_databases]]
 binding = "DB"
