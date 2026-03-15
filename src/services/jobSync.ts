@@ -142,17 +142,17 @@ async function getOrCreateCompany(
   return result.meta.last_row_id as number;
 }
 
-async function generateJobSlug(db: D1Database, title: string, companyName: string, jobId: number): Promise<string> {
+async function generateJobSlug(db: D1Database, title: string, companyName: string, crawledId: number): Promise<string> {
   const base = toSlug(`${title}-${companyName}`).substring(0, 80);
-  let candidate = `${base}-${jobId}`;
+  let candidate = `${base}-${crawledId}`;
   let attempt = 0;
   while (attempt < 5) {
     const exists = await db.prepare('SELECT 1 FROM jobs WHERE slug = ?').bind(candidate).first();
     if (!exists) return candidate;
     attempt++;
-    candidate = `${base}-${jobId}-${attempt}`;
+    candidate = `${base}-${crawledId}-${attempt}`;
   }
-  return `${base}-${jobId}-${Date.now()}`;
+  return `${base}-${crawledId}-${Date.now()}`;
 }
 
 async function processUnprocessedJobs(env: Env): Promise<number> {
@@ -195,9 +195,9 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
       );
 
       const postedAt = parsePostedAt(crawled.detected_extensions, country?.timezone || 'UTC');
-      const tempSlug = `temp-${Date.now()}-${crawled.id}`;
+      const slug = await generateJobSlug(env.DB, crawled.title, crawled.company_name, crawled.id);
 
-      const result = await env.DB.prepare(`
+      await env.DB.prepare(`
         INSERT INTO jobs
           (crawled_id, slug, title, description, company_id, location_id, country_id, posted_at,
            salary_lower, salary_upper, salary_currency, salary_pay_cycle,
@@ -205,7 +205,7 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         crawled.id,
-        tempSlug,
+        slug,
         tr.title_zh,
         tr.description_zh,
         companyId,
@@ -220,10 +220,6 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         tr.job_highlights_zh.length > 0 ? JSON.stringify(tr.job_highlights_zh) : crawled.job_highlights,
         crawled.apply_options,
       ).run();
-
-      const newJobId = result.meta.last_row_id as number;
-      const slug = await generateJobSlug(env.DB, crawled.title, crawled.company_name, newJobId);
-      await env.DB.prepare('UPDATE jobs SET slug = ? WHERE id = ?').bind(slug, newJobId).run();
 
       if (companyId) {
         await env.DB.prepare('UPDATE companies SET job_count = job_count + 1 WHERE id = ?').bind(companyId).run();
