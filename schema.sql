@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS jobs_crawled (
   detected_extensions TEXT,
   job_highlights TEXT,
   apply_options TEXT,
-  search_query TEXT,
   search_country TEXT,
+  search_term_id INTEGER REFERENCES search_terms(id),
   process_status INTEGER DEFAULT 0,
   failed_reason TEXT,
   created_at TEXT DEFAULT (datetime('now'))

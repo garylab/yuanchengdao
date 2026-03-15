@@ -63,8 +63,8 @@ export interface CrawledJob {
   detected_extensions: string | null;
   job_highlights: string | null;
   apply_options: string | null;
-  search_query: string | null;
   search_country: string | null;
+  search_term_id: number | null;
   process_status: number;
   failed_reason: string | null;
   created_at: string;

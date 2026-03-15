@@ -45,8 +45,8 @@ function parsePostedAt(detectedExtensions: string | null, timezone: string): str
 async function saveCrawledJob(
   db: D1Database,
   job: SerpApiJob,
-  searchQuery: string,
   searchCountry: string,
+  searchTermId: number | null,
 ): Promise<number | null> {
   const decoded = decodeJobId(job.job_id);
   if (!decoded) {
@@ -59,7 +59,7 @@ async function saveCrawledJob(
       INSERT OR IGNORE INTO jobs_crawled
         (job_id, htidocid, title, company_name, location, via, description, thumbnail,
          extensions, detected_extensions, job_highlights, apply_options,
-         search_query, search_country)
+         search_country, search_term_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       job.job_id,
@@ -74,8 +74,8 @@ async function saveCrawledJob(
       job.detected_extensions ? JSON.stringify(job.detected_extensions) : null,
       job.job_highlights ? JSON.stringify(job.job_highlights) : null,
       job.apply_options ? JSON.stringify(job.apply_options) : null,
-      searchQuery,
       searchCountry,
+      searchTermId,
     ).run();
 
     if (result.success && result.meta.changes > 0) {
@@ -198,12 +198,7 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
       const postedAt = parsePostedAt(crawled.detected_extensions, country?.timezone || 'UTC');
       const slug = await generateJobSlug(env.DB, crawled.title, crawled.company_name, crawled.id);
 
-      let searchTermId: number | null = null;
-      if (crawled.search_query) {
-        const baseTerm = crawled.search_query.replace(/\s+remote$/i, '');
-        const st = await env.DB.prepare('SELECT id FROM search_terms WHERE term = ?').bind(baseTerm).first<{ id: number }>();
-        if (st) searchTermId = st.id;
-      }
+      const searchTermId = crawled.search_term_id;
 
       await env.DB.prepare(`
         INSERT INTO jobs
@@ -273,10 +268,12 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
 
   const [countryRows, termRows] = await Promise.all([
     env.DB.prepare('SELECT code FROM countries WHERE is_active = 1 ORDER BY code').all(),
-    env.DB.prepare('SELECT term FROM search_terms WHERE is_active = 1 ORDER BY term').all(),
+    env.DB.prepare('SELECT id, term FROM search_terms WHERE is_active = 1 ORDER BY term').all(),
   ]);
   const countryCodes = (countryRows.results || []).map((r: Record<string, unknown>) => r.code as string);
-  const searchTerms = (termRows.results || []).map((r: Record<string, unknown>) => r.term as string);
+  const termList = (termRows.results || []) as unknown as Array<{ id: number; term: string }>;
+  const searchTerms = termList.map(t => t.term);
+  const termIdMap = new Map(termList.map(t => [t.term.toLowerCase(), t.id]));
 
   const plan = buildSearchPlan(searchTerms, countryCodes);
   if (plan.length === 0) {
@@ -292,8 +289,8 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
 
   for (let i = 0; i < plan.length; i++) {
     const { position, country } = plan[i];
-    const query = `${position} remote`;
-    console.log(`[${i + 1}/${plan.length}] "${query}" in ${country}`);
+    const stId = termIdMap.get(position.toLowerCase()) ?? null;
+    console.log(`[${i + 1}/${plan.length}] "${position} remote" in ${country}`);
 
     try {
       const jobs = await fetchOneQuery(serpApiKey, position, country, seenIds);
@@ -301,7 +298,7 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
 
       let crawledCount = 0;
       for (const job of jobs) {
-        const id = await saveCrawledJob(env.DB, job, query, country);
+        const id = await saveCrawledJob(env.DB, job, country, stId);
         if (id !== null) crawledCount++;
       }
       totalFetched += crawledCount;
@@ -329,7 +326,7 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
         console.error('SerpAPI rate limit hit, stopping fetch. Processing remaining...');
         break;
       }
-      console.error(`Error on query "${query}" (${country}):`, err);
+      console.error(`Error on query "${position} remote" (${country}):`, err);
     }
   }
 
