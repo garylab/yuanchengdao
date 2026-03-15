@@ -95,19 +95,99 @@ interface CountryFilter {
   job_count: number;
 }
 
-export function homePage(jobs: Job[], countries: CountryFilter[], page: number, totalJobs: number, query?: string, countrySlug?: string, gaId?: string, siteUrl?: string, staticUrl?: string): string {
-  const totalPages = Math.ceil(totalJobs / 30);
-  const activeCountry = countrySlug ? countries.find(c => c.slug === countrySlug) : null;
+interface LocationFilter {
+  id: number;
+  name: string;
+  name_cn: string;
+  slug: string;
+  country_id: number;
+  job_count: number;
+}
 
-  const countryBar = countries.length > 0 ? `
-    <div class="overflow-x-auto px-4 py-3 flex gap-2 text-sm whitespace-nowrap border-b border-surface-200">
-      <a href="/${query ? '?q=' + encodeURIComponent(query) : ''}" class="px-3 py-1.5 rounded-full transition ${!countrySlug ? 'bg-brand-500 text-white' : 'bg-surface-100 text-surface-600 hover:bg-surface-200'}">🌍 全部</a>
-      ${countries.map(c => `
-        <a href="/?country=${c.slug}${query ? '&q=' + encodeURIComponent(query) : ''}" class="px-3 py-1.5 rounded-full transition ${countrySlug === c.slug ? 'bg-brand-500 text-white' : 'bg-surface-100 text-surface-600 hover:bg-surface-200'}">
-          ${escapeHtml(c.name_cn)} <span class="text-xs opacity-60">${c.job_count}</span>
-        </a>
-      `).join('')}
-    </div>` : '';
+interface HomePageOptions {
+  query?: string;
+  countrySlug?: string;
+  locationSlug?: string;
+  salaryRange?: string;
+  gaId?: string;
+  siteUrl?: string;
+  staticUrl?: string;
+}
+
+const SALARY_OPTIONS = [
+  { value: '', label: '不限' },
+  { value: '0-0', label: '无薪资' },
+  { value: '1-499', label: '1-499' },
+  { value: '500-999', label: '500-1K' },
+  { value: '1000-2999', label: '1K-3K' },
+  { value: '3000-6999', label: '3K-7K' },
+  { value: '7000-9999', label: '7K-1万' },
+  { value: '10000-19999', label: '1万-2万' },
+  { value: '20000-29999', label: '2万-3万' },
+  { value: '30000-39999', label: '3万-4万' },
+  { value: '40000-49999', label: '4万-5万' },
+  { value: '50000-', label: '5万+' },
+];
+
+export function homePage(jobs: Job[], countries: CountryFilter[], locations: LocationFilter[], page: number, totalJobs: number, opts: HomePageOptions = {}): string {
+  const { query, countrySlug, locationSlug, salaryRange = '', gaId, siteUrl, staticUrl } = opts;
+  const totalPages = Math.ceil(totalJobs / 30);
+  const activeLocation = locationSlug ? locations.find(l => l.slug === locationSlug) : null;
+
+  const locationOptions = locations.map(l =>
+    `<li data-value="${escapeHtml(l.slug)}" data-label="${escapeHtml(l.name_cn)}" class="filter-option px-3 py-2 cursor-pointer hover:bg-brand-50 text-sm ${locationSlug === l.slug ? 'bg-brand-50 text-brand-600 font-medium' : 'text-surface-700'}">
+      ${escapeHtml(l.name_cn)}
+    </li>`
+  ).join('');
+
+  const activeSalary = SALARY_OPTIONS.find(s => s.value === salaryRange);
+
+  const salaryOptions = SALARY_OPTIONS.map(s =>
+    `<li data-value="${s.value}" data-label="${s.label}" class="filter-option px-3 py-2 cursor-pointer hover:bg-brand-50 text-sm ${salaryRange === s.value ? 'bg-brand-50 text-brand-600 font-medium' : 'text-surface-700'}">${s.label}</li>`
+  ).join('');
+
+  const hasFilters = locationSlug || salaryRange;
+  const filterBar = `
+    <div class="px-4 py-3 border-b border-surface-200 flex flex-wrap items-center gap-2">
+      <form action="/" method="GET" class="relative w-48">
+        <input type="text" name="q" value="${query ? escapeHtml(query) : ''}"
+          placeholder="搜索职位、公司..."
+          class="w-full px-3 py-1.5 rounded-lg border border-surface-200 text-sm outline-none focus:ring-1 focus:ring-brand-300 focus:border-brand-300 placeholder:text-surface-400">
+        <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-surface-400 hover:text-brand-500 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </button>
+      </form>
+
+      <div class="filter-dropdown relative" data-param="location">
+        <button type="button" class="filter-btn flex items-center justify-between w-40 px-3 py-1.5 rounded-lg border text-sm transition ${locationSlug ? 'border-brand-300 bg-brand-50 text-brand-600' : 'border-surface-200 bg-white text-surface-600 hover:border-surface-300'}">
+          <span class="filter-label">${activeLocation ? escapeHtml(activeLocation.name_cn) : '📍 位置'}</span>
+          <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="filter-panel hidden absolute top-full left-0 mt-1 bg-white border border-surface-200 rounded-lg shadow-lg z-50 w-72 max-h-72 overflow-hidden">
+          <div class="p-2 border-b border-surface-100">
+            <input type="text" class="filter-search w-full px-2 py-1.5 text-sm border border-surface-200 rounded outline-none focus:ring-1 focus:ring-brand-300" placeholder="搜索位置...">
+          </div>
+          <ul class="overflow-y-auto max-h-52">
+            <li data-value="" data-label="📍 位置" class="filter-option px-3 py-2 cursor-pointer hover:bg-brand-50 text-sm ${!locationSlug ? 'bg-brand-50 text-brand-600 font-medium' : 'text-surface-700'}">全部位置</li>
+            ${locationOptions}
+          </ul>
+        </div>
+      </div>
+
+      <div class="filter-dropdown relative" data-param="salary">
+        <button type="button" class="filter-btn flex items-center justify-between w-36 px-3 py-1.5 rounded-lg border text-sm transition ${salaryRange ? 'border-brand-300 bg-brand-50 text-brand-600' : 'border-surface-200 bg-white text-surface-600 hover:border-surface-300'}">
+          <span class="filter-label">${activeSalary && salaryRange ? activeSalary.label : '💰 薪资'}</span>
+          <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="filter-panel hidden absolute top-full left-0 mt-1 bg-white border border-surface-200 rounded-lg shadow-lg z-50 w-56 max-h-72 overflow-hidden">
+          <ul class="overflow-y-auto max-h-60">
+            ${salaryOptions}
+          </ul>
+        </div>
+      </div>
+
+      ${hasFilters || query ? `<a href="/" class="text-xs text-surface-400 hover:text-brand-500 transition ml-1">清除筛选</a>` : ''}
+    </div>`;
 
   const jobStats = query ? `
     <div class="px-4 py-3 border-b border-surface-200">
@@ -115,25 +195,32 @@ export function homePage(jobs: Job[], countries: CountryFilter[], page: number, 
     </div>` : '';
 
   const jobList = jobs.length > 0
-    ? `<div class="max-w-5xl mx-auto mt-4 bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden">
-        ${countryBar}
-        ${jobStats}
-        ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3, staticUrl)).join('')}
+    ? `<div class="max-w-5xl mx-auto mt-4">
+        <div class="bg-white rounded-t-xl border border-b-0 border-surface-200 relative">${filterBar}</div>
+        <div class="bg-white rounded-b-xl shadow-sm border border-surface-200 overflow-hidden">
+          ${jobStats}
+          ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3, staticUrl)).join('')}
+        </div>
        </div>`
-    : `<div class="max-w-5xl mx-auto mt-4 bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden">
-        ${countryBar}
-        ${jobStats}
-        <div class="text-center py-20 text-surface-400">
-          <p class="text-4xl mb-4">🔍</p>
-          <p class="text-lg">暂无匹配的职位</p>
-          <p class="text-sm mt-2">试试其他关键词或地区</p>
+    : `<div class="max-w-5xl mx-auto mt-4">
+        <div class="bg-white rounded-t-xl border border-b-0 border-surface-200 relative">${filterBar}</div>
+        <div class="bg-white rounded-b-xl shadow-sm border border-surface-200 overflow-hidden">
+          ${jobStats}
+          <div class="text-center py-20 text-surface-400">
+            <p class="text-4xl mb-4">🔍</p>
+            <p class="text-lg">暂无匹配的职位</p>
+            <p class="text-sm mt-2">试试其他关键词或筛选条件</p>
+          </div>
         </div>
        </div>`;
 
-  const filterSuffix = [
+  const filterParts = [
     query ? `q=${encodeURIComponent(query)}` : '',
     countrySlug ? `country=${countrySlug}` : '',
-  ].filter(Boolean).join('&');
+    locationSlug ? `location=${locationSlug}` : '',
+    salaryRange ? `salary=${encodeURIComponent(salaryRange)}` : '',
+  ].filter(Boolean);
+  const filterSuffix = filterParts.join('&');
   const paginationSuffix = filterSuffix ? '&' + filterSuffix : '';
 
   const pagination = totalPages > 1 ? `
@@ -145,14 +232,15 @@ export function homePage(jobs: Job[], countries: CountryFilter[], page: number, 
 
   const subParts: string[] = [];
   if (query) subParts.push(`${query} 相关远程工作`);
-  if (activeCountry) subParts.push(`${activeCountry.name_cn}远程岗位`);
+  if (activeLocation) subParts.push(`${activeLocation.name_cn}远程岗位`);
+  if (activeSalary && salaryRange) subParts.push(`薪资${activeSalary.label}`);
   if (page > 1) subParts.push(`第${page}页`);
   const pageTitle = subParts.length > 0
     ? `${subParts.join(' - ')} - 远程岛`
     : '远程岛 - 华人全球远程工作机会平台';
 
   const descParts = [
-    activeCountry ? `${activeCountry.name_cn}` : '全球',
+    activeLocation ? `${activeLocation.name_cn}` : '全球',
     '远程工作岗位',
     query ? `，搜索"${query}"` : '',
     `，共${totalJobs}个职位`,
@@ -161,6 +249,8 @@ export function homePage(jobs: Job[], countries: CountryFilter[], page: number, 
 
   const canonicalParams: string[] = [];
   if (countrySlug) canonicalParams.push(`country=${countrySlug}`);
+  if (locationSlug) canonicalParams.push(`location=${locationSlug}`);
+  if (salaryRange) canonicalParams.push(`salary=${encodeURIComponent(salaryRange)}`);
   if (query) canonicalParams.push(`q=${encodeURIComponent(query)}`);
   if (page > 1) canonicalParams.push(`page=${page}`);
   const canonicalPath = canonicalParams.length > 0 ? `/?${canonicalParams.join('&')}` : '/';
@@ -168,7 +258,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], page: number, 
 
   const keywords = [
     '远程工作', '远程岗位', 'remote jobs',
-    activeCountry?.name_cn,
+    activeLocation?.name_cn,
     query,
   ].filter(Boolean).join(',');
 

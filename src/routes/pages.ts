@@ -12,6 +12,8 @@ pages.get('/', async (c) => {
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
   const query = url.searchParams.get('q')?.trim() || '';
   const countrySlug = url.searchParams.get('country') || '';
+  const locationSlug = url.searchParams.get('location') || '';
+  const salaryRange = url.searchParams.get('salary') || '';
   const limit = 30;
   const offset = (page - 1) * limit;
 
@@ -44,10 +46,34 @@ pages.get('/', async (c) => {
     countParams.push(countrySlug);
   }
 
+  if (locationSlug) {
+    jobSql += ' AND lo.slug = ?';
+    countSql += ' AND j.location_id = (SELECT id FROM locations WHERE slug = ?)';
+    params.push(locationSlug);
+    countParams.push(locationSlug);
+  }
+
+  if (salaryRange) {
+    const [minStr, maxStr] = salaryRange.split('-');
+    const salaryMin = parseInt(minStr, 10) || 0;
+    const salaryMax = maxStr ? parseInt(maxStr, 10) : 0;
+    if (salaryMax > 0) {
+      jobSql += ' AND j.salary_upper >= ? AND j.salary_lower <= ?';
+      countSql += ' AND j.salary_upper >= ? AND j.salary_lower <= ?';
+      params.push(salaryMin, salaryMax);
+      countParams.push(salaryMin, salaryMax);
+    } else {
+      jobSql += ' AND j.salary_upper >= ?';
+      countSql += ' AND j.salary_upper >= ?';
+      params.push(salaryMin);
+      countParams.push(salaryMin);
+    }
+  }
+
   jobSql += ' ORDER BY j.posted_at DESC LIMIT ? OFFSET ?';
   params.push(limit, offset);
 
-  const [countResult, jobsResult, countriesResult] = await Promise.all([
+  const [countResult, jobsResult, countriesResult, locationsResult] = await Promise.all([
     c.env.DB.prepare(countSql).bind(...countParams).first<{ total: number }>(),
     c.env.DB.prepare(jobSql).bind(...params).all(),
     c.env.DB.prepare(
@@ -55,6 +81,12 @@ pages.get('/', async (c) => {
        JOIN jobs j ON j.country_id = ct.id AND j.is_active = 1
        WHERE ct.is_active = 1
        GROUP BY ct.id HAVING job_count > 0 ORDER BY job_count DESC`
+    ).all(),
+    c.env.DB.prepare(
+      `SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, COUNT(j.id) as job_count FROM locations lo
+       JOIN jobs j ON j.location_id = lo.id AND j.is_active = 1
+       WHERE lo.is_active = 1
+       GROUP BY lo.id HAVING job_count > 0 ORDER BY job_count DESC`
     ).all(),
   ]);
 
@@ -64,8 +96,12 @@ pages.get('/', async (c) => {
     company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
   }));
   const countries = (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>;
+  const locations = (locationsResult.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_id: number; job_count: number }>;
 
-  const html = homePage(jobs, countries, page, total, query, countrySlug, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL);
+  const html = homePage(jobs, countries, locations, page, total, {
+    query, countrySlug, locationSlug, salaryRange,
+    gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL,
+  });
   return c.html(html);
 });
 

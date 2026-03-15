@@ -65,14 +65,11 @@ export function layout(title: string, content: string, options?: LayoutOptions):
         <img src="${options?.staticUrl || ''}/yuanchengdao.svg" alt="远程岛" class="h-8">
         <span class="text-xs text-surface-400 hidden sm:inline ml-1">华人全球远程工作机会平台</span>
       </a>
-      <form action="/" method="GET" class="relative flex-1 max-w-md">
-        <input type="text" name="q"
-          placeholder="搜索职位、公司或关键词..."
-          class="w-full px-4 py-2 rounded-lg border border-surface-200 text-sm outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 placeholder:text-surface-400">
-        <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-brand-500 text-white px-3 py-1 rounded-md text-xs font-medium hover:bg-brand-600 transition">
-          搜索
-        </button>
-      </form>
+      <nav class="flex items-center gap-1 sm:gap-4 text-sm">
+        <a href="/" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">首页</a>
+        <a href="/companies" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">公司</a>
+        <a href="/about" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">关于</a>
+      </nav>
     </div>
   </header>
 
@@ -120,6 +117,66 @@ export function layout(title: string, content: string, options?: LayoutOptions):
         panel.classList.remove('hidden');
       }
     });
+
+    /* Filter dropdowns */
+    (function() {
+      var openPanel = null;
+
+      document.querySelectorAll('.filter-dropdown').forEach(function(dd) {
+        var btn = dd.querySelector('.filter-btn');
+        var panel = dd.querySelector('.filter-panel');
+        var search = dd.querySelector('.filter-search');
+        var options = dd.querySelectorAll('.filter-option');
+        var param = dd.dataset.param;
+
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (openPanel && openPanel !== panel) {
+            openPanel.classList.add('hidden');
+          }
+          panel.classList.toggle('hidden');
+          openPanel = panel.classList.contains('hidden') ? null : panel;
+          if (search && !panel.classList.contains('hidden')) {
+            search.value = '';
+            options.forEach(function(o) { o.style.display = ''; });
+            search.focus();
+          }
+        });
+
+        if (search) {
+          search.addEventListener('input', function() {
+            var q = this.value.toLowerCase();
+            options.forEach(function(o) {
+              var label = (o.dataset.label || o.textContent || '').toLowerCase();
+              o.style.display = label.indexOf(q) >= 0 ? '' : 'none';
+            });
+          });
+          search.addEventListener('click', function(e) { e.stopPropagation(); });
+        }
+
+        options.forEach(function(o) {
+          o.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var val = this.dataset.value;
+            var url = new URL(window.location.href);
+            url.searchParams.delete('page');
+            if (val) {
+              url.searchParams.set(param, val);
+            } else {
+              url.searchParams.delete(param);
+            }
+            window.location.href = url.toString();
+          });
+        });
+      });
+
+      document.addEventListener('click', function() {
+        if (openPanel) {
+          openPanel.classList.add('hidden');
+          openPanel = null;
+        }
+      });
+    })();
   </script>
 </body>
 </html>`;
