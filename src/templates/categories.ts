@@ -23,8 +23,7 @@ export function categoriesPage(terms: SearchTermItem[], gaId?: string, siteUrl?:
         ${terms.map(t => `
           <a href="/category/${escapeHtml(t.slug)}" class="block bg-white rounded-xl border border-surface-200 p-5 hover:border-brand-300 hover:shadow-sm transition no-underline group">
             <div class="font-semibold text-surface-900 group-hover:text-brand-500 transition">${escapeHtml(t.term_cn)}</div>
-            <div class="text-xs text-surface-400 mt-1">${escapeHtml(t.term)}</div>
-            <div class="text-sm text-surface-500 mt-2">${t.job_count} 个职位</div>
+            <div class="text-sm text-surface-500 mt-1">${t.job_count} 个职位</div>
           </a>
         `).join('')}
       </div>
