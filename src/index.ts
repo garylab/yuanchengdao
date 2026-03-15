@@ -36,31 +36,78 @@ app.get('/robots.txt', (c) => {
   return c.text(`User-agent: *\nAllow: /\nSitemap: ${c.env.SITE_URL}/sitemap.xml`);
 });
 
-app.get('/sitemap.xml', async (c) => {
-  const [jobs, terms] = await Promise.all([
-    c.env.DB.prepare(
-      'SELECT slug, updated_at FROM jobs WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1000'
-    ).all(),
-    c.env.DB.prepare(
-      'SELECT slug FROM search_terms WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL'
-    ).all(),
-  ]);
+app.get('/sitemap.xml', (c) => {
+  const site = c.env.SITE_URL;
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>${site}/sitemap-pages.xml</loc></sitemap>
+  <sitemap><loc>${site}/sitemap-categories.xml</loc></sitemap>
+  <sitemap><loc>${site}/sitemap-companies.xml</loc></sitemap>
+  <sitemap><loc>${site}/sitemap-jobs.xml</loc></sitemap>
+</sitemapindex>`;
+  c.header('Content-Type', 'application/xml');
+  return c.body(xml);
+});
 
-  const jobUrls = (jobs.results || []).map((j: Record<string, unknown>) =>
-    `<url><loc>${c.env.SITE_URL}/job/${j.slug}</loc><lastmod>${(j.updated_at as string || new Date().toISOString()).split('T')[0]}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`
-  ).join('\n');
-
-  const termUrls = (terms.results || []).map((t: Record<string, unknown>) =>
-    `<url><loc>${c.env.SITE_URL}/category/${t.slug}</loc><changefreq>daily</changefreq><priority>0.9</priority></url>`
-  ).join('\n');
-
+app.get('/sitemap-pages.xml', (c) => {
+  const site = c.env.SITE_URL;
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${c.env.SITE_URL}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
-  ${termUrls}
-  ${jobUrls}
+  <url><loc>${site}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>${site}/companies</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>${site}/categories</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>${site}/about</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
 </urlset>`;
+  c.header('Content-Type', 'application/xml');
+  return c.body(xml);
+});
 
+app.get('/sitemap-categories.xml', async (c) => {
+  const site = c.env.SITE_URL;
+  const terms = await c.env.DB.prepare(
+    'SELECT slug FROM search_terms WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL'
+  ).all();
+  const urls = (terms.results || []).map((t: Record<string, unknown>) =>
+    `<url><loc>${site}/category/${t.slug}</loc><changefreq>daily</changefreq><priority>0.9</priority></url>`
+  ).join('\n');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls}
+</urlset>`;
+  c.header('Content-Type', 'application/xml');
+  return c.body(xml);
+});
+
+app.get('/sitemap-companies.xml', async (c) => {
+  const site = c.env.SITE_URL;
+  const companies = await c.env.DB.prepare(
+    'SELECT slug FROM companies WHERE job_count > 0 ORDER BY job_count DESC'
+  ).all();
+  const urls = (companies.results || []).map((co: Record<string, unknown>) =>
+    `<url><loc>${site}/company/${co.slug}</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>`
+  ).join('\n');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls}
+</urlset>`;
+  c.header('Content-Type', 'application/xml');
+  return c.body(xml);
+});
+
+app.get('/sitemap-jobs.xml', async (c) => {
+  const site = c.env.SITE_URL;
+  const jobs = await c.env.DB.prepare(
+    'SELECT slug, updated_at FROM jobs WHERE is_active = 1 ORDER BY created_at DESC LIMIT 5000'
+  ).all();
+  const urls = (jobs.results || []).map((j: Record<string, unknown>) => {
+    const raw = (j.updated_at as string) || new Date().toISOString();
+    const date = raw.substring(0, 10);
+    return `<url><loc>${site}/job/${j.slug}</loc><lastmod>${date}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`;
+  }).join('\n');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls}
+</urlset>`;
   c.header('Content-Type', 'application/xml');
   return c.body(xml);
 });

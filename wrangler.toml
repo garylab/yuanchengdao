@@ -2,6 +2,7 @@ name = "yuanchengdao"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 account_id = "9a429384e601502567594df3cd611836"
+workers_dev = false
 
 [vars]
 SITE_URL = "https://yuanchengdao.com"
