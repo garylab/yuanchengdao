@@ -45,12 +45,6 @@ pages.get('/', async (c) => {
     countSql += ' AND j.title LIKE ?';
     params.push(`%${query}%`);
     countParams.push(`%${query}%`);
-    if (query.length <= 100) {
-      c.env.DB.prepare(
-        `INSERT INTO user_searches (query) VALUES (?)
-         ON CONFLICT(query) DO UPDATE SET search_count = search_count + 1, updated_at = datetime('now')`
-      ).bind(query).run().catch(() => {});
-    }
   }
 
   if (countrySlug) {

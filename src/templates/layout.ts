@@ -119,6 +119,15 @@ export function layout(title: string, content: string, options?: LayoutOptions):
       }
     });
 
+    /* GA: track search */
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var q = params.get('q');
+      if (q && typeof gtag === 'function') {
+        gtag('event', 'search', { search_term: q });
+      }
+    })();
+
     /* GA: track apply clicks */
     document.addEventListener('click', function(e) {
       var btn = e.target.closest('.apply-btn');

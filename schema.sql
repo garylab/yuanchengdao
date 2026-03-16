@@ -125,15 +125,4 @@ CREATE TABLE IF NOT EXISTS crawl_plan (
 
 CREATE INDEX IF NOT EXISTS idx_crawl_plan_status ON crawl_plan(status);
 
--- User search log (deduplicated by query)
-CREATE TABLE IF NOT EXISTS user_searches (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  query TEXT NOT NULL UNIQUE,
-  search_count INTEGER DEFAULT 1,
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
-);
-
-CREATE INDEX IF NOT EXISTS idx_user_searches_count ON user_searches(search_count DESC);
-
 -- No seed data; countries are auto-created by the LLM during job processing
