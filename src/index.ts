@@ -4,6 +4,7 @@ import { Env } from './types';
 import pages from './routes/pages';
 import api from './routes/api';
 import { syncJobs } from './services/jobSync';
+import { appScript, appScriptVersion } from './public/app';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -27,6 +28,12 @@ app.get('/r2/*', async (c) => {
   c.header('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream');
   c.header('Cache-Control', 'public, max-age=86400');
   return c.body(object.body as ReadableStream);
+});
+
+app.get('/js/app.js', (c) => {
+  c.header('Content-Type', 'application/javascript');
+  c.header('Cache-Control', 'public, max-age=86400');
+  return c.body(appScript);
 });
 
 app.route('/', pages);
