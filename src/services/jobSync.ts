@@ -165,9 +165,27 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
   const crawledJobs = (unprocessed.results || []) as unknown as CrawledJob[];
   if (crawledJobs.length === 0) return 0;
 
-  console.log(`  Translating ${crawledJobs.length} unprocessed jobs...`);
+  // Skip crawled jobs that already have a processed job (from a previous partial run)
+  const toTranslate: CrawledJob[] = [];
+  for (const crawled of crawledJobs) {
+    const existing = await env.DB.prepare(
+      'SELECT 1 FROM jobs WHERE crawled_id = ?'
+    ).bind(crawled.id).first();
+    if (existing) {
+      await env.DB.prepare(
+        'UPDATE jobs_crawled SET process_status = 1 WHERE id = ?'
+      ).bind(crawled.id).run();
+      console.log(`  Skipped crawled #${crawled.id} — already in jobs table`);
+    } else {
+      toTranslate.push(crawled);
+    }
+  }
 
-  const inputs: TranslateInput[] = crawledJobs.map(crawled => {
+  if (toTranslate.length === 0) return 0;
+
+  console.log(`  Translating ${toTranslate.length} unprocessed jobs...`);
+
+  const inputs: TranslateInput[] = toTranslate.map(crawled => {
     const decoded = decodeJobId(crawled.job_id) || { htidocid: crawled.htidocid };
     return { crawled, decoded };
   });
@@ -181,7 +199,7 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
 
   let saved = 0;
   for (const tr of translations) {
-    const crawled = crawledJobs[tr.index];
+    const crawled = toTranslate[tr.index];
     if (!crawled) continue;
 
     try {

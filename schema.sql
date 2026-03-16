@@ -90,7 +90,7 @@ CREATE INDEX IF NOT EXISTS idx_locations_slug ON locations(slug);
 CREATE INDEX IF NOT EXISTS idx_locations_country ON locations(country_id);
 CREATE INDEX IF NOT EXISTS idx_locations_active ON locations(is_active);
 CREATE INDEX IF NOT EXISTS idx_jobs_active ON jobs(is_active, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_jobs_crawled_id ON jobs(crawled_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_crawled_id ON jobs(crawled_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_company ON jobs(company_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_location ON jobs(location_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_country ON jobs(country_id);
