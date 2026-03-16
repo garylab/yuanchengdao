@@ -75,7 +75,7 @@ function renderJobRow(job: Job, isNew: boolean = false, staticUrl: string = ''):
                 </a>
               ` : ''}
               <a href="/job/${escapeHtml(job.slug)}" class="text-sm text-brand-500 hover:text-brand-600 transition no-underline">
-                详情 →
+                详情
               </a>
             </div>
             <button class="job-collapse p-2 rounded-full hover:bg-surface-100 transition text-surface-400 hover:text-surface-600" title="收起">

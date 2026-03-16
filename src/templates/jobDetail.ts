@@ -107,8 +107,8 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
     ${bc}
     <div class="max-w-5xl mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6">
       <div class="flex-1 min-w-0 max-w-3xl">
-        <!-- Header -->
-        <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-6 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-6">
+          <!-- Header -->
           <div class="flex items-start gap-4">
             ${job.company_thumbnail
               ? `<img src="${escapeHtml(job.company_thumbnail)}" alt="${escapeHtml(job.company_name || '')}" class="w-16 h-16 rounded-xl object-contain bg-surface-100 flex-shrink-0">`
@@ -133,61 +133,62 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
               <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
                 class="apply-btn inline-block bg-brand-500 text-white px-8 py-3 rounded-xl font-semibold text-base hover:bg-brand-600 transition shadow-sm"
                 data-from="detail-top" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
-                立即申请 →
+                立即申请
               </a>
             </div>
           ` : ''}
-        </div>
 
-        <!-- Highlights -->
-        ${highlights.length > 0 ? `
-          <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-6 mb-6">
-            ${highlights.map(h => `
-              <div class="mb-4 last:mb-0">
-                <h3 class="font-semibold text-surface-800 mb-2">${escapeHtml(h.title)}</h3>
-                <ul class="list-disc list-inside space-y-1 text-sm text-surface-600">
-                  ${h.items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
-                </ul>
-              </div>
-            `).join('')}
-          </div>
-        ` : ''}
-
-        <!-- Description -->
-        <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-6">
-          <h2 class="text-lg font-bold mb-4">职位描述</h2>
-          <div class="text-surface-700 leading-relaxed text-sm">
-            <p class="mb-3">${descriptionHtml}</p>
-          </div>
-        </div>
-
-        <!-- Apply options -->
-        ${applyOptions.length > 0 ? `
-          <div class="mt-6 bg-white rounded-xl shadow-sm border border-surface-200 p-6">
-            <h2 class="text-lg font-bold mb-3">申请渠道</h2>
-            <div class="space-y-2">
-              ${applyOptions.map((opt, i) => `
-                <a href="${escapeHtml(rewriteUtm(opt.link))}" target="_blank" rel="noopener noreferrer"
-                  class="apply-btn flex items-center justify-between p-3 rounded-lg border border-surface-200 hover:border-brand-300 hover:bg-brand-50 transition no-underline text-inherit"
-                  data-from="detail-${escapeHtml(opt.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))}-link" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
-                  <span class="text-sm font-medium">${escapeHtml(opt.title)}</span>
-                  <span class="text-xs text-brand-500">前往申请 →</span>
-                </a>
+          <!-- Highlights -->
+          ${highlights.length > 0 ? `
+            <div class="mt-6 pt-6 border-t border-surface-100">
+              ${highlights.map(h => `
+                <div class="mb-4 last:mb-0">
+                  <h3 class="font-semibold text-surface-800 mb-2">${escapeHtml(h.title)}</h3>
+                  <ul class="list-disc list-inside space-y-1 text-sm text-surface-600">
+                    ${h.items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+                  </ul>
+                </div>
               `).join('')}
             </div>
-          </div>
-        ` : ''}
+          ` : ''}
 
-        ${primaryApply ? `
-          <div class="mt-6 text-center">
-            <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
-              class="apply-btn inline-block bg-brand-500 text-white px-10 py-3.5 rounded-xl font-semibold text-lg hover:bg-brand-600 transition shadow-md"
-              data-from="detail-bottom" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
-              立即申请 →
-            </a>
-            <p class="text-xs text-surface-400 mt-2">将跳转至招聘方页面</p>
+          <!-- Description -->
+          <div class="mt-6 pt-6 border-t border-surface-100">
+            <h2 class="text-lg font-bold mb-4">职位描述</h2>
+            <div class="text-surface-700 leading-relaxed text-sm">
+              <p class="mb-3">${descriptionHtml}</p>
+            </div>
           </div>
-        ` : ''}
+
+          <!-- Apply options -->
+          ${applyOptions.length > 0 ? `
+            <div class="mt-6 pt-6 border-t border-surface-100">
+              <h2 class="text-lg font-bold mb-3">申请渠道</h2>
+              <div class="space-y-2">
+                ${applyOptions.map((opt, i) => `
+                  <a href="${escapeHtml(rewriteUtm(opt.link))}" target="_blank" rel="noopener noreferrer"
+                    class="apply-btn flex items-center p-3 rounded-lg hover:bg-brand-50 transition no-underline text-inherit"
+                    data-from="detail-${escapeHtml(opt.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))}-link" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
+                    <span class="text-sm font-medium">${escapeHtml(opt.title)}</span>
+                    <span class="flex-1 border-b border-dashed border-surface-200 mx-3"></span>
+                    <span class="text-xs text-brand-500 flex-shrink-0">前往申请</span>
+                  </a>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          ${primaryApply ? `
+            <div class="mt-6 pt-6 border-t border-surface-100 text-center">
+              <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
+                class="apply-btn inline-block bg-brand-500 text-white px-10 py-3.5 rounded-xl font-semibold text-lg hover:bg-brand-600 transition shadow-md"
+                data-from="detail-bottom" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
+                立即申请
+              </a>
+              <p class="text-xs text-surface-400 mt-2">将跳转至招聘方页面</p>
+            </div>
+          ` : ''}
+        </div>
       </div>
 
       ${similarSection}
