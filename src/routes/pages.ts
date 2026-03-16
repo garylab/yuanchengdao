@@ -8,6 +8,7 @@ import { companyDetailPage } from '../templates/companyDetail';
 import { categoriesPage } from '../templates/categories';
 import { searchTermPage } from '../templates/searchTerm';
 import { resolveThumbnail } from '../utils/helpers';
+import { recordSearch } from '../services/searchBuffer';
 
 const pages = new Hono<{ Bindings: Env }>();
 
@@ -45,6 +46,7 @@ pages.get('/', async (c) => {
     countSql += ' AND j.title LIKE ?';
     params.push(`%${query}%`);
     countParams.push(`%${query}%`);
+    recordSearch(query);
   }
 
   if (countrySlug) {

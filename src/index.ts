@@ -4,6 +4,7 @@ import { Env } from './types';
 import pages from './routes/pages';
 import api from './routes/api';
 import { syncJobs } from './services/jobSync';
+import { flushSearchBuffer } from './services/searchBuffer';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -136,9 +137,14 @@ export default {
 
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
     ctx.waitUntil(
-      syncJobs(env).catch((err) => {
-        console.error('Scheduled sync failed:', err);
-      })
+      Promise.all([
+        flushSearchBuffer(env.DB).catch((err) => {
+          console.error('Search buffer flush failed:', err);
+        }),
+        syncJobs(env).catch((err) => {
+          console.error('Scheduled sync failed:', err);
+        }),
+      ])
     );
   },
 };
