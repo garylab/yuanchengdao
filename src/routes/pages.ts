@@ -8,7 +8,6 @@ import { companyDetailPage } from '../templates/companyDetail';
 import { categoriesPage } from '../templates/categories';
 import { searchTermPage } from '../templates/searchTerm';
 import { resolveThumbnail } from '../utils/helpers';
-import { recordSearch } from '../services/searchBuffer';
 
 const pages = new Hono<{ Bindings: Env }>();
 
@@ -46,7 +45,12 @@ pages.get('/', async (c) => {
     countSql += ' AND j.title LIKE ?';
     params.push(`%${query}%`);
     countParams.push(`%${query}%`);
-    recordSearch(query);
+    if (query.length <= 100) {
+      c.env.DB.prepare(
+        `INSERT INTO user_searches (query) VALUES (?)
+         ON CONFLICT(query) DO UPDATE SET search_count = search_count + 1, updated_at = datetime('now')`
+      ).bind(query).run().catch(() => {});
+    }
   }
 
   if (countrySlug) {
