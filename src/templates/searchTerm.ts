@@ -117,7 +117,7 @@ export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, 
     </div>`;
 
   const pageTitle = `远程${term.term_cn} - 远程岛`;
-  const pageDesc = `远程${term.term_cn}工作机会，共${totalJobs}个职位。远程岛 - 华人全球远程工作机会平台。`;
+  const pageDesc = `正在找远程${term.term_cn}的工作？这里有 ${totalJobs} 个在招岗位，每天更新，查看职位详情并直接申请。`;
 
   return layout(pageTitle, content, {
     gaId,

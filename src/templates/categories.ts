@@ -35,7 +35,7 @@ export function categoriesPage(terms: SearchTermItem[], gaId?: string, siteUrl?:
     </div>`;
 
   const pageTitle = '职位分类 - 远程岛';
-  const pageDesc = '按职位类别浏览远程工作机会。远程岛 - 华人全球远程工作机会平台。';
+  const pageDesc = '不确定找什么工作？按类别浏览所有远程岗位方向，从工程师到设计师、从产品到运营，找到最适合你的远程职业。';
 
   return layout(pageTitle, content, {
     gaId,

@@ -158,8 +158,8 @@ export function jobDetailPage(job: Job, gaId?: string, siteUrl?: string, staticU
     </div>`;
 
   const locationLabel = [job.location_name_cn, job.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || '远程';
-  const salarySnippet = salary ? ` | ${salary}` : '';
-  const pageDesc = `${job.title} - ${job.company_name || ''}${salarySnippet} | ${locationLabel} | 远程岛`;
+  const salarySnippet = salary ? `，薪资 ${salary}` : '';
+  const pageDesc = `${job.company_name || ''} 招聘 ${job.title}（远程）${locationLabel !== '远程' ? `，地点 ${locationLabel}` : ''}${salarySnippet}。查看完整职位描述、福利待遇，直接申请。`;
   const canonical = siteUrl ? `${siteUrl}/job/${job.slug}` : undefined;
   const jsonLd = buildJobJsonLd(job, siteUrl);
 

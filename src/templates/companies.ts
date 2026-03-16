@@ -61,8 +61,8 @@ export function companiesPage(companies: CompanyItem[], page: number, totalPages
 
   return layout('公司列表 - 远程岛', content, {
     gaId,
-    description: '远程岛收录的招聘远程岗位的公司列表，浏览全球远程招聘公司。',
-    keywords: '远程工作公司,远程招聘,海外远程公司,远程岛',
+    description: '哪些公司提供远程工作？浏览正在招聘远程岗位的全球企业，了解各家公司在招职位数量，找到你心仪的雇主。',
+    keywords: '远程工作公司,远程招聘企业,海外远程公司,远程岛',
     canonical: siteUrl ? `${siteUrl}/companies${page > 1 ? `?page=${page}` : ''}` : undefined,
     staticUrl,
   });

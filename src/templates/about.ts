@@ -40,7 +40,7 @@ export function aboutPage(gaId?: string, staticUrl?: string): string {
 
   return layout('关于我们 - 远程岛', content, {
     gaId,
-    description: '远程岛是专为华人打造的全球远程工作信息平台，精选海外远程岗位。',
+    description: '远程岛是什么？一个帮助华人发现全球远程工作机会的平台，无论你身在何处，都能找到不限地点的理想工作。',
     keywords: '远程岛,关于我们,远程工作平台,华人远程工作,海外远程岗位',
     staticUrl,
   });

@@ -255,13 +255,11 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
     ? `${subParts.join(' - ')} - 远程岛`
     : '远程岛 - 华人全球远程工作机会平台';
 
-  const descParts = [
-    activeLocation ? `${activeLocation.name_cn}` : '全球',
-    '远程工作岗位',
-    query ? `，搜索"${query}"` : '',
-    `，共${totalJobs}个职位`,
-  ];
-  const pageDesc = `远程岛 - ${descParts.join('')}。精选海外远程岗位。`;
+  const pageDesc = query
+    ? `"${query}"相关的远程工作机会，共找到 ${totalJobs} 个匹配职位。在远程岛轻松发现适合你的全球远程岗位。`
+    : activeLocation
+      ? `${activeLocation.name_cn}地区的 ${totalJobs} 个远程工作机会，每天更新，在远程岛找到不限地点的理想工作。`
+      : `每天更新的全球远程工作机会，目前共 ${totalJobs} 个在招岗位。远程岛帮你找到不限地点、自由办公的理想工作。`;
 
   const canonicalParams: string[] = [];
   if (countrySlug) canonicalParams.push(`country=${countrySlug}`);

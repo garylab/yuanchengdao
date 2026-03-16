@@ -126,7 +126,7 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
     </div>`;
 
   const pageTitle = `${company.name} 远程工作 - 远程岛`;
-  const pageDesc = `${company.name} 的远程工作机会，共 ${totalJobs} 个在招职位。远程岛 - 华人全球远程工作机会平台。`;
+  const pageDesc = `${company.name} 目前有 ${totalJobs} 个远程岗位正在招聘${location ? `，总部位于${location}` : ''}。查看所有在招职位并直接申请。`;
 
   return layout(pageTitle, content, {
     gaId,

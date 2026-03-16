@@ -11,7 +11,7 @@ export interface LayoutOptions {
 }
 
 export function layout(title: string, content: string, options?: LayoutOptions): string {
-  const desc = options?.description || '远程岛 - 华人全球远程工作机会平台，精选海外远程岗位';
+  const desc = options?.description || '远程岛是面向华人的全球远程工作平台，每天更新来自世界各地的远程岗位，帮你找到不限地点、自由办公的理想工作。';
   const fullTitle = title;
   const ga = options?.gaId?.trim() ? `
   <script async src="https://www.googletagmanager.com/gtag/js?id=${options.gaId}"></script>
