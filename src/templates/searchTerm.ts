@@ -69,7 +69,8 @@ function renderJobRow(job: Job): string {
             <div class="flex items-center gap-3">
               ${primaryApply ? `
                 <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
-                  class="inline-block bg-brand-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-600 transition no-underline">
+                  class="apply-btn inline-block bg-brand-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-600 transition no-underline"
+                  data-from="category-list" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
                   申请
                 </a>
               ` : ''}

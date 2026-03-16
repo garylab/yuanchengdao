@@ -98,8 +98,9 @@ export function jobDetailPage(job: Job, gaId?: string, siteUrl?: string, staticU
         ${primaryApply ? `
           <div class="mt-6">
             <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
-              class="inline-block bg-brand-500 text-white px-8 py-3 rounded-xl font-semibold text-base hover:bg-brand-600 transition shadow-sm">
-              申请该职位 →
+              class="apply-btn inline-block bg-brand-500 text-white px-8 py-3 rounded-xl font-semibold text-base hover:bg-brand-600 transition shadow-sm"
+              data-from="detail-top" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
+              立即申请 →
             </a>
           </div>
         ` : ''}
@@ -134,7 +135,8 @@ export function jobDetailPage(job: Job, gaId?: string, siteUrl?: string, staticU
           <div class="space-y-2">
             ${applyOptions.map((opt, i) => `
               <a href="${escapeHtml(rewriteUtm(opt.link))}" target="_blank" rel="noopener noreferrer"
-                class="flex items-center justify-between p-3 rounded-lg border border-surface-200 hover:border-brand-300 hover:bg-brand-50 transition no-underline text-inherit">
+                class="apply-btn flex items-center justify-between p-3 rounded-lg border border-surface-200 hover:border-brand-300 hover:bg-brand-50 transition no-underline text-inherit"
+                data-from="detail-${escapeHtml(opt.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))}-link" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
                 <span class="text-sm font-medium">${escapeHtml(opt.title)}</span>
                 <span class="text-xs text-brand-500">前往申请 →</span>
               </a>
@@ -146,7 +148,8 @@ export function jobDetailPage(job: Job, gaId?: string, siteUrl?: string, staticU
       ${primaryApply ? `
         <div class="mt-6 text-center">
           <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
-            class="inline-block bg-brand-500 text-white px-10 py-3.5 rounded-xl font-semibold text-lg hover:bg-brand-600 transition shadow-md">
+            class="apply-btn inline-block bg-brand-500 text-white px-10 py-3.5 rounded-xl font-semibold text-lg hover:bg-brand-600 transition shadow-md"
+            data-from="detail-bottom" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
             立即申请 →
           </a>
           <p class="text-xs text-surface-400 mt-2">将跳转至招聘方页面</p>

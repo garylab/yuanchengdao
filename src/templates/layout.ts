@@ -119,6 +119,19 @@ export function layout(title: string, content: string, options?: LayoutOptions):
       }
     });
 
+    /* GA: track apply clicks */
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('.apply-btn');
+      if (btn && typeof gtag === 'function') {
+        gtag('event', 'apply_click', {
+          from: btn.dataset.from || '',
+          job_title: btn.dataset.job || '',
+          company: btn.dataset.company || '',
+          url: btn.href || ''
+        });
+      }
+    });
+
     /* Filter dropdowns */
     (function() {
       var openPanel = null;
