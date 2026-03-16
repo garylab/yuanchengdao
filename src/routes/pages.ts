@@ -143,7 +143,28 @@ pages.get('/job/:slug', async (c) => {
   }
 
   job.company_thumbnail = resolveThumbnail(job.company_thumbnail, c.env.STATIC_URL) as string;
-  return c.html(jobDetailPage(job, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+
+  let similarJobs: Job[] = [];
+  if (job.search_term_id) {
+    const result = await c.env.DB.prepare(`
+      SELECT j.slug, j.title, j.posted_at,
+        co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
+        lo.name_cn as location_name_cn, ct.name_cn as country_name_cn
+      FROM jobs j
+      LEFT JOIN companies co ON j.company_id = co.id
+      LEFT JOIN locations lo ON j.location_id = lo.id
+      LEFT JOIN countries ct ON j.country_id = ct.id
+      WHERE j.search_term_id = ? AND j.id != ? AND j.is_active = 1
+      ORDER BY j.posted_at DESC
+      LIMIT 10
+    `).bind(job.search_term_id, job.id).all();
+    similarJobs = ((result.results || []) as unknown as Job[]).map(j => ({
+      ...j,
+      company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
+    })) as Job[];
+  }
+
+  return c.html(jobDetailPage(job, similarJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
 
 pages.get('/companies', async (c) => {
