@@ -199,7 +199,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
       ${topSearchTerms.length > 0 ? `
         <div class="ml-auto flex items-center gap-1.5 flex-shrink-0">
           ${topSearchTerms.map(t =>
-            `<a href="/category/${escapeHtml(t.slug)}" class="text-xs px-2.5 py-1 rounded-full border border-surface-200 text-surface-500 hover:border-brand-300 hover:text-brand-500 transition no-underline whitespace-nowrap">${escapeHtml(t.term_cn)}</a>`
+            `<a href="/category/${escapeHtml(t.slug)}" class="text-xs px-2.5 py-1 rounded-lg border border-surface-200 bg-white text-surface-600 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-500 transition no-underline whitespace-nowrap">🔥 ${escapeHtml(t.term_cn)}</a>`
           ).join('')}
         </div>
       ` : ''}
