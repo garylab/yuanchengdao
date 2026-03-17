@@ -277,6 +277,17 @@ async function fetchKeyFromUrl(url: string): Promise<string> {
   return (await res.text()).trim();
 }
 
+async function invalidateKey(keyUrl: string, apiKey: string): Promise<void> {
+  try {
+    const url = new URL(keyUrl);
+    url.searchParams.set('api-key', apiKey);
+    await fetch(url.toString(), { method: 'DELETE' });
+    console.log('Invalidated API key via DELETE');
+  } catch (err) {
+    console.error('Failed to invalidate API key:', err);
+  }
+}
+
 function shuffle<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -376,34 +387,15 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
     ).bind(task.id).run();
 
   } catch (err) {
-    if (err instanceof Error && err.message === 'INVALID_KEY' && keyIsUrl) {
-      console.warn('SerpAPI key invalid, refreshing from URL...');
-      try {
-        serpApiKey = await fetchKeyFromUrl(env.SERPAPI_KEY);
-        const jobs = await fetchOneQuery(serpApiKey, task.term, task.country_code, seenIds);
-        let crawledCount = 0;
-        for (const job of jobs) {
-          const id = await saveCrawledJob(env.DB, job, task.country_code, task.search_term_id);
-          if (id !== null) crawledCount++;
-        }
-        totalFetched = crawledCount;
-        await env.DB.prepare(
-          "UPDATE crawl_plan SET status = 1, processed_at = datetime('now') WHERE id = ?"
-        ).bind(task.id).run();
-      } catch (retryErr) {
-        console.error('Retry after key refresh failed:', retryErr);
-        await env.DB.prepare(
-          'UPDATE crawl_plan SET status = 2 WHERE id = ?'
-        ).bind(task.id).run();
-      }
-    } else if (err instanceof Error && err.message === 'RATE_LIMIT') {
-      console.error('SerpAPI rate limit — will retry this task next run');
-      // Leave status = 0 so it retries next time
-    } else {
-      console.error(`Error crawling "${task.term} remote" (${task.country_code}):`, err);
-      await env.DB.prepare(
-        'UPDATE crawl_plan SET status = 2 WHERE id = ?'
-      ).bind(task.id).run();
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`SerpAPI error for "${task.term} remote" (${task.country_code}): ${msg}`);
+
+    await env.DB.prepare(
+      'UPDATE crawl_plan SET status = 2 WHERE id = ?'
+    ).bind(task.id).run();
+
+    if (keyIsUrl) {
+      await invalidateKey(env.SERPAPI_KEY, serpApiKey);
     }
   }
 
