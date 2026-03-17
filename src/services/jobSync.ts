@@ -88,21 +88,13 @@ async function saveCrawledJob(
   }
 }
 
-async function getOrCreateCountry(
-  db: D1Database, code: string, name: string, nameCn: string, timezone: string
+async function findCountry(
+  db: D1Database, code: string
 ): Promise<{ id: number; timezone: string } | null> {
   if (!code || code.length !== 2) return null;
   const lower = code.toLowerCase();
-  const existing = await db.prepare('SELECT id, timezone FROM countries WHERE code = ?')
+  return db.prepare('SELECT id, timezone FROM countries WHERE code = ?')
     .bind(lower).first<{ id: number; timezone: string }>();
-  if (existing) return existing;
-
-  const slug = toSlug(name || lower);
-  const tz = timezone || 'UTC';
-  const result = await db.prepare(
-    'INSERT INTO countries (code, name, name_cn, slug, timezone) VALUES (?, ?, ?, ?, ?)'
-  ).bind(lower, name || lower, nameCn || lower, slug, tz).run();
-  return { id: result.meta.last_row_id as number, timezone: tz };
 }
 
 async function getOrCreateLocation(
@@ -203,8 +195,15 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
     if (!crawled) continue;
 
     try {
-      const country = await getOrCreateCountry(env.DB, tr.country_code, tr.country_name, tr.country_name_cn, tr.country_timezone);
-      const countryId = country?.id ?? null;
+      const country = await findCountry(env.DB, tr.country_code);
+      if (!country) {
+        console.log(`  Skipped crawled #${crawled.id} — country "${tr.country_code}" not in database`);
+        await env.DB.prepare(
+          "UPDATE jobs_crawled SET process_status = 44, failed_reason = ? WHERE id = ?"
+        ).bind(`unknown country: ${tr.country_code}`, crawled.id).run();
+        continue;
+      }
+      const countryId = country.id;
       const locationId = await getOrCreateLocation(env.DB, tr.location_name, tr.location_name_cn, countryId);
       const companyId = await getOrCreateCompany(
         env,
