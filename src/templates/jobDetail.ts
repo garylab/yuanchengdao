@@ -2,17 +2,35 @@ import { Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb } from '../utils/helpers';
 
+function payCycleToUnitText(cycle: string): string {
+  switch (cycle) {
+    case 'hour': return 'HOUR';
+    case 'day': return 'DAY';
+    case 'week': return 'WEEK';
+    case 'month': return 'MONTH';
+    default: return 'YEAR';
+  }
+}
+
 function buildJobJsonLd(job: Job, siteUrl?: string): string {
   const location = [job.location_name_cn, job.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || '远程';
+
+  const datePosted = job.posted_at || job.created_at;
+  const validThrough = new Date(new Date(datePosted).getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   const ld: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
     title: job.title,
     description: job.description,
-    datePosted: job.posted_at || job.created_at,
+    datePosted,
+    validThrough,
     jobLocationType: 'TELECOMMUTE',
     employmentType: 'FULL_TIME',
+    applicantLocationRequirements: {
+      '@type': 'Country',
+      name: (job.country_code || 'CN').toUpperCase(),
+    },
     jobLocation: {
       '@type': 'Place',
       address: { '@type': 'PostalAddress', addressLocality: location },
@@ -35,12 +53,12 @@ function buildJobJsonLd(job: Job, siteUrl?: string): string {
   if (job.salary_lower || job.salary_upper) {
     ld.baseSalary = {
       '@type': 'MonetaryAmount',
-      currency: job.salary_currency || 'CNY',
+      currency: job.salary_currency || 'USD',
       value: {
         '@type': 'QuantitativeValue',
         ...(job.salary_lower ? { minValue: job.salary_lower } : {}),
         ...(job.salary_upper ? { maxValue: job.salary_upper } : {}),
-        unitText: job.salary_pay_cycle === 'year' ? 'YEAR' : job.salary_pay_cycle === 'month' ? 'MONTH' : job.salary_pay_cycle === 'week' ? 'WEEK' : job.salary_pay_cycle === 'day' ? 'DAY' : job.salary_pay_cycle === 'hour' ? 'HOUR' : 'YEAR',
+        unitText: payCycleToUnitText(job.salary_pay_cycle),
       },
     };
   }
