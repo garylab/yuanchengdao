@@ -93,7 +93,7 @@ async function findCountry(
 ): Promise<{ id: number; timezone: string } | null> {
   if (!code || code.length !== 2) return null;
   const lower = code.toLowerCase();
-  return db.prepare('SELECT id, timezone FROM countries WHERE code = ?')
+  return db.prepare('SELECT id, timezone FROM countries WHERE code = ? AND is_active = 1')
     .bind(lower).first<{ id: number; timezone: string }>();
 }
 
@@ -336,8 +336,23 @@ async function ensureCrawlPlan(db: D1Database): Promise<number> {
   return entries.length;
 }
 
+async function deactivateJobsFromInactiveCountries(db: D1Database): Promise<number> {
+  const result = await db.prepare(`
+    UPDATE jobs SET is_active = 0
+    WHERE is_active = 1
+      AND country_id IS NOT NULL
+      AND country_id NOT IN (SELECT id FROM countries WHERE is_active = 1)
+  `).run();
+  return result.meta.changes;
+}
+
 export async function syncJobs(env: Env): Promise<{ fetched: number; saved: number }> {
   console.log('Starting job sync...');
+
+  const deactivated = await deactivateJobsFromInactiveCountries(env.DB);
+  if (deactivated > 0) {
+    console.log(`Deactivated ${deactivated} jobs from inactive countries`);
+  }
 
   const pendingCount = await ensureCrawlPlan(env.DB);
   if (pendingCount === 0) {
