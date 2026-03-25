@@ -64,7 +64,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   <header class="bg-white border-b border-surface-200 sticky top-0 z-50">
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
       <a href="/" class="flex items-center gap-2 no-underline flex-shrink-0">
-        <img src="${options?.staticUrl || ''}/yuanchengdao.svg" alt="远程岛" class="h-8">
+        <img src="${options?.staticUrl || ''}/yuanchengdao-logo.png" alt="远程岛" class="h-8">
         <span class="text-xs text-surface-400 hidden sm:inline ml-1">华人全球远程工作机会平台</span>
       </a>
       <nav class="flex items-center gap-1 sm:gap-4 text-sm">
@@ -81,7 +81,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   <!-- Footer -->
   <footer class="border-t border-surface-200 bg-white mt-16">
     <div class="max-w-5xl mx-auto px-4 py-8 text-center text-sm text-surface-400">
-      <p class="mb-2 inline-flex items-center justify-center gap-1"><a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition inline-flex items-center"><img src="${options?.staticUrl || ''}/yuanchengdao.svg" alt="远程岛" class="h-5"></a> <span>— 为中国人提供全球远程工作机会</span></p>
+      <p class="mb-2 inline-flex items-center justify-center gap-1"><a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition inline-flex items-center"><img src="${options?.staticUrl || ''}/yuanchengdao-logo.png" alt="远程岛" class="h-5"></a> <span>— 为中国人提供全球远程工作机会</span></p>
       <p class="mt-2">© ${new Date().getFullYear()} <a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition">yuanchengdao.com</a></p>
     </div>
   </footer>
