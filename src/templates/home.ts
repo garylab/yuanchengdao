@@ -38,11 +38,12 @@ function renderJobRow(job: Job, isNew: boolean = false, staticUrl: string = ''):
           <div class="flex flex-wrap items-center gap-2 mt-1.5">
             ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs font-semibold">💰 ${salary}</span>` : ''}
             <span class="text-xs text-surface-400 flex-shrink-0">📍 ${escapeHtml(locationLabel)}</span>
+            <span class="text-xs text-surface-400 flex-shrink-0 sm:hidden">${posted}</span>
           </div>
         </div>
 
-        <div class="flex items-center gap-3 flex-shrink-0">
-          <div class="text-xs text-surface-400 hidden sm:block text-right">
+        <div class="hidden sm:flex items-center gap-3 flex-shrink-0">
+          <div class="text-xs text-surface-400 text-right">
             ${posted}
           </div>
         </div>
