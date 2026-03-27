@@ -1,5 +1,5 @@
 import { layout } from './layout';
-import { escapeHtml, breadcrumb } from '../utils/helpers';
+import { escapeHtml, breadcrumb, companyLogo } from '../utils/helpers';
 
 interface CompanyItem {
   id: number;
@@ -13,20 +13,13 @@ interface CompanyItem {
 
 export function companiesPage(companies: CompanyItem[], page: number, totalPages: number, query?: string, gaId?: string, siteUrl?: string, staticUrl?: string): string {
   const companyCards = companies.map(c => {
-    const firstWord = (c.name || '?').split(/\s+/)[0];
-    const logoFontSize = firstWord.length <= 2 ? 'text-lg' : firstWord.length <= 5 ? 'text-xs' : 'text-[10px]';
-    const logo = c.thumbnail
-      ? `<img src="${escapeHtml(c.thumbnail)}" alt="${escapeHtml(c.name)}" class="w-12 h-12 rounded-lg object-contain bg-surface-100" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-      : '';
+    const logo = companyLogo(c.name, c.thumbnail);
     const locationParts = [c.location_name_cn, c.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
     const location = locationParts.join(', ') || '';
 
     return `
       <a href="/company/${escapeHtml(c.slug)}" class="flex items-center gap-3 p-4 bg-white rounded-xl border border-surface-200 hover:border-brand-300 hover:shadow-sm transition no-underline group">
-        <div class="flex-shrink-0 w-12 h-12">
-          ${logo}
-          <div class="${c.thumbnail ? 'hidden' : 'flex'} w-12 h-12 rounded-lg bg-brand-50 items-center justify-center ${logoFontSize} font-bold text-brand-500 leading-tight text-center overflow-hidden p-1.5">${escapeHtml(firstWord)}</div>
-        </div>
+        ${logo}
         <div class="flex-1 min-w-0">
           <div class="font-semibold text-surface-900 text-sm group-hover:text-brand-500 transition truncate">${escapeHtml(c.name)}</div>
           <div class="flex items-center gap-3 mt-1 text-xs text-surface-400">

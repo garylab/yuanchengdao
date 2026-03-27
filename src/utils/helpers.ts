@@ -86,6 +86,30 @@ export function breadcrumb(items: Array<{ label: string; href?: string }>): stri
   return `<nav class="max-w-5xl mx-auto px-4 mt-4 text-xs flex items-center gap-1.5">${parts.join('<span class="text-surface-300">/</span>')}</nav>`;
 }
 
+export function companyLogo(name: string | null | undefined, thumbnail: string | null | undefined, size: 'sm' | 'md' | 'lg' = 'md'): string {
+  const companyName = name || '?';
+  const firstWord = companyName.split(/\s+/)[0];
+  const label = firstWord.length <= 7 ? firstWord : companyName[0];
+  const escaped = escapeHtml(label);
+  const alt = escapeHtml(companyName);
+
+  const cfg: Record<string, { wh: string; rounded: string; pad: string; fontSize: string }> = {
+    sm:  { wh: 'w-8 h-8',   rounded: 'rounded-lg', pad: 'p-0.5', fontSize: label.length <= 2 ? 'text-xs' : 'text-[9px]' },
+    md:  { wh: 'w-12 h-12', rounded: 'rounded-lg', pad: 'p-1.5', fontSize: label.length <= 2 ? 'text-lg' : label.length <= 5 ? 'text-xs' : 'text-[10px]' },
+    lg:  { wh: 'w-16 h-16', rounded: 'rounded-xl', pad: 'p-2',   fontSize: label.length <= 2 ? 'text-xl' : label.length <= 5 ? 'text-sm' : 'text-xs' },
+  };
+  const c = cfg[size];
+
+  const fallbackDisplay = thumbnail ? 'hidden' : 'flex';
+  const fallback = `<div class="${fallbackDisplay} ${c.wh} ${c.rounded} bg-brand-50 items-center justify-center ${c.fontSize} font-bold text-brand-500 leading-tight text-center overflow-hidden ${c.pad}">${escaped}</div>`;
+
+  const img = thumbnail
+    ? `<img src="${escapeHtml(thumbnail)}" alt="${alt}" class="${c.wh} ${c.rounded} object-contain bg-surface-100 flex-shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    : '';
+
+  return `<div class="flex-shrink-0 ${c.wh}">${img}${fallback}</div>`;
+}
+
 export function rewriteUtm(url: string): string {
   try {
     const u = new URL(url);

@@ -1,6 +1,6 @@
 import { Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb } from '../utils/helpers';
+import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo } from '../utils/helpers';
 
 interface SearchTermInfo {
   id: number;
@@ -12,12 +12,7 @@ interface SearchTermInfo {
 function renderJobRow(job: Job): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(job.posted_at || job.created_at);
-  const firstWord = (job.company_name || '?').split(/\s+/)[0];
-  const logoFontSize = firstWord.length <= 2 ? 'text-lg' : firstWord.length <= 5 ? 'text-xs' : 'text-[10px]';
-  const companyInitial = escapeHtml(firstWord);
-  const logo = job.company_thumbnail
-    ? `<img src="${escapeHtml(job.company_thumbnail)}" alt="${escapeHtml(job.company_name || '')}" class="w-12 h-12 rounded-lg object-contain bg-surface-100 flex-shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-    : '';
+  const logo = companyLogo(job.company_name, job.company_thumbnail);
 
   const locationLabel = [job.location_name_cn, job.country_name_cn]
     .filter(Boolean)
@@ -35,10 +30,7 @@ function renderJobRow(job: Job): string {
   return `
     <div class="job-row border-b border-surface-100" data-job-id="${job.id}">
       <div class="job-row-header flex items-center gap-4 px-4 py-4 cursor-pointer select-none">
-        <div class="flex-shrink-0 w-12 h-12">
-          ${logo}
-          <div class="${job.company_thumbnail ? 'hidden' : 'flex'} w-12 h-12 rounded-lg bg-brand-50 items-center justify-center ${logoFontSize} font-bold text-brand-500 leading-tight text-center overflow-hidden p-1.5">${companyInitial}</div>
-        </div>
+        ${logo}
         <div class="flex-1 min-w-0">
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <a href="/job/${escapeHtml(job.slug)}" class="job-title font-semibold text-surface-900 text-sm sm:text-base hover:text-brand-500 transition no-underline">${escapeHtml(job.title)}</a>

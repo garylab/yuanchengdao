@@ -1,6 +1,6 @@
 import { Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb } from '../utils/helpers';
+import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo } from '../utils/helpers';
 
 interface CompanyInfo {
   id: number;
@@ -83,14 +83,9 @@ function renderJobRow(job: Job): string {
 }
 
 export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: number, totalPages: number, totalJobs: number, gaId?: string, siteUrl?: string, staticUrl?: string): string {
-  const firstWord = (company.name || '?').split(/\s+/)[0];
-  const logoFontSize = firstWord.length <= 2 ? 'text-xl' : firstWord.length <= 5 ? 'text-sm' : 'text-xs';
+  const logo = companyLogo(company.name, company.thumbnail, 'lg');
   const locationParts = [company.location_name_cn, company.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
   const location = locationParts.join(', ') || '';
-
-  const logo = company.thumbnail
-    ? `<img src="${escapeHtml(company.thumbnail)}" alt="${escapeHtml(company.name)}" class="w-16 h-16 rounded-xl object-contain bg-surface-100 flex-shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-    : '';
 
   const bc = breadcrumb([
     { label: '首页', href: '/' },
@@ -103,10 +98,7 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
     <div class="max-w-5xl mx-auto px-4 mt-4">
       <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-6 mb-4">
         <div class="flex items-center gap-4">
-          <div class="flex-shrink-0 w-16 h-16">
-            ${logo}
-            <div class="${company.thumbnail ? 'hidden' : 'flex'} w-16 h-16 rounded-xl bg-brand-50 items-center justify-center ${logoFontSize} font-bold text-brand-500 leading-tight text-center overflow-hidden p-2">${escapeHtml(firstWord)}</div>
-          </div>
+          ${logo}
           <div>
             <h1 class="text-xl font-bold text-surface-900">${escapeHtml(company.name)}</h1>
             <div class="flex items-center gap-3 mt-1 text-sm text-surface-400">

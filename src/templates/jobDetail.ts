@@ -1,6 +1,6 @@
 import { Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb } from '../utils/helpers';
+import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo } from '../utils/helpers';
 
 function payCycleToUnitText(cycle: string): string {
   switch (cycle) {
@@ -100,16 +100,9 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
           ${similarJobs.map(sj => {
             const sjLocation = [sj.location_name_cn, sj.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || '远程';
             const sjPosted = timeAgo(sj.posted_at || '');
-            const sjFirstWord = (sj.company_name || '?').split(/\s+/)[0];
-            const sjFontSize = sjFirstWord.length <= 2 ? 'text-xs' : 'text-[9px]';
             return `
               <a href="/job/${escapeHtml(sj.slug)}" class="flex items-center gap-2.5 px-3 py-2.5 hover:bg-brand-50 transition no-underline text-inherit">
-                <div class="flex-shrink-0 w-8 h-8">
-                  ${sj.company_thumbnail
-                    ? `<img src="${escapeHtml(sj.company_thumbnail)}" alt="${escapeHtml(sj.company_name || '')}" class="w-8 h-8 rounded-lg object-contain bg-surface-100">`
-                    : `<div class="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center ${sjFontSize} font-bold text-brand-500 leading-tight text-center overflow-hidden p-0.5">${escapeHtml(sjFirstWord)}</div>`
-                  }
-                </div>
+                ${companyLogo(sj.company_name, sj.company_thumbnail, 'sm')}
                 <div class="flex-1 min-w-0">
                   <div class="text-xs font-medium text-surface-900 line-clamp-2 leading-snug">${escapeHtml(sj.title)}</div>
                   <div class="text-[11px] text-surface-400 mt-0.5 truncate">${escapeHtml(sj.company_name || '')} · ${escapeHtml(sjLocation)} · ${sjPosted}</div>
@@ -128,10 +121,7 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
         <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-6">
           <!-- Header -->
           <div class="flex items-start gap-4">
-            ${job.company_thumbnail
-              ? `<img src="${escapeHtml(job.company_thumbnail)}" alt="${escapeHtml(job.company_name || '')}" class="w-16 h-16 rounded-xl object-contain bg-surface-100 flex-shrink-0">`
-              : (() => { const fw = (job.company_name || '?').split(/\s+/)[0]; const fs = fw.length <= 2 ? 'text-xl' : fw.length <= 5 ? 'text-sm' : 'text-xs'; return `<div class="w-16 h-16 rounded-xl bg-brand-50 flex items-center justify-center ${fs} font-bold text-brand-500 leading-tight text-center overflow-hidden p-2 flex-shrink-0">${escapeHtml(fw)}</div>`; })()
-            }
+            ${companyLogo(job.company_name, job.company_thumbnail, 'lg')}
             <div class="flex-1">
               <h1 class="text-xl sm:text-2xl font-bold text-surface-900 mb-1">${escapeHtml(job.title)}</h1>
               <div class="flex flex-wrap items-center gap-3 text-sm text-surface-500 mt-1">
