@@ -67,12 +67,23 @@ export function layout(title: string, content: string, options?: LayoutOptions):
         <img src="${options?.staticUrl || ''}/yuanchengdao-logo.png" alt="远程岛" class="h-8">
         <span class="text-xs text-surface-400 hidden sm:inline ml-1">华人全球远程工作机会平台</span>
       </a>
-      <nav class="flex items-center gap-1 sm:gap-4 text-sm">
+      <nav class="hidden sm:flex items-center gap-4 text-sm">
         <a href="/" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">首页</a>
         <a href="/companies" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">企业</a>
         <a href="/categories" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">分类</a>
         <a href="/about" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">关于</a>
       </nav>
+      <div class="relative sm:hidden">
+        <button id="mobile-menu-btn" class="p-2 text-surface-600 hover:text-brand-500 transition" aria-label="菜单">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div id="mobile-menu" class="hidden absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-surface-200 py-1 z-50">
+          <a href="/" class="block px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 no-underline">首页</a>
+          <a href="/companies" class="block px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 no-underline">企业</a>
+          <a href="/categories" class="block px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 no-underline">分类</a>
+          <a href="/about" class="block px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 no-underline">关于</a>
+        </div>
+      </div>
     </div>
   </header>
 

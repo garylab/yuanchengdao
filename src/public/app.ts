@@ -65,6 +65,21 @@ document.addEventListener('click', function(e) {
   }
 });
 
+/* Mobile nav menu */
+(function() {
+  var btn = document.getElementById('mobile-menu-btn');
+  var menu = document.getElementById('mobile-menu');
+  if (btn && menu) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      menu.classList.toggle('hidden');
+    });
+    document.addEventListener('click', function() {
+      menu.classList.add('hidden');
+    });
+  }
+})();
+
 /* Filter dropdowns */
 (function() {
   var openPanel = null;
