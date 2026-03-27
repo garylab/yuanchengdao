@@ -13,6 +13,7 @@ api.get('/api/jobs', async (c) => {
   const country = url.searchParams.get('country') || '';
   const q = url.searchParams.get('q') || '';
 
+  const cutoff = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
   let sql = `
     SELECT j.*,
       co.name as company_name, co.thumbnail as company_thumbnail,
@@ -22,8 +23,8 @@ api.get('/api/jobs', async (c) => {
     LEFT JOIN companies co ON j.company_id = co.id
     LEFT JOIN locations lo ON j.location_id = lo.id
     LEFT JOIN countries ct ON j.country_id = ct.id
-    WHERE 1=1`;
-  const params: (string | number)[] = [];
+    WHERE j.posted_at >= ?`;
+  const params: (string | number)[] = [cutoff];
 
   if (q) {
     sql += ' AND (j.title LIKE ? OR co.name LIKE ?)';
@@ -48,11 +49,10 @@ api.get('/api/jobs', async (c) => {
 
 api.get('/api/countries', async (c) => {
   const result = await c.env.DB.prepare(`
-    SELECT ct.*, COUNT(j.id) as job_count FROM countries ct
-    JOIN jobs j ON j.country_id = ct.id
-    WHERE ct.is_active = 1
-    GROUP BY ct.id HAVING job_count > 0
-    ORDER BY job_count DESC
+    SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
+    FROM countries ct
+    WHERE ct.is_active = 1 AND ct.job_count > 0
+    ORDER BY ct.job_count DESC
   `).all();
 
   return c.json({ countries: result.results });
@@ -60,14 +60,12 @@ api.get('/api/countries', async (c) => {
 
 api.get('/api/locations', async (c) => {
   const result = await c.env.DB.prepare(`
-    SELECT lo.*, ct.name_cn as country_name_cn, ct.code as country_code,
-      COUNT(j.id) as job_count
+    SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, lo.job_count,
+      ct.name_cn as country_name_cn, ct.code as country_code
     FROM locations lo
     LEFT JOIN countries ct ON lo.country_id = ct.id
-    LEFT JOIN jobs j ON lo.id = j.location_id
-    WHERE lo.is_active = 1
-    GROUP BY lo.id HAVING job_count > 0
-    ORDER BY job_count DESC
+    WHERE lo.is_active = 1 AND lo.job_count > 0
+    ORDER BY lo.job_count DESC
   `).all();
 
   return c.json({ locations: result.results });
@@ -75,12 +73,12 @@ api.get('/api/locations', async (c) => {
 
 api.get('/api/companies', async (c) => {
   const result = await c.env.DB.prepare(`
-    SELECT co.*, lo.name_cn as location_name_cn, COUNT(j.id) as job_count
+    SELECT co.id, co.name, co.slug, co.thumbnail, co.job_count,
+      lo.name_cn as location_name_cn
     FROM companies co
     LEFT JOIN locations lo ON co.location_id = lo.id
-    LEFT JOIN jobs j ON co.id = j.company_id
-    GROUP BY co.id HAVING job_count > 0
-    ORDER BY job_count DESC
+    WHERE co.job_count > 0
+    ORDER BY co.job_count DESC
   `).all();
 
   return c.json({ companies: result.results });

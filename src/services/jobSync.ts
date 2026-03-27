@@ -250,6 +250,10 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         await env.DB.prepare('UPDATE locations SET job_count = job_count + 1 WHERE id = ?').bind(locationId).run();
       }
 
+      if (countryId) {
+        await env.DB.prepare('UPDATE countries SET job_count = job_count + 1 WHERE id = ?').bind(countryId).run();
+      }
+
       if (searchTermId) {
         await env.DB.prepare('UPDATE search_terms SET job_count = job_count + 1 WHERE id = ?').bind(searchTermId).run();
       }
@@ -344,7 +348,7 @@ async function deleteJobsFromInactiveCountries(db: D1Database): Promise<number> 
   const result = await db.prepare(`
     DELETE FROM jobs
     WHERE country_id IS NOT NULL
-      AND country_id NOT IN (SELECT id FROM countries WHERE is_active = 1)
+      AND NOT EXISTS (SELECT 1 FROM countries WHERE countries.id = jobs.country_id AND countries.is_active = 1)
   `).run();
   return result.meta.changes;
 }

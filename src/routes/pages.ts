@@ -32,7 +32,7 @@ pages.get('/', async (c) => {
   let jobSql = `
     SELECT j.*,
       co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug, lo.slug as location_slug,
+      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
       ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
     FROM jobs j
     LEFT JOIN companies co ON j.company_id = co.id
@@ -87,16 +87,16 @@ pages.get('/', async (c) => {
     c.env.DB.prepare(countSql).bind(...countParams).first<{ total: number }>(),
     c.env.DB.prepare(jobSql).bind(...params).all(),
     c.env.DB.prepare(
-      `SELECT ct.*, COUNT(j.id) as job_count FROM countries ct
-       JOIN jobs j ON j.country_id = ct.id
-       WHERE ct.is_active = 1
-       GROUP BY ct.id HAVING job_count > 0 ORDER BY job_count DESC`
+      `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
+       FROM countries ct
+       WHERE ct.is_active = 1 AND ct.job_count > 0
+       ORDER BY ct.job_count DESC`
     ).all(),
     c.env.DB.prepare(
-      `SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, COUNT(j.id) as job_count FROM locations lo
-       JOIN jobs j ON j.location_id = lo.id
-       WHERE lo.is_active = 1
-       GROUP BY lo.id HAVING job_count > 0 ORDER BY job_count DESC`
+      `SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, lo.job_count
+       FROM locations lo
+       WHERE lo.is_active = 1 AND lo.job_count > 0
+       ORDER BY lo.job_count DESC`
     ).all(),
     c.env.DB.prepare(
       `SELECT term_cn, slug, job_count FROM search_terms

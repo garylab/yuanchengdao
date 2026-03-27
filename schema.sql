@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS countries (
   slug TEXT NOT NULL UNIQUE,
   flag_emoji TEXT DEFAULT '🌍',
   timezone TEXT NOT NULL DEFAULT 'UTC',
+  job_count INTEGER DEFAULT 0,
   is_active INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
@@ -90,15 +91,18 @@ CREATE INDEX IF NOT EXISTS idx_countries_active ON countries(is_active);
 CREATE INDEX IF NOT EXISTS idx_locations_slug ON locations(slug);
 CREATE INDEX IF NOT EXISTS idx_locations_country ON locations(country_id);
 CREATE INDEX IF NOT EXISTS idx_locations_active ON locations(is_active);
-CREATE INDEX IF NOT EXISTS idx_jobs_created ON jobs(created_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_crawled_id ON jobs(crawled_id);
-CREATE INDEX IF NOT EXISTS idx_jobs_company ON jobs(company_id);
-CREATE INDEX IF NOT EXISTS idx_jobs_location ON jobs(location_id);
-CREATE INDEX IF NOT EXISTS idx_jobs_country ON jobs(country_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_slug ON jobs(slug);
-CREATE INDEX IF NOT EXISTS idx_jobs_search_term ON jobs(search_term_id);
-CREATE INDEX IF NOT EXISTS idx_jobs_posted_at ON jobs(posted_at);
+CREATE INDEX IF NOT EXISTS idx_jobs_posted_at ON jobs(posted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_company_posted ON jobs(company_id, posted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_location_posted ON jobs(location_id, posted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_country_posted ON jobs(country_id, posted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_search_term_posted ON jobs(search_term_id, posted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_salary_posted ON jobs(salary_upper, posted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_companies_slug ON companies(slug);
+CREATE INDEX IF NOT EXISTS idx_companies_job_count ON companies(job_count DESC);
+CREATE INDEX IF NOT EXISTS idx_locations_job_count ON locations(job_count DESC);
+CREATE INDEX IF NOT EXISTS idx_countries_job_count ON countries(job_count DESC);
 
 -- Search terms for job crawling
 CREATE TABLE IF NOT EXISTS search_terms (
