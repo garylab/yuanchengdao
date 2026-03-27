@@ -139,8 +139,9 @@ interface HomePageOptions {
 }
 
 const SALARY_OPTIONS = [
-  { value: '', label: '不限' },
+  { value: '', label: '全部' },
   { value: '0-0', label: '无薪资' },
+  { value: '1-', label: '有薪资' },
   { value: '1-499', label: '1-499' },
   { value: '500-999', label: '500-1K' },
   { value: '1000-2999', label: '1K-3K' },
@@ -193,7 +194,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
             <input type="text" class="filter-search w-full px-2 py-1.5 text-sm border border-surface-200 rounded outline-none focus:ring-1 focus:ring-brand-300" placeholder="搜索位置...">
           </div>
           <ul class="overflow-y-auto max-h-52">
-            <li data-value="" data-label="位置" class="filter-option px-3 py-2 cursor-pointer hover:bg-brand-50 text-sm ${!locationSlug ? 'bg-brand-50 text-brand-600 font-medium' : 'text-surface-700'}">全部位置</li>
+            <li data-value="" data-label="位置" class="filter-option px-3 py-2 cursor-pointer hover:bg-brand-50 text-sm ${!locationSlug ? 'bg-brand-50 text-brand-600 font-medium' : 'text-surface-700'}">全部</li>
             ${locationOptions}
           </ul>
         </div>
