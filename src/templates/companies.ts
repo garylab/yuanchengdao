@@ -8,6 +8,7 @@ interface CompanyItem {
   thumbnail: string | null;
   location_name_cn: string | null;
   country_name_cn: string | null;
+  country_flag_emoji: string | null;
   job_count: number;
 }
 
@@ -23,7 +24,7 @@ export function companiesPage(companies: CompanyItem[], page: number, totalPages
         <div class="flex-1 min-w-0">
           <div class="font-semibold text-surface-900 text-sm group-hover:text-brand-500 transition truncate">${escapeHtml(c.name)}</div>
           <div class="flex items-center gap-3 mt-1 text-xs text-surface-400">
-            ${location ? `<span>${escapeHtml(location)}</span>` : ''}
+            ${location ? `<span>${c.country_flag_emoji || '🌍'} ${escapeHtml(location)}</span>` : ''}
             <span>${c.job_count} 个职位</span>
           </div>
         </div>

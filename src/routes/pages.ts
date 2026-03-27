@@ -188,7 +188,8 @@ pages.get('/companies', async (c) => {
   let listSql = `
     SELECT co.id, co.name, co.slug, co.thumbnail, co.job_count,
       lo.name_cn as location_name_cn,
-      ct.name_cn as country_name_cn
+      ct.name_cn as country_name_cn,
+      ct.flag_emoji as country_flag_emoji
     FROM companies co
     LEFT JOIN locations lo ON co.location_id = lo.id
     LEFT JOIN countries ct ON lo.country_id = ct.id
@@ -234,7 +235,8 @@ pages.get('/company/:slug', async (c) => {
   const company = await c.env.DB.prepare(`
     SELECT co.id, co.name, co.slug, co.thumbnail,
       lo.name_cn as location_name_cn,
-      ct.name_cn as country_name_cn
+      ct.name_cn as country_name_cn,
+      ct.flag_emoji as country_flag_emoji
     FROM companies co
     LEFT JOIN locations lo ON co.location_id = lo.id
     LEFT JOIN countries ct ON lo.country_id = ct.id

@@ -9,6 +9,7 @@ interface CompanyInfo {
   thumbnail: string | null;
   location_name_cn: string | null;
   country_name_cn: string | null;
+  country_flag_emoji: string | null;
 }
 
 function renderJobRow(job: Job): string {
@@ -102,7 +103,7 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
           <div>
             <h1 class="text-xl font-bold text-surface-900">${escapeHtml(company.name)}</h1>
             <div class="flex items-center gap-3 mt-1 text-sm text-surface-400">
-              ${location ? `<span>🌍 ${escapeHtml(location)}</span>` : ''}
+              ${location ? `<span>${company.country_flag_emoji || '🌍'} ${escapeHtml(location)}</span>` : ''}
               <span>${totalJobs} 个在招职位</span>
             </div>
           </div>
