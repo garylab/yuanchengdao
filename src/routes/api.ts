@@ -16,13 +16,13 @@ api.get('/api/jobs', async (c) => {
   let sql = `
     SELECT j.*,
       co.name as company_name, co.thumbnail as company_thumbnail,
-      lo.name as location_name, lo.name_cn as location_name_cn,
-      ct.code as country_code, ct.name_cn as country_name_cn
+      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
+      ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
     FROM jobs j
     LEFT JOIN companies co ON j.company_id = co.id
     LEFT JOIN locations lo ON j.location_id = lo.id
     LEFT JOIN countries ct ON j.country_id = ct.id
-    WHERE j.is_active = 1`;
+    WHERE 1=1`;
   const params: (string | number)[] = [];
 
   if (q) {
@@ -49,7 +49,7 @@ api.get('/api/jobs', async (c) => {
 api.get('/api/countries', async (c) => {
   const result = await c.env.DB.prepare(`
     SELECT ct.*, COUNT(j.id) as job_count FROM countries ct
-    JOIN jobs j ON j.country_id = ct.id AND j.is_active = 1
+    JOIN jobs j ON j.country_id = ct.id
     WHERE ct.is_active = 1
     GROUP BY ct.id HAVING job_count > 0
     ORDER BY job_count DESC
@@ -64,7 +64,7 @@ api.get('/api/locations', async (c) => {
       COUNT(j.id) as job_count
     FROM locations lo
     LEFT JOIN countries ct ON lo.country_id = ct.id
-    LEFT JOIN jobs j ON lo.id = j.location_id AND j.is_active = 1
+    LEFT JOIN jobs j ON lo.id = j.location_id
     WHERE lo.is_active = 1
     GROUP BY lo.id HAVING job_count > 0
     ORDER BY job_count DESC
@@ -78,7 +78,7 @@ api.get('/api/companies', async (c) => {
     SELECT co.*, lo.name_cn as location_name_cn, COUNT(j.id) as job_count
     FROM companies co
     LEFT JOIN locations lo ON co.location_id = lo.id
-    LEFT JOIN jobs j ON co.id = j.company_id AND j.is_active = 1
+    LEFT JOIN jobs j ON co.id = j.company_id
     GROUP BY co.id HAVING job_count > 0
     ORDER BY job_count DESC
   `).all();

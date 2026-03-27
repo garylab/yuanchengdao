@@ -19,6 +19,10 @@ function renderJobRow(job: Job): string {
     .filter(Boolean)
     .filter((v, i, a) => a.indexOf(v) === i)
     .join(', ') || '远程';
+  const flag = job.country_flag_emoji || '🌍';
+  const locationLink = job.location_slug
+    ? `<a href="/location/${escapeHtml(job.location_slug)}" class="text-xs text-surface-400 hover:text-brand-500 transition no-underline flex-shrink-0">${flag} ${escapeHtml(locationLabel)}</a>`
+    : `<span class="text-xs text-surface-400 flex-shrink-0">${flag} ${escapeHtml(locationLabel)}</span>`;
 
   const highlights = job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
   const applyOptions = job.apply_options ? JSON.parse(job.apply_options) as Array<{ title: string; link: string }> : [];
@@ -33,7 +37,7 @@ function renderJobRow(job: Job): string {
           </div>
           <div class="flex flex-wrap items-center gap-2 mt-1.5">
             ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs font-semibold">💰 ${salary}</span>` : ''}
-            <span class="text-xs text-surface-400 flex-shrink-0">📍 ${escapeHtml(locationLabel)}</span>
+            ${locationLink}
           </div>
         </div>
         <div class="flex items-center gap-3 flex-shrink-0">
@@ -106,7 +110,7 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
           <div>
             <h1 class="text-xl font-bold text-surface-900">${escapeHtml(company.name)}</h1>
             <div class="flex items-center gap-3 mt-1 text-sm text-surface-400">
-              ${location ? `<span>📍 ${escapeHtml(location)}</span>` : ''}
+              ${location ? `<span>🌍 ${escapeHtml(location)}</span>` : ''}
               <span>${totalJobs} 个在招职位</span>
             </div>
           </div>
@@ -135,5 +139,6 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
     canonical: siteUrl ? `${siteUrl}/company/${company.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
     ogImage: company.thumbnail || undefined,
     staticUrl,
+    activePath: '/companies',
   });
 }

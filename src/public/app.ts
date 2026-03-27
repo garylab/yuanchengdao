@@ -17,8 +17,8 @@ document.addEventListener('click', function(e) {
     row.querySelector('.job-expand').classList.add('hidden');
     return;
   }
-  var title = e.target.closest('.job-title');
-  if (title) return;
+  var link = e.target.closest('.job-row-header a');
+  if (link) return;
   var header = e.target.closest('.job-row-header');
   if (!header) return;
   e.preventDefault();
@@ -139,6 +139,7 @@ document.addEventListener('click', function(e) {
     }
   });
 })();
+
 `;
 
 export const appScriptVersion = simpleHash(appScript);

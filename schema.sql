@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS countries (
   name TEXT NOT NULL,
   name_cn TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
+  flag_emoji TEXT DEFAULT '🌍',
   timezone TEXT NOT NULL DEFAULT 'UTC',
   is_active INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
@@ -39,6 +40,7 @@ CREATE TABLE IF NOT EXISTS locations (
   name_cn TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
   country_id INTEGER REFERENCES countries(id),
+  job_count INTEGER DEFAULT 0,
   is_active INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
@@ -75,7 +77,6 @@ CREATE TABLE IF NOT EXISTS jobs (
   detected_extensions TEXT,
   job_highlights TEXT,
   apply_options TEXT,
-  is_active INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -89,7 +90,7 @@ CREATE INDEX IF NOT EXISTS idx_countries_active ON countries(is_active);
 CREATE INDEX IF NOT EXISTS idx_locations_slug ON locations(slug);
 CREATE INDEX IF NOT EXISTS idx_locations_country ON locations(country_id);
 CREATE INDEX IF NOT EXISTS idx_locations_active ON locations(is_active);
-CREATE INDEX IF NOT EXISTS idx_jobs_active ON jobs(is_active, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_created ON jobs(created_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_crawled_id ON jobs(crawled_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_company ON jobs(company_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_location ON jobs(location_id);

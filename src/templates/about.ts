@@ -34,6 +34,12 @@ export function aboutPage(gaId?: string, staticUrl?: string): string {
             "远程"（yuancheng）意为远距离工作，"岛"（dao）寓意一片属于远程工作者的自由天地。
             无论你身在何处，都能找到理想的工作机会。
           </p>
+
+          <h2 class="text-xl font-bold mt-8 mb-3">联系我们</h2>
+          <p>
+            如有任何问题或建议，欢迎发送邮件至
+            <a href="mailto:yuanchengdao.com@gmail.com" class="text-brand-500 hover:text-brand-600 transition underline">yuanchengdao.com@gmail.com</a>
+          </p>
         </div>
       </div>
     </div>`;
@@ -43,5 +49,6 @@ export function aboutPage(gaId?: string, staticUrl?: string): string {
     description: '远程岛是什么？一个帮助华人发现全球远程工作机会的平台，无论你身在何处，都能找到不限地点的理想工作。',
     keywords: '远程岛,关于我们,远程工作平台,华人远程工作,海外远程岗位',
     staticUrl,
+    activePath: '/about',
   });
 }

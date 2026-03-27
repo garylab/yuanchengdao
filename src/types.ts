@@ -77,6 +77,7 @@ export interface Country {
   name: string;
   name_cn: string;
   slug: string;
+  flag_emoji: string;
   timezone: string;
   is_active: number;
   created_at: string;
@@ -125,7 +126,6 @@ export interface Job {
   detected_extensions: string | null;
   job_highlights: string | null;
   apply_options: string | null;
-  is_active: number;
   created_at: string;
   updated_at: string;
   // joined fields
@@ -134,8 +134,10 @@ export interface Job {
   company_thumbnail?: string;
   location_name?: string;
   location_name_cn?: string;
+  location_slug?: string;
   country_code?: string;
   country_name_cn?: string;
+  country_flag_emoji?: string;
 }
 
 // ChatGPT translation response shape for a single job

@@ -8,6 +8,7 @@ export interface LayoutOptions {
   jsonLd?: string;
   keywords?: string;
   staticUrl?: string;
+  activePath?: string;
 }
 
 export function layout(title: string, content: string, options?: LayoutOptions): string {
@@ -20,6 +21,21 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   const ogImage = options?.ogImage || '';
   const keywords = options?.keywords || '远程工作,远程岗位,remote jobs,海外远程,远程招聘,在家工作,远程办公,华人远程工作';
   const jsonLd = options?.jsonLd ? `\n  <script type="application/ld+json">${options.jsonLd}</script>` : '';
+  const ap = options?.activePath || '/';
+  const navItems = [
+    { href: '/', label: '工作' },
+    { href: '/companies', label: '企业' },
+    { href: '/locations', label: '地区' },
+    { href: '/categories', label: '分类' },
+    { href: '/about', label: '关于' },
+  ];
+  const isActive = (href: string) => href === '/' ? ap === '/' : ap.startsWith(href);
+  const desktopNav = navItems.map(n =>
+    `<a href="${n.href}" class="px-2 py-1 transition no-underline ${isActive(n.href) ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">${n.label}</a>`
+  ).join('\n        ');
+  const mobileNav = navItems.map(n =>
+    `<a href="${n.href}" class="block px-4 py-2 text-sm no-underline ${isActive(n.href) ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">${n.label}</a>`
+  ).join('\n          ');
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -68,20 +84,14 @@ export function layout(title: string, content: string, options?: LayoutOptions):
         <span class="text-xs text-surface-400 hidden sm:inline ml-1">华人全球远程工作机会平台</span>
       </a>
       <nav class="hidden sm:flex items-center gap-4 text-sm">
-        <a href="/" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">首页</a>
-        <a href="/companies" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">企业</a>
-        <a href="/categories" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">分类</a>
-        <a href="/about" class="px-2 py-1 text-surface-600 hover:text-brand-500 transition no-underline">关于</a>
+        ${desktopNav}
       </nav>
       <div class="relative sm:hidden">
         <button id="mobile-menu-btn" class="p-2 text-surface-600 hover:text-brand-500 transition" aria-label="菜单">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
         <div id="mobile-menu" class="hidden absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-surface-200 py-1 z-50">
-          <a href="/" class="block px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 no-underline">首页</a>
-          <a href="/companies" class="block px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 no-underline">企业</a>
-          <a href="/categories" class="block px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 no-underline">分类</a>
-          <a href="/about" class="block px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 no-underline">关于</a>
+          ${mobileNav}
         </div>
       </div>
     </div>

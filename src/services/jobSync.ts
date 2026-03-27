@@ -246,6 +246,10 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         await env.DB.prepare('UPDATE companies SET job_count = job_count + 1 WHERE id = ?').bind(companyId).run();
       }
 
+      if (locationId) {
+        await env.DB.prepare('UPDATE locations SET job_count = job_count + 1 WHERE id = ?').bind(locationId).run();
+      }
+
       if (searchTermId) {
         await env.DB.prepare('UPDATE search_terms SET job_count = job_count + 1 WHERE id = ?').bind(searchTermId).run();
       }
@@ -336,11 +340,10 @@ async function ensureCrawlPlan(db: D1Database): Promise<number> {
   return entries.length;
 }
 
-async function deactivateJobsFromInactiveCountries(db: D1Database): Promise<number> {
+async function deleteJobsFromInactiveCountries(db: D1Database): Promise<number> {
   const result = await db.prepare(`
-    UPDATE jobs SET is_active = 0
-    WHERE is_active = 1
-      AND country_id IS NOT NULL
+    DELETE FROM jobs
+    WHERE country_id IS NOT NULL
       AND country_id NOT IN (SELECT id FROM countries WHERE is_active = 1)
   `).run();
   return result.meta.changes;
@@ -349,9 +352,9 @@ async function deactivateJobsFromInactiveCountries(db: D1Database): Promise<numb
 export async function syncJobs(env: Env): Promise<{ fetched: number; saved: number }> {
   console.log('Starting job sync...');
 
-  const deactivated = await deactivateJobsFromInactiveCountries(env.DB);
-  if (deactivated > 0) {
-    console.log(`Deactivated ${deactivated} jobs from inactive countries`);
+  const deleted = await deleteJobsFromInactiveCountries(env.DB);
+  if (deleted > 0) {
+    console.log(`Deleted ${deleted} jobs from inactive countries`);
   }
 
   const pendingCount = await ensureCrawlPlan(env.DB);

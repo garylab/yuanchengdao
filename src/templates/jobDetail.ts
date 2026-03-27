@@ -139,7 +139,13 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
                   ? `<a href="/company/${escapeHtml(job.company_slug)}" class="font-medium text-surface-700 hover:text-brand-500 transition no-underline">${escapeHtml(job.company_name || '')}</a>`
                   : `<span class="font-medium text-surface-700">${escapeHtml(job.company_name || '')}</span>`
                 }
-                <span>📍 ${escapeHtml([job.location_name_cn, job.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || '远程')}</span>
+                ${(() => {
+                  const f = job.country_flag_emoji || '🌍';
+                  const loc = escapeHtml([job.location_name_cn, job.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || '远程');
+                  return job.location_slug
+                    ? `<a href="/location/${escapeHtml(job.location_slug)}" class="hover:text-brand-500 transition no-underline">${f} ${loc}</a>`
+                    : `<span>${f} ${loc}</span>`;
+                })()}
                 ${salary ? `<span class="text-green-600 font-medium">💰 ${salary}</span>` : ''}
                 <span>${posted}</span>
               </div>
@@ -228,5 +234,6 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
     ogImage: job.company_thumbnail || undefined,
     keywords: [job.title, job.company_name, locationLabel, '远程工作', 'remote job'].filter(Boolean).join(','),
     staticUrl,
+    activePath: '/',
   });
 }

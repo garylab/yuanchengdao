@@ -2,11 +2,13 @@ import { Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb } from '../utils/helpers';
 
-interface SearchTermInfo {
+interface LocationInfo {
   id: number;
-  term: string;
-  term_cn: string;
+  name: string;
+  name_cn: string;
   slug: string;
+  country_name_cn: string | null;
+  country_flag_emoji: string | null;
 }
 
 function renderJobRow(job: Job): string {
@@ -18,15 +20,6 @@ function renderJobRow(job: Job): string {
   const logo = job.company_thumbnail
     ? `<img src="${escapeHtml(job.company_thumbnail)}" alt="${escapeHtml(job.company_name || '')}" class="w-12 h-12 rounded-lg object-contain bg-surface-100 flex-shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
     : '';
-
-  const locationLabel = [job.location_name_cn, job.country_name_cn]
-    .filter(Boolean)
-    .filter((v, i, a) => a.indexOf(v) === i)
-    .join(', ') || '远程';
-  const flag = job.country_flag_emoji || '🌍';
-  const locationLink = job.location_slug
-    ? `<a href="/location/${escapeHtml(job.location_slug)}" class="text-xs text-surface-400 hover:text-brand-500 transition no-underline flex-shrink-0">${flag} ${escapeHtml(locationLabel)}</a>`
-    : `<span class="text-xs text-surface-400 flex-shrink-0">${flag} ${escapeHtml(locationLabel)}</span>`;
 
   const highlights = job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
   const applyOptions = job.apply_options ? JSON.parse(job.apply_options) as Array<{ title: string; link: string }> : [];
@@ -49,11 +42,11 @@ function renderJobRow(job: Job): string {
           </div>
           <div class="flex flex-wrap items-center gap-2 mt-1.5">
             ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs font-semibold">💰 ${salary}</span>` : ''}
-            ${locationLink}
+            <span class="text-xs text-surface-400 flex-shrink-0 sm:hidden">${posted}</span>
           </div>
         </div>
-        <div class="flex items-center gap-3 flex-shrink-0">
-          <div class="text-xs text-surface-400 hidden sm:block text-right">${posted}</div>
+        <div class="hidden sm:flex items-center gap-3 flex-shrink-0">
+          <div class="text-xs text-surface-400 text-right">${posted}</div>
         </div>
       </div>
 
@@ -77,7 +70,7 @@ function renderJobRow(job: Job): string {
               ${primaryApply ? `
                 <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
                   class="apply-btn inline-block bg-brand-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-600 transition no-underline"
-                  data-from="category-list" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
+                  data-from="location-list" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
                   申请
                 </a>
               ` : ''}
@@ -94,24 +87,31 @@ function renderJobRow(job: Job): string {
     </div>`;
 }
 
-export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, totalPages: number, totalJobs: number, gaId?: string, siteUrl?: string, staticUrl?: string): string {
-  const pagination = totalPages > 1 ? `
-    <div class="flex justify-center gap-2 mt-6">
-      ${page > 1 ? `<a href="/category/${escapeHtml(term.slug)}?page=${page - 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">← 上一页</a>` : ''}
-      <span class="px-4 py-2 text-sm text-surface-500">${page} / ${totalPages}</span>
-      ${page < totalPages ? `<a href="/category/${escapeHtml(term.slug)}?page=${page + 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
-    </div>` : '';
+export function locationDetailPage(location: LocationInfo, jobs: Job[], page: number, totalPages: number, totalJobs: number, gaId?: string, siteUrl?: string, staticUrl?: string): string {
+  const displayName = location.name_cn || location.name;
+  const subtitle = location.country_name_cn && location.country_name_cn !== location.name_cn
+    ? location.country_name_cn
+    : '';
 
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '分类', href: '/categories' },
-    { label: `远程${term.term_cn}` },
+    { label: displayName },
   ]);
+
+  const pagination = totalPages > 1 ? `
+    <div class="flex justify-center gap-2 mt-6">
+      ${page > 1 ? `<a href="/location/${escapeHtml(location.slug)}?page=${page - 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">← 上一页</a>` : ''}
+      <span class="px-4 py-2 text-sm text-surface-500">${page} / ${totalPages}</span>
+      ${page < totalPages ? `<a href="/location/${escapeHtml(location.slug)}?page=${page + 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
+    </div>` : '';
 
   const content = `
     ${bc}
     <div class="max-w-5xl mx-auto px-4 mt-4">
-      <h1 class="text-xl font-bold text-surface-900 mb-4">远程${escapeHtml(term.term_cn)}</h1>
+      <div class="mb-4">
+        <h1 class="text-xl font-bold text-surface-900">${location.country_flag_emoji || '🌍'} ${escapeHtml(displayName)}远程工作</h1>
+        <p class="text-sm text-surface-400 mt-1">${subtitle ? `${escapeHtml(subtitle)} · ` : ''}${totalJobs} 个在招职位</p>
+      </div>
       <div class="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden">
         ${jobs.length > 0
           ? jobs.map(j => renderJobRow(j)).join('')
@@ -123,15 +123,15 @@ export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, 
       ${pagination}
     </div>`;
 
-  const pageTitle = `远程${term.term_cn} - 远程岛`;
-  const pageDesc = `正在找远程${term.term_cn}的工作？这里有 ${totalJobs} 个在招岗位，每天更新，查看职位详情并直接申请。`;
+  const pageTitle = `${displayName}远程工作 - 远程岛`;
+  const pageDesc = `正在找${displayName}的远程工作？这里有 ${totalJobs} 个在招岗位，每天更新，查看职位详情并直接申请。`;
 
   return layout(pageTitle, content, {
     gaId,
     description: pageDesc,
-    keywords: `远程${term.term_cn},${term.term},remote ${term.term},远程工作,远程岛`,
-    canonical: siteUrl ? `${siteUrl}/category/${term.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
+    keywords: `${displayName},远程工作,${location.name},remote jobs,远程岛`,
+    canonical: siteUrl ? `${siteUrl}/location/${location.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
     staticUrl,
-    activePath: '/categories',
+    activePath: '/locations',
   });
 }

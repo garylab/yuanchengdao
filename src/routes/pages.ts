@@ -7,6 +7,8 @@ import { companiesPage } from '../templates/companies';
 import { companyDetailPage } from '../templates/companyDetail';
 import { categoriesPage } from '../templates/categories';
 import { searchTermPage } from '../templates/searchTerm';
+import { locationsPage } from '../templates/locations';
+import { locationDetailPage } from '../templates/locationDetail';
 import { resolveThumbnail } from '../utils/helpers';
 
 const pages = new Hono<{ Bindings: Env }>();
@@ -26,17 +28,17 @@ pages.get('/', async (c) => {
   const offset = (page - 1) * limit;
 
   const cutoff = thirtyDaysAgo();
-  let countSql = 'SELECT COUNT(*) as total FROM jobs j WHERE j.is_active = 1 AND j.posted_at >= ?';
+  let countSql = 'SELECT COUNT(*) as total FROM jobs j WHERE j.posted_at >= ?';
   let jobSql = `
     SELECT j.*,
       co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-      lo.name as location_name, lo.name_cn as location_name_cn,
-      ct.code as country_code, ct.name_cn as country_name_cn
+      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug, lo.slug as location_slug,
+      ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
     FROM jobs j
     LEFT JOIN companies co ON j.company_id = co.id
     LEFT JOIN locations lo ON j.location_id = lo.id
     LEFT JOIN countries ct ON j.country_id = ct.id
-    WHERE j.is_active = 1 AND j.posted_at >= ?`;
+    WHERE j.posted_at >= ?`;
   const params: (string | number)[] = [cutoff];
   const countParams: (string | number)[] = [cutoff];
 
@@ -81,25 +83,32 @@ pages.get('/', async (c) => {
   jobSql += ' ORDER BY j.posted_at DESC LIMIT ? OFFSET ?';
   params.push(limit, offset);
 
-  const [countResult, jobsResult, countriesResult, locationsResult, topTermsResult] = await Promise.all([
+  const [countResult, jobsResult, countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
     c.env.DB.prepare(countSql).bind(...countParams).first<{ total: number }>(),
     c.env.DB.prepare(jobSql).bind(...params).all(),
     c.env.DB.prepare(
       `SELECT ct.*, COUNT(j.id) as job_count FROM countries ct
-       JOIN jobs j ON j.country_id = ct.id AND j.is_active = 1
+       JOIN jobs j ON j.country_id = ct.id
        WHERE ct.is_active = 1
        GROUP BY ct.id HAVING job_count > 0 ORDER BY job_count DESC`
     ).all(),
     c.env.DB.prepare(
       `SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, COUNT(j.id) as job_count FROM locations lo
-       JOIN jobs j ON j.location_id = lo.id AND j.is_active = 1
+       JOIN jobs j ON j.location_id = lo.id
        WHERE lo.is_active = 1
        GROUP BY lo.id HAVING job_count > 0 ORDER BY job_count DESC`
     ).all(),
     c.env.DB.prepare(
       `SELECT term_cn, slug, job_count FROM search_terms
        WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL
-       ORDER BY job_count DESC LIMIT 3`
+       ORDER BY job_count DESC LIMIT 7`
+    ).all(),
+    c.env.DB.prepare(
+      `SELECT lo.name_cn, lo.slug, lo.job_count, ct.flag_emoji as country_flag_emoji
+       FROM locations lo
+       LEFT JOIN countries ct ON lo.country_id = ct.id
+       WHERE lo.is_active = 1 AND lo.job_count > 0
+       ORDER BY lo.job_count DESC LIMIT 5`
     ).all(),
   ]);
 
@@ -111,11 +120,12 @@ pages.get('/', async (c) => {
   const countries = (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>;
   const locations = (locationsResult.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_id: number; job_count: number }>;
   const topSearchTerms = (topTermsResult.results || []) as unknown as Array<{ term_cn: string; slug: string; job_count: number }>;
+  const topLocations = (topLocationsResult.results || []) as unknown as Array<{ name_cn: string; slug: string; job_count: number; country_flag_emoji: string | null }>;
 
   const html = homePage(jobs, countries, locations, page, total, {
     query, countrySlug, locationSlug, salaryRange,
     gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL,
-    topSearchTerms,
+    topSearchTerms, topLocations,
   });
   return c.html(html);
 });
@@ -126,8 +136,8 @@ pages.get('/job/:slug', async (c) => {
   const job = await c.env.DB.prepare(`
     SELECT j.*,
       co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-      lo.name as location_name, lo.name_cn as location_name_cn,
-      ct.code as country_code, ct.name_cn as country_name_cn
+      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
+      ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
     FROM jobs j
     LEFT JOIN companies co ON j.company_id = co.id
     LEFT JOIN locations lo ON j.location_id = lo.id
@@ -149,12 +159,12 @@ pages.get('/job/:slug', async (c) => {
     const result = await c.env.DB.prepare(`
       SELECT j.slug, j.title, j.posted_at,
         co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-        lo.name_cn as location_name_cn, ct.name_cn as country_name_cn
+        lo.name_cn as location_name_cn, lo.slug as location_slug, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
       FROM jobs j
       LEFT JOIN companies co ON j.company_id = co.id
       LEFT JOIN locations lo ON j.location_id = lo.id
       LEFT JOIN countries ct ON j.country_id = ct.id
-      WHERE j.search_term_id = ? AND j.id != ? AND j.is_active = 1
+      WHERE j.search_term_id = ? AND j.id != ?
       ORDER BY j.posted_at DESC
       LIMIT 10
     `).bind(job.search_term_id, job.id).all();
@@ -170,22 +180,35 @@ pages.get('/job/:slug', async (c) => {
 pages.get('/companies', async (c) => {
   const url = new URL(c.req.url);
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const query = url.searchParams.get('q')?.trim() || '';
   const limit = 30;
   const offset = (page - 1) * limit;
 
+  let countSql = 'SELECT COUNT(*) as total FROM companies WHERE job_count > 0';
+  let listSql = `
+    SELECT co.id, co.name, co.slug, co.thumbnail, co.job_count,
+      lo.name_cn as location_name_cn,
+      ct.name_cn as country_name_cn
+    FROM companies co
+    LEFT JOIN locations lo ON co.location_id = lo.id
+    LEFT JOIN countries ct ON lo.country_id = ct.id
+    WHERE co.job_count > 0`;
+  const params: (string | number)[] = [];
+  const countParams: (string | number)[] = [];
+
+  if (query) {
+    countSql += ' AND name LIKE ?';
+    listSql += ' AND co.name LIKE ?';
+    params.push(`%${query}%`);
+    countParams.push(`%${query}%`);
+  }
+
+  listSql += ' ORDER BY co.job_count DESC LIMIT ? OFFSET ?';
+  params.push(limit, offset);
+
   const [countResult, result] = await Promise.all([
-    c.env.DB.prepare('SELECT COUNT(*) as total FROM companies WHERE job_count > 0').first<{ total: number }>(),
-    c.env.DB.prepare(`
-      SELECT co.id, co.name, co.slug, co.thumbnail, co.job_count,
-        lo.name_cn as location_name_cn,
-        ct.name_cn as country_name_cn
-      FROM companies co
-      LEFT JOIN locations lo ON co.location_id = lo.id
-      LEFT JOIN countries ct ON lo.country_id = ct.id
-      WHERE co.job_count > 0
-      ORDER BY co.job_count DESC
-      LIMIT ? OFFSET ?
-    `).bind(limit, offset).all(),
+    c.env.DB.prepare(countSql).bind(...countParams).first<{ total: number }>(),
+    c.env.DB.prepare(listSql).bind(...params).all(),
   ]);
 
   const total = countResult?.total || 0;
@@ -196,7 +219,7 @@ pages.get('/companies', async (c) => {
   }));
 
   return c.html(companiesPage(
-    companies as any[], page, totalPages,
+    companies as any[], page, totalPages, query,
     c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL,
   ));
 });
@@ -229,17 +252,17 @@ pages.get('/company/:slug', async (c) => {
 
   const cutoff = thirtyDaysAgo();
   const [countResult, jobsResult] = await Promise.all([
-    c.env.DB.prepare('SELECT COUNT(*) as total FROM jobs WHERE company_id = ? AND is_active = 1 AND posted_at >= ?').bind(company.id, cutoff).first<{ total: number }>(),
+    c.env.DB.prepare('SELECT COUNT(*) as total FROM jobs WHERE company_id = ? AND posted_at >= ?').bind(company.id, cutoff).first<{ total: number }>(),
     c.env.DB.prepare(`
       SELECT j.*,
         co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-        lo.name as location_name, lo.name_cn as location_name_cn,
-        ct.code as country_code, ct.name_cn as country_name_cn
+        lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
+        ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
       FROM jobs j
       LEFT JOIN companies co ON j.company_id = co.id
       LEFT JOIN locations lo ON j.location_id = lo.id
       LEFT JOIN countries ct ON j.country_id = ct.id
-      WHERE j.company_id = ? AND j.is_active = 1 AND j.posted_at >= ?
+      WHERE j.company_id = ? AND j.posted_at >= ?
       ORDER BY j.posted_at DESC
       LIMIT ? OFFSET ?
     `).bind(company.id, cutoff, limit, offset).all(),
@@ -256,14 +279,22 @@ pages.get('/company/:slug', async (c) => {
 });
 
 pages.get('/categories', async (c) => {
-  const result = await c.env.DB.prepare(
-    `SELECT id, term, term_cn, slug, job_count FROM search_terms
-     WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL
-     ORDER BY job_count DESC`
-  ).all();
+  const query = new URL(c.req.url).searchParams.get('q')?.trim() || '';
 
+  let sql = `SELECT id, term, term_cn, slug, job_count FROM search_terms
+     WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL`;
+  const params: string[] = [];
+
+  if (query) {
+    sql += ' AND (term_cn LIKE ? OR term LIKE ?)';
+    params.push(`%${query}%`, `%${query}%`);
+  }
+
+  sql += ' ORDER BY job_count DESC';
+
+  const result = await c.env.DB.prepare(sql).bind(...params).all();
   const terms = (result.results || []) as unknown as Array<{ id: number; term: string; term_cn: string; slug: string; job_count: number }>;
-  return c.html(categoriesPage(terms, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+  return c.html(categoriesPage(terms, query, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
 
 pages.get('/category/:slug', async (c) => {
@@ -287,18 +318,18 @@ pages.get('/category/:slug', async (c) => {
   const cutoff = thirtyDaysAgo();
   const [countResult, jobsResult] = await Promise.all([
     c.env.DB.prepare(
-      'SELECT COUNT(*) as total FROM jobs WHERE is_active = 1 AND search_term_id = ? AND posted_at >= ?'
+      'SELECT COUNT(*) as total FROM jobs WHERE search_term_id = ? AND posted_at >= ?'
     ).bind(term.id, cutoff).first<{ total: number }>(),
     c.env.DB.prepare(`
       SELECT j.*,
         co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-        lo.name as location_name, lo.name_cn as location_name_cn,
-        ct.code as country_code, ct.name_cn as country_name_cn
+        lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
+        ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
       FROM jobs j
       LEFT JOIN companies co ON j.company_id = co.id
       LEFT JOIN locations lo ON j.location_id = lo.id
       LEFT JOIN countries ct ON j.country_id = ct.id
-      WHERE j.is_active = 1 AND j.search_term_id = ? AND j.posted_at >= ?
+      WHERE j.search_term_id = ? AND j.posted_at >= ?
       ORDER BY j.posted_at DESC
       LIMIT ? OFFSET ?
     `).bind(term.id, cutoff, limit, offset).all(),
@@ -312,6 +343,97 @@ pages.get('/category/:slug', async (c) => {
   }));
 
   return c.html(searchTermPage(term, jobs, page, totalPages, totalJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+});
+
+pages.get('/locations', async (c) => {
+  const url = new URL(c.req.url);
+  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const query = url.searchParams.get('q')?.trim() || '';
+  const limit = 30;
+  const offset = (page - 1) * limit;
+
+  let countSql = 'SELECT COUNT(*) as total FROM locations WHERE is_active = 1 AND job_count > 0';
+  let listSql = `
+    SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.job_count,
+      ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
+    FROM locations lo
+    LEFT JOIN countries ct ON lo.country_id = ct.id
+    WHERE lo.is_active = 1 AND lo.job_count > 0`;
+  const params: (string | number)[] = [];
+  const countParams: (string | number)[] = [];
+
+  if (query) {
+    countSql += ' AND (name LIKE ? OR name_cn LIKE ?)';
+    listSql += ' AND (lo.name LIKE ? OR lo.name_cn LIKE ?)';
+    params.push(`%${query}%`, `%${query}%`);
+    countParams.push(`%${query}%`, `%${query}%`);
+  }
+
+  listSql += ' ORDER BY lo.job_count DESC LIMIT ? OFFSET ?';
+  params.push(limit, offset);
+
+  const [countResult, result] = await Promise.all([
+    c.env.DB.prepare(countSql).bind(...countParams).first<{ total: number }>(),
+    c.env.DB.prepare(listSql).bind(...params).all(),
+  ]);
+
+  const total = countResult?.total || 0;
+  const totalPages = Math.ceil(total / limit);
+  const locations = (result.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_name_cn: string | null; country_flag_emoji: string | null; job_count: number }>;
+
+  return c.html(locationsPage(locations, page, totalPages, query, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+});
+
+pages.get('/location/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  const url = new URL(c.req.url);
+  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const limit = 30;
+  const offset = (page - 1) * limit;
+
+  const location = await c.env.DB.prepare(`
+    SELECT lo.id, lo.name, lo.name_cn, lo.slug,
+      ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
+    FROM locations lo
+    LEFT JOIN countries ct ON lo.country_id = ct.id
+    WHERE lo.slug = ? AND lo.is_active = 1
+  `).bind(slug).first<{ id: number; name: string; name_cn: string; slug: string; country_name_cn: string | null; country_flag_emoji: string | null }>();
+
+  if (!location) {
+    return c.html(
+      `<div class="text-center py-20"><h1 class="text-2xl">404 - 地区未找到</h1><a href="/" class="text-brand-500">返回首页</a></div>`,
+      404
+    );
+  }
+
+  const cutoff = thirtyDaysAgo();
+  const [countResult, jobsResult] = await Promise.all([
+    c.env.DB.prepare(
+      'SELECT COUNT(*) as total FROM jobs WHERE location_id = ? AND posted_at >= ?'
+    ).bind(location.id, cutoff).first<{ total: number }>(),
+    c.env.DB.prepare(`
+      SELECT j.*,
+        co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
+        lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
+        ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
+      FROM jobs j
+      LEFT JOIN companies co ON j.company_id = co.id
+      LEFT JOIN locations lo ON j.location_id = lo.id
+      LEFT JOIN countries ct ON j.country_id = ct.id
+      WHERE j.location_id = ? AND j.posted_at >= ?
+      ORDER BY j.posted_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(location.id, cutoff, limit, offset).all(),
+  ]);
+
+  const totalJobs = countResult?.total || 0;
+  const totalPages = Math.ceil(totalJobs / limit);
+  const jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
+    ...j,
+    company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
+  }));
+
+  return c.html(locationDetailPage(location, jobs, page, totalPages, totalJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
 
 pages.get('/about', (c) => {

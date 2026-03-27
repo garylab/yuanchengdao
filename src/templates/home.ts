@@ -16,6 +16,10 @@ function renderJobRow(job: Job, isNew: boolean = false, staticUrl: string = ''):
     .filter(Boolean)
     .filter((v, i, a) => a.indexOf(v) === i)
     .join(', ') || '远程';
+  const flag = job.country_flag_emoji || '🌍';
+  const locationLink = job.location_slug
+    ? `<a href="/location/${escapeHtml(job.location_slug)}" class="text-xs text-surface-400 hover:text-brand-500 transition no-underline flex-shrink-0">${flag} ${escapeHtml(locationLabel)}</a>`
+    : `<span class="text-xs text-surface-400 flex-shrink-0">${flag} ${escapeHtml(locationLabel)}</span>`;
 
   const highlights = job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
   const applyOptions = job.apply_options ? JSON.parse(job.apply_options) as Array<{ title: string; link: string }> : [];
@@ -32,12 +36,15 @@ function renderJobRow(job: Job, isNew: boolean = false, staticUrl: string = ''):
         <div class="flex-1 min-w-0">
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <a href="/job/${escapeHtml(job.slug)}" class="job-title font-semibold text-surface-900 text-sm sm:text-base hover:text-brand-500 transition no-underline">${escapeHtml(job.title)}</a>
-            <span class="text-sm text-surface-500 flex-shrink-0">${escapeHtml(job.company_name || '')}</span>
+            ${job.company_slug
+              ? `<a href="/company/${escapeHtml(job.company_slug)}" class="text-sm text-surface-500 hover:text-brand-500 transition no-underline flex-shrink-0">${escapeHtml(job.company_name || '')}</a>`
+              : `<span class="text-sm text-surface-500 flex-shrink-0">${escapeHtml(job.company_name || '')}</span>`
+            }
             ${isNew ? `<img src="${staticUrl}/new2x.webp" alt="New" class="h-4 flex-shrink-0">` : ''}
           </div>
           <div class="flex flex-wrap items-center gap-2 mt-1.5">
             ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs font-semibold">💰 ${salary}</span>` : ''}
-            <span class="text-xs text-surface-400 flex-shrink-0">📍 ${escapeHtml(locationLabel)}</span>
+            ${locationLink}
             <span class="text-xs text-surface-400 flex-shrink-0 sm:hidden">${posted}</span>
           </div>
         </div>
@@ -112,6 +119,13 @@ interface SearchTermPill {
   job_count: number;
 }
 
+interface LocationPill {
+  name_cn: string;
+  slug: string;
+  job_count: number;
+  country_flag_emoji?: string | null;
+}
+
 interface HomePageOptions {
   query?: string;
   countrySlug?: string;
@@ -121,6 +135,7 @@ interface HomePageOptions {
   siteUrl?: string;
   staticUrl?: string;
   topSearchTerms?: SearchTermPill[];
+  topLocations?: LocationPill[];
 }
 
 const SALARY_OPTIONS = [
@@ -139,7 +154,7 @@ const SALARY_OPTIONS = [
 ];
 
 export function homePage(jobs: Job[], countries: CountryFilter[], locations: LocationFilter[], page: number, totalJobs: number, opts: HomePageOptions = {}): string {
-  const { query, countrySlug, locationSlug, salaryRange = '', gaId, siteUrl, staticUrl, topSearchTerms = [] } = opts;
+  const { query, countrySlug, locationSlug, salaryRange = '', gaId, siteUrl, staticUrl, topSearchTerms = [], topLocations = [] } = opts;
   const totalPages = Math.ceil(totalJobs / 30);
   const activeLocation = locationSlug ? locations.find(l => l.slug === locationSlug) : null;
 
@@ -156,9 +171,10 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
   ).join('');
 
   const hasFilters = locationSlug || salaryRange;
+  const hasShortcuts = topLocations.length > 0 || topSearchTerms.length > 0;
   const filterBar = `
     <div class="px-4 py-3 flex flex-wrap items-center gap-2">
-      <form action="/" method="GET" class="relative w-48">
+      <form action="/" method="GET" class="relative flex-1 min-w-[200px] max-w-md">
         <input type="text" name="q" value="${query ? escapeHtml(query) : ''}"
           placeholder="搜索职位、公司..."
           class="w-full px-3 py-1.5 rounded-lg border border-surface-200 text-sm outline-none focus:ring-1 focus:ring-brand-300 focus:border-brand-300 placeholder:text-surface-400">
@@ -168,8 +184,8 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
       </form>
 
       <div class="filter-dropdown relative" data-param="location">
-        <button type="button" class="filter-btn flex items-center justify-between w-40 px-3 py-1.5 rounded-lg border text-sm transition ${locationSlug ? 'border-brand-300 bg-brand-50 text-brand-600' : 'border-surface-200 bg-white text-surface-600 hover:border-surface-300'}">
-          <span class="filter-label">${activeLocation ? escapeHtml(activeLocation.name_cn) : '📍 位置'}</span>
+        <button type="button" class="filter-btn flex items-center justify-between w-32 px-3 py-1.5 rounded-lg border text-sm transition ${locationSlug ? 'border-brand-300 bg-brand-50 text-brand-600' : 'border-surface-200 bg-white text-surface-600 hover:border-surface-300'}">
+          <span class="filter-label">${activeLocation ? escapeHtml(activeLocation.name_cn) : '位置'}</span>
           <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <div class="filter-panel hidden absolute top-full left-0 mt-1 bg-white border border-surface-200 rounded-lg shadow-lg z-50 w-72 max-h-72 overflow-hidden">
@@ -177,15 +193,15 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
             <input type="text" class="filter-search w-full px-2 py-1.5 text-sm border border-surface-200 rounded outline-none focus:ring-1 focus:ring-brand-300" placeholder="搜索位置...">
           </div>
           <ul class="overflow-y-auto max-h-52">
-            <li data-value="" data-label="📍 位置" class="filter-option px-3 py-2 cursor-pointer hover:bg-brand-50 text-sm ${!locationSlug ? 'bg-brand-50 text-brand-600 font-medium' : 'text-surface-700'}">全部位置</li>
+            <li data-value="" data-label="位置" class="filter-option px-3 py-2 cursor-pointer hover:bg-brand-50 text-sm ${!locationSlug ? 'bg-brand-50 text-brand-600 font-medium' : 'text-surface-700'}">全部位置</li>
             ${locationOptions}
           </ul>
         </div>
       </div>
 
       <div class="filter-dropdown relative" data-param="salary">
-        <button type="button" class="filter-btn flex items-center justify-between w-36 px-3 py-1.5 rounded-lg border text-sm transition ${salaryRange ? 'border-brand-300 bg-brand-50 text-brand-600' : 'border-surface-200 bg-white text-surface-600 hover:border-surface-300'}">
-          <span class="filter-label">${activeSalary && salaryRange ? activeSalary.label : '💰 薪资'}</span>
+        <button type="button" class="filter-btn flex items-center justify-between w-32 px-3 py-1.5 rounded-lg border text-sm transition ${salaryRange ? 'border-brand-300 bg-brand-50 text-brand-600' : 'border-surface-200 bg-white text-surface-600 hover:border-surface-300'}">
+          <span class="filter-label">${activeSalary && salaryRange ? activeSalary.label : '薪资'}</span>
           <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <div class="filter-panel hidden absolute top-full left-0 mt-1 bg-white border border-surface-200 rounded-lg shadow-lg z-50 w-56 max-h-72 overflow-hidden">
@@ -195,16 +211,21 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
         </div>
       </div>
 
-      ${hasFilters || query ? `<a href="/" class="text-xs text-surface-400 hover:text-brand-500 transition ml-1">清除筛选</a>` : ''}
-
-      ${topSearchTerms.length > 0 ? `
-        <div class="ml-auto flex items-center gap-1.5 flex-shrink-0">
-          ${topSearchTerms.map(t =>
-            `<a href="/category/${escapeHtml(t.slug)}" class="text-xs px-2.5 py-1 rounded-lg border border-surface-200 bg-white text-surface-600 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-500 transition no-underline whitespace-nowrap">🔥 ${escapeHtml(t.term_cn)}</a>`
-          ).join('')}
-        </div>
-      ` : ''}
-    </div>`;
+      ${hasFilters || query ? `<a href="/" class="text-xs text-surface-400 hover:text-brand-500 transition">清除</a>` : ''}
+    </div>
+    ${hasShortcuts ? `
+    <div class="px-4 pt-1 pb-3 mt-1 flex items-center gap-x-3 gap-y-1 flex-wrap overflow-x-auto text-xs text-surface-400">
+      ${topLocations.length > 0 ? '<span class="font-semibold text-surface-600">热门位置：</span>' : ''}
+      ${topLocations.length > 0 ? topLocations.map(l =>
+        `<a href="/location/${escapeHtml(l.slug)}" class="hover:text-brand-500 transition no-underline whitespace-nowrap">${l.country_flag_emoji || '🌍'} ${escapeHtml(l.name_cn)}</a>`
+      ).join('') : ''}
+      ${topLocations.length > 0 && topSearchTerms.length > 0 ? '<span class="text-surface-200 mx-2">|</span>' : ''}
+      ${topSearchTerms.length > 0 ? '<span class="font-semibold text-surface-600">热门岗位：</span>' : ''}
+      ${topSearchTerms.length > 0 ? topSearchTerms.map(t =>
+        `<a href="/category/${escapeHtml(t.slug)}" class="hover:text-brand-500 transition no-underline whitespace-nowrap">${escapeHtml(t.term_cn)}</a>`
+      ).join('') : ''}
+    </div>
+    ` : ''}`;
 
   const jobStats = query ? `
     <div class="px-4 py-3 border-b border-surface-200">
@@ -212,14 +233,14 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
     </div>` : '';
 
   const jobList = jobs.length > 0
-    ? `<div class="max-w-5xl mx-auto mt-4">
+    ? `<div class="max-w-5xl mx-auto mt-6">
         <div class="bg-white rounded-xl border border-surface-200 relative">${filterBar}</div>
         <div class="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden mt-3">
           ${jobStats}
           ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3, staticUrl)).join('')}
         </div>
        </div>`
-    : `<div class="max-w-5xl mx-auto mt-4">
+    : `<div class="max-w-5xl mx-auto mt-6">
         <div class="bg-white rounded-xl border border-surface-200 relative">${filterBar}</div>
         <div class="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden mt-3">
           ${jobStats}
@@ -277,5 +298,5 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
     query,
   ].filter(Boolean).join(',');
 
-  return layout(pageTitle, jobList + pagination, { gaId, description: pageDesc, canonical, keywords, staticUrl });
+  return layout(pageTitle, jobList + pagination, { gaId, description: pageDesc, canonical, keywords, staticUrl, activePath: '/' });
 }

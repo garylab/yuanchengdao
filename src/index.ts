@@ -49,6 +49,7 @@ app.get('/sitemap.xml', (c) => {
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap><loc>${site}/sitemap-pages.xml</loc></sitemap>
   <sitemap><loc>${site}/sitemap-categories.xml</loc></sitemap>
+  <sitemap><loc>${site}/sitemap-locations.xml</loc></sitemap>
   <sitemap><loc>${site}/sitemap-companies.xml</loc></sitemap>
   <sitemap><loc>${site}/sitemap-jobs.xml</loc></sitemap>
 </sitemapindex>`;
@@ -62,6 +63,7 @@ app.get('/sitemap-pages.xml', (c) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${site}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
   <url><loc>${site}/companies</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>${site}/locations</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>${site}/categories</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>${site}/about</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
 </urlset>`;
@@ -76,6 +78,22 @@ app.get('/sitemap-categories.xml', async (c) => {
   ).all();
   const urls = (terms.results || []).map((t: Record<string, unknown>) =>
     `<url><loc>${site}/category/${t.slug}</loc><changefreq>daily</changefreq><priority>0.9</priority></url>`
+  ).join('\n');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls}
+</urlset>`;
+  c.header('Content-Type', 'application/xml');
+  return c.body(xml);
+});
+
+app.get('/sitemap-locations.xml', async (c) => {
+  const site = c.env.SITE_URL;
+  const locations = await c.env.DB.prepare(
+    `SELECT slug FROM locations WHERE is_active = 1 AND job_count > 0 ORDER BY job_count DESC`
+  ).all();
+  const urls = (locations.results || []).map((lo: Record<string, unknown>) =>
+    `<url><loc>${site}/location/${lo.slug}</loc><changefreq>daily</changefreq><priority>0.7</priority></url>`
   ).join('\n');
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -104,7 +122,7 @@ app.get('/sitemap-companies.xml', async (c) => {
 app.get('/sitemap-jobs.xml', async (c) => {
   const site = c.env.SITE_URL;
   const jobs = await c.env.DB.prepare(
-    'SELECT slug, updated_at FROM jobs WHERE is_active = 1 ORDER BY created_at DESC LIMIT 5000'
+    'SELECT slug, updated_at FROM jobs ORDER BY created_at DESC LIMIT 5000'
   ).all();
   const urls = (jobs.results || []).map((j: Record<string, unknown>) => {
     const raw = (j.updated_at as string) || new Date().toISOString();
