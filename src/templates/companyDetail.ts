@@ -37,8 +37,8 @@ function renderJobRow(job: Job): string {
             <a href="/job/${escapeHtml(job.slug)}" class="job-title font-semibold text-surface-900 text-sm sm:text-base hover:text-brand-500 transition no-underline">${escapeHtml(job.title)}</a>
           </div>
           <div class="flex flex-wrap items-center gap-2 mt-1.5">
-            ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs font-semibold">💰 ${salary}</span>` : ''}
             ${locationLink}
+            ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs font-semibold">💰 ${salary}</span>` : ''}
           </div>
         </div>
         <div class="flex items-center gap-3 flex-shrink-0">
