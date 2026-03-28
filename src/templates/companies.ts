@@ -12,7 +12,7 @@ interface CompanyItem {
   job_count: number;
 }
 
-export function companiesPage(companies: CompanyItem[], page: number, totalPages: number, query?: string, gaId?: string, siteUrl?: string, staticUrl?: string): string {
+export function companiesPage(companies: CompanyItem[], page: number, hasMore: boolean, query?: string, gaId?: string, siteUrl?: string, staticUrl?: string): string {
   const companyCards = companies.map(c => {
     const logo = companyLogo(c.name, c.thumbnail);
     const locationParts = [c.location_name_cn, c.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
@@ -38,11 +38,10 @@ export function companiesPage(companies: CompanyItem[], page: number, totalPages
     return parts.length ? '?' + parts.join('&') : '';
   };
 
-  const pagination = totalPages > 1 ? `
+  const pagination = (page > 1 || hasMore) ? `
     <div class="flex justify-center gap-2 mt-6">
       ${page > 1 ? `<a href="/companies${qs(page - 1)}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">← 上一页</a>` : ''}
-      <span class="px-4 py-2 text-sm text-surface-500">${page} / ${totalPages}</span>
-      ${page < totalPages ? `<a href="/companies${qs(page + 1)}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
+      ${hasMore ? `<a href="/companies${qs(page + 1)}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
     </div>` : '';
 
   const bc = breadcrumb([

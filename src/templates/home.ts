@@ -146,9 +146,8 @@ const SALARY_OPTIONS = [
   { value: '50000-', label: '5万+' },
 ];
 
-export function homePage(jobs: Job[], countries: CountryFilter[], locations: LocationFilter[], page: number, totalJobs: number, opts: HomePageOptions = {}): string {
+export function homePage(jobs: Job[], countries: CountryFilter[], locations: LocationFilter[], page: number, hasMore: boolean, opts: HomePageOptions = {}): string {
   const { query, countrySlug, locationSlug, salaryRange = '', gaId, siteUrl, staticUrl, topSearchTerms = [], topLocations = [] } = opts;
-  const totalPages = Math.ceil(totalJobs / 30);
   const activeLocation = locationSlug ? locations.find(l => l.slug === locationSlug) : null;
 
   const locationOptions = locations.map(l =>
@@ -254,11 +253,10 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
   const filterSuffix = filterParts.join('&');
   const paginationSuffix = filterSuffix ? '&' + filterSuffix : '';
 
-  const pagination = totalPages > 1 ? `
+  const pagination = (page > 1 || hasMore) ? `
     <div class="max-w-5xl mx-auto px-4 py-6 flex justify-center gap-2">
       ${page > 1 ? `<a href="/?page=${page - 1}${paginationSuffix}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition">← 上一页</a>` : ''}
-      <span class="px-4 py-2 text-sm text-surface-500">${page} / ${totalPages}</span>
-      ${page < totalPages ? `<a href="/?page=${page + 1}${paginationSuffix}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition">下一页 →</a>` : ''}
+      ${hasMore ? `<a href="/?page=${page + 1}${paginationSuffix}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition">下一页 →</a>` : ''}
     </div>` : '';
 
   const subParts: string[] = [];
@@ -271,10 +269,10 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
     : '远程岛 - 华人全球远程工作机会平台';
 
   const pageDesc = query
-    ? `"${query}"相关的远程工作机会，共找到 ${totalJobs} 个匹配职位。在远程岛轻松发现适合你的全球远程岗位。`
+    ? `"${query}"相关的远程工作机会。在远程岛轻松发现适合你的全球远程岗位。`
     : activeLocation
-      ? `${activeLocation.name_cn}地区的 ${totalJobs} 个远程工作机会，每天更新，在远程岛找到不限地点的理想工作。`
-      : `每天更新的全球远程工作机会，目前共 ${totalJobs} 个在招岗位。远程岛帮你找到不限地点、自由办公的理想工作。`;
+      ? `${activeLocation.name_cn}地区的远程工作机会，每天更新，在远程岛找到不限地点的理想工作。`
+      : `每天更新的全球远程工作机会。远程岛帮你找到不限地点、自由办公的理想工作。`;
 
   const canonicalParams: string[] = [];
   if (countrySlug) canonicalParams.push(`country=${countrySlug}`);

@@ -11,7 +11,7 @@ interface LocationItem {
   job_count: number;
 }
 
-export function locationsPage(locations: LocationItem[], page: number, totalPages: number, query?: string, gaId?: string, siteUrl?: string, staticUrl?: string): string {
+export function locationsPage(locations: LocationItem[], page: number, hasMore: boolean, query?: string, gaId?: string, siteUrl?: string, staticUrl?: string): string {
   const cards = locations.map(l => {
     const displayName = l.name_cn || l.name;
     const subtitle = l.country_name_cn && l.country_name_cn !== l.name_cn ? l.country_name_cn : '';
@@ -36,11 +36,10 @@ export function locationsPage(locations: LocationItem[], page: number, totalPage
     return parts.length ? '?' + parts.join('&') : '';
   };
 
-  const pagination = totalPages > 1 ? `
+  const pagination = (page > 1 || hasMore) ? `
     <div class="flex justify-center gap-2 mt-6">
       ${page > 1 ? `<a href="/locations${qs(page - 1)}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">← 上一页</a>` : ''}
-      <span class="px-4 py-2 text-sm text-surface-500">${page} / ${totalPages}</span>
-      ${page < totalPages ? `<a href="/locations${qs(page + 1)}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
+      ${hasMore ? `<a href="/locations${qs(page + 1)}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
     </div>` : '';
 
   const bc = breadcrumb([

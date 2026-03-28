@@ -28,7 +28,6 @@ pages.get('/', async (c) => {
   const offset = (page - 1) * limit;
 
   const cutoff = thirtyDaysAgo();
-  let countSql = 'SELECT COUNT(*) as total FROM jobs j WHERE j.posted_at >= ?';
   let jobSql = `
     SELECT j.*,
       co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
@@ -40,27 +39,20 @@ pages.get('/', async (c) => {
     LEFT JOIN countries ct ON j.country_id = ct.id
     WHERE j.posted_at >= ?`;
   const params: (string | number)[] = [cutoff];
-  const countParams: (string | number)[] = [cutoff];
 
   if (query) {
     jobSql += ' AND j.title LIKE ?';
-    countSql += ' AND j.title LIKE ?';
     params.push(`%${query}%`);
-    countParams.push(`%${query}%`);
   }
 
   if (countrySlug) {
     jobSql += ' AND ct.slug = ?';
-    countSql += ' AND j.country_id = (SELECT id FROM countries WHERE slug = ?)';
     params.push(countrySlug);
-    countParams.push(countrySlug);
   }
 
   if (locationSlug) {
     jobSql += ' AND lo.slug = ?';
-    countSql += ' AND j.location_id = (SELECT id FROM locations WHERE slug = ?)';
     params.push(locationSlug);
-    countParams.push(locationSlug);
   }
 
   if (salaryRange) {
@@ -69,22 +61,17 @@ pages.get('/', async (c) => {
     const salaryMax = maxStr ? parseInt(maxStr, 10) : 0;
     if (salaryMax > 0) {
       jobSql += ' AND j.salary_upper >= ? AND j.salary_lower <= ?';
-      countSql += ' AND j.salary_upper >= ? AND j.salary_lower <= ?';
       params.push(salaryMin, salaryMax);
-      countParams.push(salaryMin, salaryMax);
     } else {
       jobSql += ' AND j.salary_upper >= ?';
-      countSql += ' AND j.salary_upper >= ?';
       params.push(salaryMin);
-      countParams.push(salaryMin);
     }
   }
 
   jobSql += ' ORDER BY j.posted_at DESC LIMIT ? OFFSET ?';
-  params.push(limit, offset);
+  params.push(limit + 1, offset);
 
-  const [countResult, jobsResult, countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
-    c.env.DB.prepare(countSql).bind(...countParams).first<{ total: number }>(),
+  const [jobsResult, countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
     c.env.DB.prepare(jobSql).bind(...params).all(),
     c.env.DB.prepare(
       `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
@@ -112,17 +99,18 @@ pages.get('/', async (c) => {
     ).all(),
   ]);
 
-  const total = countResult?.total || 0;
-  const jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
+  const allRows = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
     ...j,
     company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
   }));
+  const hasMore = allRows.length > limit;
+  const jobs = hasMore ? allRows.slice(0, limit) : allRows;
   const countries = (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>;
   const locations = (locationsResult.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_id: number; job_count: number }>;
   const topSearchTerms = (topTermsResult.results || []) as unknown as Array<{ term_cn: string; slug: string; job_count: number }>;
   const topLocations = (topLocationsResult.results || []) as unknown as Array<{ name_cn: string; slug: string; job_count: number; country_flag_emoji: string | null }>;
 
-  const html = homePage(jobs, countries, locations, page, total, {
+  const html = homePage(jobs, countries, locations, page, hasMore, {
     query, countrySlug, locationSlug, salaryRange,
     gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL,
     topSearchTerms, topLocations,
@@ -184,7 +172,6 @@ pages.get('/companies', async (c) => {
   const limit = 30;
   const offset = (page - 1) * limit;
 
-  let countSql = 'SELECT COUNT(*) as total FROM companies WHERE job_count > 0';
   let listSql = `
     SELECT co.id, co.name, co.slug, co.thumbnail, co.job_count,
       lo.name_cn as location_name_cn,
@@ -195,32 +182,26 @@ pages.get('/companies', async (c) => {
     LEFT JOIN countries ct ON lo.country_id = ct.id
     WHERE co.job_count > 0`;
   const params: (string | number)[] = [];
-  const countParams: (string | number)[] = [];
 
   if (query) {
-    countSql += ' AND name LIKE ?';
     listSql += ' AND co.name LIKE ?';
     params.push(`%${query}%`);
-    countParams.push(`%${query}%`);
   }
 
   listSql += ' ORDER BY co.job_count DESC LIMIT ? OFFSET ?';
-  params.push(limit, offset);
+  params.push(limit + 1, offset);
 
-  const [countResult, result] = await Promise.all([
-    c.env.DB.prepare(countSql).bind(...countParams).first<{ total: number }>(),
-    c.env.DB.prepare(listSql).bind(...params).all(),
-  ]);
+  const result = await c.env.DB.prepare(listSql).bind(...params).all();
 
-  const total = countResult?.total || 0;
-  const totalPages = Math.ceil(total / limit);
-  const companies = (result.results || []).map((r: Record<string, unknown>) => ({
+  const allCompanies = (result.results || []).map((r: Record<string, unknown>) => ({
     ...r,
     thumbnail: resolveThumbnail(r.thumbnail as string | null, c.env.STATIC_URL),
   }));
+  const hasMore = allCompanies.length > limit;
+  const companies = hasMore ? allCompanies.slice(0, limit) : allCompanies;
 
   return c.html(companiesPage(
-    companies as any[], page, totalPages, query,
+    companies as any[], page, hasMore, query,
     c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL,
   ));
 });
@@ -253,31 +234,28 @@ pages.get('/company/:slug', async (c) => {
   company.thumbnail = resolveThumbnail(company.thumbnail as string | null, c.env.STATIC_URL) as any;
 
   const cutoff = thirtyDaysAgo();
-  const [countResult, jobsResult] = await Promise.all([
-    c.env.DB.prepare('SELECT COUNT(*) as total FROM jobs WHERE company_id = ? AND posted_at >= ?').bind(company.id, cutoff).first<{ total: number }>(),
-    c.env.DB.prepare(`
-      SELECT j.*,
-        co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-        lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
-        ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
-      FROM jobs j
-      LEFT JOIN companies co ON j.company_id = co.id
-      LEFT JOIN locations lo ON j.location_id = lo.id
-      LEFT JOIN countries ct ON j.country_id = ct.id
-      WHERE j.company_id = ? AND j.posted_at >= ?
-      ORDER BY j.posted_at DESC
-      LIMIT ? OFFSET ?
-    `).bind(company.id, cutoff, limit, offset).all(),
-  ]);
+  const jobsResult = await c.env.DB.prepare(`
+    SELECT j.*,
+      co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
+      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
+      ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
+    FROM jobs j
+    LEFT JOIN companies co ON j.company_id = co.id
+    LEFT JOIN locations lo ON j.location_id = lo.id
+    LEFT JOIN countries ct ON j.country_id = ct.id
+    WHERE j.company_id = ? AND j.posted_at >= ?
+    ORDER BY j.posted_at DESC
+    LIMIT ? OFFSET ?
+  `).bind(company.id, cutoff, limit + 1, offset).all();
 
-  const totalJobs = countResult?.total || 0;
-  const totalPages = Math.ceil(totalJobs / limit);
-  const jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
+  const allJobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
     ...j,
     company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
   }));
+  const hasMore = allJobs.length > limit;
+  const jobs = hasMore ? allJobs.slice(0, limit) : allJobs;
 
-  return c.html(companyDetailPage(company as any, jobs, page, totalPages, totalJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+  return c.html(companyDetailPage(company as any, jobs, page, hasMore, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
 
 pages.get('/categories', async (c) => {
@@ -318,33 +296,28 @@ pages.get('/category/:slug', async (c) => {
   }
 
   const cutoff = thirtyDaysAgo();
-  const [countResult, jobsResult] = await Promise.all([
-    c.env.DB.prepare(
-      'SELECT COUNT(*) as total FROM jobs WHERE search_term_id = ? AND posted_at >= ?'
-    ).bind(term.id, cutoff).first<{ total: number }>(),
-    c.env.DB.prepare(`
-      SELECT j.*,
-        co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-        lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
-        ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
-      FROM jobs j
-      LEFT JOIN companies co ON j.company_id = co.id
-      LEFT JOIN locations lo ON j.location_id = lo.id
-      LEFT JOIN countries ct ON j.country_id = ct.id
-      WHERE j.search_term_id = ? AND j.posted_at >= ?
-      ORDER BY j.posted_at DESC
-      LIMIT ? OFFSET ?
-    `).bind(term.id, cutoff, limit, offset).all(),
-  ]);
+  const jobsResult = await c.env.DB.prepare(`
+    SELECT j.*,
+      co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
+      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
+      ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
+    FROM jobs j
+    LEFT JOIN companies co ON j.company_id = co.id
+    LEFT JOIN locations lo ON j.location_id = lo.id
+    LEFT JOIN countries ct ON j.country_id = ct.id
+    WHERE j.search_term_id = ? AND j.posted_at >= ?
+    ORDER BY j.posted_at DESC
+    LIMIT ? OFFSET ?
+  `).bind(term.id, cutoff, limit + 1, offset).all();
 
-  const totalJobs = countResult?.total || 0;
-  const totalPages = Math.ceil(totalJobs / limit);
-  const jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
+  const allJobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
     ...j,
     company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
   }));
+  const hasMore = allJobs.length > limit;
+  const jobs = hasMore ? allJobs.slice(0, limit) : allJobs;
 
-  return c.html(searchTermPage(term, jobs, page, totalPages, totalJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+  return c.html(searchTermPage(term, jobs, page, hasMore, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
 
 pages.get('/locations', async (c) => {
@@ -354,7 +327,6 @@ pages.get('/locations', async (c) => {
   const limit = 30;
   const offset = (page - 1) * limit;
 
-  let countSql = 'SELECT COUNT(*) as total FROM locations WHERE is_active = 1 AND job_count > 0';
   let listSql = `
     SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.job_count,
       ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
@@ -362,28 +334,22 @@ pages.get('/locations', async (c) => {
     LEFT JOIN countries ct ON lo.country_id = ct.id
     WHERE lo.is_active = 1 AND lo.job_count > 0`;
   const params: (string | number)[] = [];
-  const countParams: (string | number)[] = [];
 
   if (query) {
-    countSql += ' AND (name LIKE ? OR name_cn LIKE ?)';
     listSql += ' AND (lo.name LIKE ? OR lo.name_cn LIKE ?)';
     params.push(`%${query}%`, `%${query}%`);
-    countParams.push(`%${query}%`, `%${query}%`);
   }
 
   listSql += ' ORDER BY lo.job_count DESC LIMIT ? OFFSET ?';
-  params.push(limit, offset);
+  params.push(limit + 1, offset);
 
-  const [countResult, result] = await Promise.all([
-    c.env.DB.prepare(countSql).bind(...countParams).first<{ total: number }>(),
-    c.env.DB.prepare(listSql).bind(...params).all(),
-  ]);
+  const result = await c.env.DB.prepare(listSql).bind(...params).all();
 
-  const total = countResult?.total || 0;
-  const totalPages = Math.ceil(total / limit);
-  const locations = (result.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_name_cn: string | null; country_flag_emoji: string | null; job_count: number }>;
+  const allLocations = (result.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_name_cn: string | null; country_flag_emoji: string | null; job_count: number }>;
+  const hasMore = allLocations.length > limit;
+  const locations = hasMore ? allLocations.slice(0, limit) : allLocations;
 
-  return c.html(locationsPage(locations, page, totalPages, query, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+  return c.html(locationsPage(locations, page, hasMore, query, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
 
 pages.get('/location/:slug', async (c) => {
@@ -409,33 +375,28 @@ pages.get('/location/:slug', async (c) => {
   }
 
   const cutoff = thirtyDaysAgo();
-  const [countResult, jobsResult] = await Promise.all([
-    c.env.DB.prepare(
-      'SELECT COUNT(*) as total FROM jobs WHERE location_id = ? AND posted_at >= ?'
-    ).bind(location.id, cutoff).first<{ total: number }>(),
-    c.env.DB.prepare(`
-      SELECT j.*,
-        co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-        lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
-        ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
-      FROM jobs j
-      LEFT JOIN companies co ON j.company_id = co.id
-      LEFT JOIN locations lo ON j.location_id = lo.id
-      LEFT JOIN countries ct ON j.country_id = ct.id
-      WHERE j.location_id = ? AND j.posted_at >= ?
-      ORDER BY j.posted_at DESC
-      LIMIT ? OFFSET ?
-    `).bind(location.id, cutoff, limit, offset).all(),
-  ]);
+  const jobsResult = await c.env.DB.prepare(`
+    SELECT j.*,
+      co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
+      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
+      ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
+    FROM jobs j
+    LEFT JOIN companies co ON j.company_id = co.id
+    LEFT JOIN locations lo ON j.location_id = lo.id
+    LEFT JOIN countries ct ON j.country_id = ct.id
+    WHERE j.location_id = ? AND j.posted_at >= ?
+    ORDER BY j.posted_at DESC
+    LIMIT ? OFFSET ?
+  `).bind(location.id, cutoff, limit + 1, offset).all();
 
-  const totalJobs = countResult?.total || 0;
-  const totalPages = Math.ceil(totalJobs / limit);
-  const jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
+  const allJobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
     ...j,
     company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
   }));
+  const hasMore = allJobs.length > limit;
+  const jobs = hasMore ? allJobs.slice(0, limit) : allJobs;
 
-  return c.html(locationDetailPage(location, jobs, page, totalPages, totalJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+  return c.html(locationDetailPage(location, jobs, page, hasMore, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
 
 pages.get('/about', (c) => {

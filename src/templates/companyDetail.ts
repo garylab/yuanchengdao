@@ -83,7 +83,7 @@ function renderJobRow(job: Job): string {
     </div>`;
 }
 
-export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: number, totalPages: number, totalJobs: number, gaId?: string, siteUrl?: string, staticUrl?: string): string {
+export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: number, hasMore: boolean, gaId?: string, siteUrl?: string, staticUrl?: string): string {
   const logo = companyLogo(company.name, company.thumbnail, 'lg');
   const locationParts = [company.location_name_cn, company.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
   const location = locationParts.join(', ') || '';
@@ -104,7 +104,7 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
             <h1 class="text-xl font-bold text-surface-900">${escapeHtml(company.name)}</h1>
             <div class="flex items-center gap-3 mt-1 text-sm text-surface-400">
               ${location ? `<span>${company.country_flag_emoji || '🌍'} ${escapeHtml(location)}</span>` : ''}
-              <span>${totalJobs} 个在招职位</span>
+              <span>远程招聘中</span>
             </div>
           </div>
         </div>
@@ -113,17 +113,16 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
       <div class="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden">
         ${jobs.map(j => renderJobRow(j)).join('')}
       </div>
-      ${totalPages > 1 ? `
+      ${(page > 1 || hasMore) ? `
         <div class="flex justify-center gap-2 mt-6">
           ${page > 1 ? `<a href="/company/${escapeHtml(company.slug)}?page=${page - 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">← 上一页</a>` : ''}
-          <span class="px-4 py-2 text-sm text-surface-500">${page} / ${totalPages}</span>
-          ${page < totalPages ? `<a href="/company/${escapeHtml(company.slug)}?page=${page + 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
+          ${hasMore ? `<a href="/company/${escapeHtml(company.slug)}?page=${page + 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
         </div>
       ` : ''}
     </div>`;
 
   const pageTitle = `${company.name} 远程工作 - 远程岛`;
-  const pageDesc = `${company.name} 目前有 ${totalJobs} 个远程岗位正在招聘${location ? `，总部位于${location}` : ''}。查看所有在招职位并直接申请。`;
+  const pageDesc = `${company.name} 远程岗位正在招聘${location ? `，总部位于${location}` : ''}。查看所有在招职位并直接申请。`;
 
   return layout(pageTitle, content, {
     gaId,

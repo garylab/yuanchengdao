@@ -86,12 +86,11 @@ function renderJobRow(job: Job): string {
     </div>`;
 }
 
-export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, totalPages: number, totalJobs: number, gaId?: string, siteUrl?: string, staticUrl?: string): string {
-  const pagination = totalPages > 1 ? `
+export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, hasMore: boolean, gaId?: string, siteUrl?: string, staticUrl?: string): string {
+  const pagination = (page > 1 || hasMore) ? `
     <div class="flex justify-center gap-2 mt-6">
       ${page > 1 ? `<a href="/category/${escapeHtml(term.slug)}?page=${page - 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">← 上一页</a>` : ''}
-      <span class="px-4 py-2 text-sm text-surface-500">${page} / ${totalPages}</span>
-      ${page < totalPages ? `<a href="/category/${escapeHtml(term.slug)}?page=${page + 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
+      ${hasMore ? `<a href="/category/${escapeHtml(term.slug)}?page=${page + 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
     </div>` : '';
 
   const bc = breadcrumb([
@@ -116,7 +115,7 @@ export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, 
     </div>`;
 
   const pageTitle = `远程${term.term_cn} - 远程岛`;
-  const pageDesc = `正在找远程${term.term_cn}的工作？这里有 ${totalJobs} 个在招岗位，每天更新，查看职位详情并直接申请。`;
+  const pageDesc = `正在找远程${term.term_cn}的工作？每天更新远程岗位，查看职位详情并直接申请。`;
 
   return layout(pageTitle, content, {
     gaId,
