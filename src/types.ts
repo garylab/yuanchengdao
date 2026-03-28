@@ -26,6 +26,7 @@ export interface SerpApiJob {
     posted_at?: string;
     schedule_type?: string;
     salary?: string;
+    work_from_home?: boolean;
     health_insurance?: boolean;
     dental_coverage?: boolean;
     paid_time_off?: boolean;
