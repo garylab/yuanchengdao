@@ -168,7 +168,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
     <div class="px-4 py-3 flex flex-wrap items-center gap-2">
       <form action="/" method="GET" class="relative flex-1 min-w-[200px] max-w-md">
         <input type="text" name="q" value="${query ? escapeHtml(query) : ''}"
-          placeholder="搜索职位、公司..."
+          placeholder="搜索职位..."
           class="w-full px-3 py-1.5 rounded-lg border border-surface-200 text-sm outline-none focus:ring-1 focus:ring-brand-300 focus:border-brand-300 placeholder:text-surface-400">
         <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-surface-400 hover:text-brand-500 transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
