@@ -20,4 +20,4 @@ bucket_name = "yuanchengdao"
 
 # Cron trigger: runs every minute, processes 1 search query per run
 [triggers]
-crons = ["* * * * *"]
+crons = ["*/3 * * * *"]
