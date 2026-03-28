@@ -20,9 +20,13 @@ api.get('/api/jobs', async (c) => {
   if (q) {
     const ftsQuery = tokenizeForFtsMatch(q);
     const ftsResult = await c.env.DB.prepare(
-      'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ?'
-    ).bind(ftsQuery, cutoff).all();
+      'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT ? OFFSET ?'
+    ).bind(ftsQuery, cutoff, limit, offset).all();
     ftsIds = (ftsResult.results || []).map((r: Record<string, unknown>) => r.rowid as number);
+  }
+
+  if (ftsIds !== null && ftsIds.length === 0) {
+    return c.json({ jobs: [], page, limit });
   }
 
   let sql = `
@@ -38,23 +42,17 @@ api.get('/api/jobs', async (c) => {
   const params: (string | number)[] = [];
 
   if (ftsIds !== null) {
-    if (ftsIds.length === 0) {
-      return c.json({ jobs: [], page, limit });
-    }
-    const placeholders = ftsIds.map(() => '?').join(',');
-    sql += ` AND j.id IN (${placeholders})`;
-    params.push(...ftsIds);
+    sql += ` AND j.id IN (${ftsIds.join(',')})`;
   } else {
     sql += ' AND j.posted_at >= ?';
     params.push(cutoff);
+    if (country) {
+      sql += ' AND ct.slug = ?';
+      params.push(country);
+    }
+    sql += ' ORDER BY j.posted_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
   }
-  if (country) {
-    sql += ' AND ct.slug = ?';
-    params.push(country);
-  }
-
-  sql += ' ORDER BY j.posted_at DESC LIMIT ? OFFSET ?';
-  params.push(limit, offset);
 
   const result = await c.env.DB.prepare(sql).bind(...params).all();
   const jobs = ((result.results || []) as unknown as Job[]).map(j => ({

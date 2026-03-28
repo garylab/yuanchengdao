@@ -34,9 +34,40 @@ pages.get('/', async (c) => {
   if (query) {
     const ftsQuery = tokenizeForFtsMatch(query);
     const ftsResult = await c.env.DB.prepare(
-      'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ?'
-    ).bind(ftsQuery, cutoff).all();
+      'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT ? OFFSET ?'
+    ).bind(ftsQuery, cutoff, limit + 1, offset).all();
     ftsIds = (ftsResult.results || []).map((r: Record<string, unknown>) => r.rowid as number);
+  }
+
+  if (ftsIds !== null && ftsIds.length === 0) {
+    const emptyJobs: Job[] = [];
+    const [countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
+      c.env.DB.prepare(
+        `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
+         FROM countries ct WHERE ct.is_active = 1 AND ct.job_count > 0 ORDER BY ct.job_count DESC`
+      ).all(),
+      c.env.DB.prepare(
+        `SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, lo.job_count
+         FROM locations lo WHERE lo.is_active = 1 AND lo.job_count > 0 ORDER BY lo.job_count DESC`
+      ).all(),
+      c.env.DB.prepare(
+        `SELECT term_cn, slug, job_count FROM search_terms
+         WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL ORDER BY job_count DESC LIMIT 7`
+      ).all(),
+      c.env.DB.prepare(
+        `SELECT lo.name_cn, lo.slug, lo.job_count, ct.flag_emoji as country_flag_emoji
+         FROM locations lo LEFT JOIN countries ct ON lo.country_id = ct.id
+         WHERE lo.is_active = 1 AND lo.job_count > 0 ORDER BY lo.job_count DESC LIMIT 5`
+      ).all(),
+    ]);
+    return c.html(homePage(emptyJobs,
+      (countriesResult.results || []) as any[], (locationsResult.results || []) as any[],
+      page, false, {
+        query, countrySlug, locationSlug, salaryRange,
+        gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL,
+        topSearchTerms: (topTermsResult.results || []) as any[],
+        topLocations: (topLocationsResult.results || []) as any[],
+      }));
   }
 
   let jobSql = `
@@ -52,69 +83,37 @@ pages.get('/', async (c) => {
   const params: (string | number)[] = [];
 
   if (ftsIds !== null) {
-    if (ftsIds.length === 0) {
-      const emptyJobs: Job[] = [];
-      const [countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
-        c.env.DB.prepare(
-          `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
-           FROM countries ct WHERE ct.is_active = 1 AND ct.job_count > 0 ORDER BY ct.job_count DESC`
-        ).all(),
-        c.env.DB.prepare(
-          `SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, lo.job_count
-           FROM locations lo WHERE lo.is_active = 1 AND lo.job_count > 0 ORDER BY lo.job_count DESC`
-        ).all(),
-        c.env.DB.prepare(
-          `SELECT term_cn, slug, job_count FROM search_terms
-           WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL ORDER BY job_count DESC LIMIT 7`
-        ).all(),
-        c.env.DB.prepare(
-          `SELECT lo.name_cn, lo.slug, lo.job_count, ct.flag_emoji as country_flag_emoji
-           FROM locations lo LEFT JOIN countries ct ON lo.country_id = ct.id
-           WHERE lo.is_active = 1 AND lo.job_count > 0 ORDER BY lo.job_count DESC LIMIT 5`
-        ).all(),
-      ]);
-      return c.html(homePage(emptyJobs,
-        (countriesResult.results || []) as any[], (locationsResult.results || []) as any[],
-        page, false, {
-          query, countrySlug, locationSlug, salaryRange,
-          gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL,
-          topSearchTerms: (topTermsResult.results || []) as any[],
-          topLocations: (topLocationsResult.results || []) as any[],
-        }));
-    }
-    const placeholders = ftsIds.map(() => '?').join(',');
-    jobSql += ` AND j.id IN (${placeholders})`;
-    params.push(...ftsIds);
+    jobSql += ` AND j.id IN (${ftsIds.join(',')})`;
   } else {
     jobSql += ' AND j.posted_at >= ?';
     params.push(cutoff);
-  }
 
-  if (countrySlug) {
-    jobSql += ' AND ct.slug = ?';
-    params.push(countrySlug);
-  }
-
-  if (locationSlug) {
-    jobSql += ' AND lo.slug = ?';
-    params.push(locationSlug);
-  }
-
-  if (salaryRange) {
-    const [minStr, maxStr] = salaryRange.split('-');
-    const salaryMin = parseInt(minStr, 10) || 0;
-    const salaryMax = maxStr ? parseInt(maxStr, 10) : 0;
-    if (salaryMax > 0) {
-      jobSql += ' AND j.salary_upper >= ? AND j.salary_lower <= ?';
-      params.push(salaryMin, salaryMax);
-    } else {
-      jobSql += ' AND j.salary_upper >= ?';
-      params.push(salaryMin);
+    if (countrySlug) {
+      jobSql += ' AND ct.slug = ?';
+      params.push(countrySlug);
     }
-  }
 
-  jobSql += ' ORDER BY j.posted_at DESC LIMIT ? OFFSET ?';
-  params.push(limit + 1, offset);
+    if (locationSlug) {
+      jobSql += ' AND lo.slug = ?';
+      params.push(locationSlug);
+    }
+
+    if (salaryRange) {
+      const [minStr, maxStr] = salaryRange.split('-');
+      const salaryMin = parseInt(minStr, 10) || 0;
+      const salaryMax = maxStr ? parseInt(maxStr, 10) : 0;
+      if (salaryMax > 0) {
+        jobSql += ' AND j.salary_upper >= ? AND j.salary_lower <= ?';
+        params.push(salaryMin, salaryMax);
+      } else {
+        jobSql += ' AND j.salary_upper >= ?';
+        params.push(salaryMin);
+      }
+    }
+
+    jobSql += ' ORDER BY j.posted_at DESC LIMIT ? OFFSET ?';
+    params.push(limit + 1, offset);
+  }
 
   const [jobsResult, countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
     c.env.DB.prepare(jobSql).bind(...params).all(),
