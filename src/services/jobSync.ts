@@ -7,6 +7,25 @@ function toSlug(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+const CJK_RE = /[\u4e00-\u9fff\u3400-\u4dbf]+/;
+const SEGMENT_RE = /([\u4e00-\u9fff\u3400-\u4dbf]+)/;
+
+function segmentChinese(text: string): string {
+  const segmenter = new Intl.Segmenter('zh-CN', { granularity: 'word' });
+  return text
+    .split(SEGMENT_RE)
+    .flatMap((seg) => {
+      if (CJK_RE.test(seg)) {
+        return [...segmenter.segment(seg)]
+          .filter((s) => s.isWordLike)
+          .map((s) => s.segment);
+      }
+      const trimmed = seg.trim();
+      return trimmed ? [trimmed] : [];
+    })
+    .join(' ');
+}
+
 function getTimezoneOffsetMs(timezone: string): number {
   try {
     const now = new Date();
@@ -217,7 +236,7 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
 
       const searchTermId = crawled.search_term_id;
 
-      await env.DB.prepare(`
+      const jobInsert = await env.DB.prepare(`
         INSERT INTO jobs
           (crawled_id, slug, title, description, company_id, location_id, country_id, search_term_id, posted_at,
            salary_lower, salary_upper, salary_currency, salary_pay_cycle,
@@ -241,6 +260,14 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         tr.job_highlights_zh.length > 0 ? JSON.stringify(tr.job_highlights_zh) : crawled.job_highlights,
         crawled.apply_options,
       ).run();
+
+      const newJobId = jobInsert.meta.last_row_id;
+      if (newJobId) {
+        const titleSeg = segmentChinese(tr.title_zh);
+        await env.DB.prepare(
+          'INSERT INTO jobs_fts(rowid, title, posted_at) VALUES (?, ?, ?)'
+        ).bind(newJobId, titleSeg, postedAt).run();
+      }
 
       if (companyId) {
         await env.DB.prepare('UPDATE companies SET job_count = job_count + 1 WHERE id = ?').bind(companyId).run();

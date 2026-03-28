@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Env, Job } from '../types';
 import { syncJobs } from '../services/jobSync';
 import { resolveThumbnail } from '../utils/helpers';
+import { tokenizeForFtsMatch } from '../utils/tokenizer';
 
 const api = new Hono<{ Bindings: Env }>();
 
@@ -14,6 +15,16 @@ api.get('/api/jobs', async (c) => {
   const q = url.searchParams.get('q') || '';
 
   const cutoff = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
+
+  let ftsIds: number[] | null = null;
+  if (q) {
+    const ftsQuery = tokenizeForFtsMatch(q);
+    const ftsResult = await c.env.DB.prepare(
+      'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ?'
+    ).bind(ftsQuery, cutoff).all();
+    ftsIds = (ftsResult.results || []).map((r: Record<string, unknown>) => r.rowid as number);
+  }
+
   let sql = `
     SELECT j.*,
       co.name as company_name, co.thumbnail as company_thumbnail,
@@ -23,12 +34,19 @@ api.get('/api/jobs', async (c) => {
     LEFT JOIN companies co ON j.company_id = co.id
     LEFT JOIN locations lo ON j.location_id = lo.id
     LEFT JOIN countries ct ON j.country_id = ct.id
-    WHERE j.posted_at >= ?`;
-  const params: (string | number)[] = [cutoff];
+    WHERE 1=1`;
+  const params: (string | number)[] = [];
 
-  if (q) {
-    sql += ' AND (j.title LIKE ? OR co.name LIKE ?)';
-    params.push(`%${q}%`, `%${q}%`);
+  if (ftsIds !== null) {
+    if (ftsIds.length === 0) {
+      return c.json({ jobs: [], page, limit });
+    }
+    const placeholders = ftsIds.map(() => '?').join(',');
+    sql += ` AND j.id IN (${placeholders})`;
+    params.push(...ftsIds);
+  } else {
+    sql += ' AND j.posted_at >= ?';
+    params.push(cutoff);
   }
   if (country) {
     sql += ' AND ct.slug = ?';

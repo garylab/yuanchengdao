@@ -10,6 +10,7 @@ import { searchTermPage } from '../templates/searchTerm';
 import { locationsPage } from '../templates/locations';
 import { locationDetailPage } from '../templates/locationDetail';
 import { resolveThumbnail } from '../utils/helpers';
+import { tokenizeForFtsMatch } from '../utils/tokenizer';
 
 const pages = new Hono<{ Bindings: Env }>();
 
@@ -28,6 +29,16 @@ pages.get('/', async (c) => {
   const offset = (page - 1) * limit;
 
   const cutoff = thirtyDaysAgo();
+
+  let ftsIds: number[] | null = null;
+  if (query) {
+    const ftsQuery = tokenizeForFtsMatch(query);
+    const ftsResult = await c.env.DB.prepare(
+      'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ?'
+    ).bind(ftsQuery, cutoff).all();
+    ftsIds = (ftsResult.results || []).map((r: Record<string, unknown>) => r.rowid as number);
+  }
+
   let jobSql = `
     SELECT j.*,
       co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
@@ -37,12 +48,46 @@ pages.get('/', async (c) => {
     LEFT JOIN companies co ON j.company_id = co.id
     LEFT JOIN locations lo ON j.location_id = lo.id
     LEFT JOIN countries ct ON j.country_id = ct.id
-    WHERE j.posted_at >= ?`;
-  const params: (string | number)[] = [cutoff];
+    WHERE 1=1`;
+  const params: (string | number)[] = [];
 
-  if (query) {
-    jobSql += ' AND j.title LIKE ?';
-    params.push(`%${query}%`);
+  if (ftsIds !== null) {
+    if (ftsIds.length === 0) {
+      const emptyJobs: Job[] = [];
+      const [countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
+        c.env.DB.prepare(
+          `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
+           FROM countries ct WHERE ct.is_active = 1 AND ct.job_count > 0 ORDER BY ct.job_count DESC`
+        ).all(),
+        c.env.DB.prepare(
+          `SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, lo.job_count
+           FROM locations lo WHERE lo.is_active = 1 AND lo.job_count > 0 ORDER BY lo.job_count DESC`
+        ).all(),
+        c.env.DB.prepare(
+          `SELECT term_cn, slug, job_count FROM search_terms
+           WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL ORDER BY job_count DESC LIMIT 7`
+        ).all(),
+        c.env.DB.prepare(
+          `SELECT lo.name_cn, lo.slug, lo.job_count, ct.flag_emoji as country_flag_emoji
+           FROM locations lo LEFT JOIN countries ct ON lo.country_id = ct.id
+           WHERE lo.is_active = 1 AND lo.job_count > 0 ORDER BY lo.job_count DESC LIMIT 5`
+        ).all(),
+      ]);
+      return c.html(homePage(emptyJobs,
+        (countriesResult.results || []) as any[], (locationsResult.results || []) as any[],
+        page, false, {
+          query, countrySlug, locationSlug, salaryRange,
+          gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL,
+          topSearchTerms: (topTermsResult.results || []) as any[],
+          topLocations: (topLocationsResult.results || []) as any[],
+        }));
+    }
+    const placeholders = ftsIds.map(() => '?').join(',');
+    jobSql += ` AND j.id IN (${placeholders})`;
+    params.push(...ftsIds);
+  } else {
+    jobSql += ' AND j.posted_at >= ?';
+    params.push(cutoff);
   }
 
   if (countrySlug) {
