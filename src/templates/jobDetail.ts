@@ -71,7 +71,7 @@ function buildJobJsonLd(job: Job, siteUrl?: string): string {
   return JSON.stringify(ld);
 }
 
-export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, siteUrl?: string, staticUrl?: string): string {
+export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, siteUrl?: string, staticUrl?: string, isExpired = false): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(job.posted_at || job.created_at);
 
@@ -114,8 +114,16 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
       </div>
     </aside>` : '';
 
+  const expiredBanner = isExpired ? `
+    <div class="max-w-5xl mx-auto px-4 mt-4">
+      <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-3 text-sm">
+        ⚠️ 此职位已过期，信息仅供参考。
+      </div>
+    </div>` : '';
+
   const content = `
     ${bc}
+    ${expiredBanner}
     <div class="max-w-5xl mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6">
       <div class="flex-1 min-w-0 max-w-3xl">
         <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-6">

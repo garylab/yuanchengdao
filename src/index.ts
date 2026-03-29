@@ -4,6 +4,7 @@ import { Env } from './types';
 import pages from './routes/pages';
 import api from './routes/api';
 import { syncJobs } from './services/jobSync';
+import { expiredCutoff } from './utils/helpers';
 import { appScript, appScriptVersion } from './public/app';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -121,9 +122,10 @@ app.get('/sitemap-companies.xml', async (c) => {
 
 app.get('/sitemap-jobs.xml', async (c) => {
   const site = c.env.SITE_URL;
+  const cutoff = expiredCutoff();
   const jobs = await c.env.DB.prepare(
-    'SELECT slug, updated_at FROM jobs ORDER BY posted_at DESC LIMIT 5000'
-  ).all();
+    'SELECT slug, updated_at FROM jobs WHERE posted_at >= ? ORDER BY posted_at DESC LIMIT 5000'
+  ).bind(cutoff).all();
   const urls = (jobs.results || []).map((j: Record<string, unknown>) => {
     const raw = (j.updated_at as string) || new Date().toISOString();
     const date = raw.substring(0, 10);

@@ -1,3 +1,15 @@
+function dateCutoff(days: number): string {
+  return new Date(Date.now() - days * 86400000).toISOString().slice(0, 19).replace('T', ' ');
+}
+
+export function activeCutoff(): string {
+  return dateCutoff(30);
+}
+
+export function expiredCutoff(): string {
+  return dateCutoff(90);
+}
+
 export function timeAgo(dateStr: string | null): string {
   if (!dateStr) return '最近';
   const now = Date.now();

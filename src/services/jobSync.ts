@@ -371,6 +371,60 @@ async function ensureCrawlPlan(db: D1Database): Promise<number> {
   return entries.length;
 }
 
+async function deleteExpiredJobs(db: D1Database): Promise<number> {
+  const cutoff = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
+
+  const expired = await db.prepare(
+    'SELECT id, company_id, location_id, country_id, search_term_id FROM jobs WHERE posted_at < ?'
+  ).bind(cutoff).all();
+
+  const rows = (expired.results || []) as unknown as Array<{
+    id: number; company_id: number | null; location_id: number | null;
+    country_id: number | null; search_term_id: number | null;
+  }>;
+  if (rows.length === 0) return 0;
+
+  const ids = rows.map(r => r.id);
+
+  const companyCount = new Map<number, number>();
+  const locationCount = new Map<number, number>();
+  const countryCount = new Map<number, number>();
+  const termCount = new Map<number, number>();
+  for (const r of rows) {
+    if (r.company_id) companyCount.set(r.company_id, (companyCount.get(r.company_id) || 0) + 1);
+    if (r.location_id) locationCount.set(r.location_id, (locationCount.get(r.location_id) || 0) + 1);
+    if (r.country_id) countryCount.set(r.country_id, (countryCount.get(r.country_id) || 0) + 1);
+    if (r.search_term_id) termCount.set(r.search_term_id, (termCount.get(r.search_term_id) || 0) + 1);
+  }
+
+  const BATCH = 50;
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const batch = ids.slice(i, i + BATCH);
+    const placeholders = batch.join(',');
+    await db.prepare(`DELETE FROM jobs_fts WHERE rowid IN (${placeholders})`).run();
+    await db.prepare(`DELETE FROM jobs WHERE id IN (${placeholders})`).run();
+  }
+
+  const stmts: D1PreparedStatement[] = [];
+  for (const [id, cnt] of companyCount) {
+    stmts.push(db.prepare('UPDATE companies SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
+  }
+  for (const [id, cnt] of locationCount) {
+    stmts.push(db.prepare('UPDATE locations SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
+  }
+  for (const [id, cnt] of countryCount) {
+    stmts.push(db.prepare('UPDATE countries SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
+  }
+  for (const [id, cnt] of termCount) {
+    stmts.push(db.prepare('UPDATE search_terms SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
+  }
+  if (stmts.length > 0) {
+    await db.batch(stmts);
+  }
+
+  return rows.length;
+}
+
 async function deleteJobsFromInactiveCountries(db: D1Database): Promise<number> {
   const result = await db.prepare(`
     DELETE FROM jobs
@@ -382,6 +436,11 @@ async function deleteJobsFromInactiveCountries(db: D1Database): Promise<number> 
 
 export async function syncJobs(env: Env): Promise<{ fetched: number; saved: number }> {
   console.log('Starting job sync...');
+
+  const expiredDeleted = await deleteExpiredJobs(env.DB);
+  if (expiredDeleted > 0) {
+    console.log(`Cleaned up ${expiredDeleted} expired jobs (90+ days old)`);
+  }
 
   const deleted = await deleteJobsFromInactiveCountries(env.DB);
   if (deleted > 0) {

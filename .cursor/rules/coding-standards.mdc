@@ -1,0 +1,74 @@
+---
+description: Project coding standards for yuanchengdao (Cloudflare Workers + D1)
+alwaysApply: true
+---
+
+# Coding Standards
+
+## No Comments
+
+Do not add comments to the code. Use self-explanatory variable and function names instead.
+
+```typescript
+// ❌ BAD
+// Calculate the cutoff date for active jobs (30 days)
+const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
+
+// ✅ GOOD
+const activeCutoff = new Date(Date.now() - 30 * 86400000).toISOString();
+```
+
+## Avoid SQL JOINs — Use Two-Stage Queries
+
+Cloudflare D1 charges per row read. JOINs multiply row reads (N rows × M tables). Instead, split into two stages:
+
+1. **Stage 1**: Fetch IDs with filters from a single table (uses index, minimal row reads)
+2. **Stage 2**: Hydrate only the page-sized ID set with JOINs
+
+```typescript
+// ❌ BAD — scans all matching rows × 4 tables
+const result = await db.prepare(`
+  SELECT j.*, co.name, lo.name_cn, ct.flag_emoji
+  FROM jobs j
+  LEFT JOIN companies co ON j.company_id = co.id
+  LEFT JOIN locations lo ON j.location_id = lo.id
+  LEFT JOIN countries ct ON j.country_id = ct.id
+  WHERE j.posted_at >= ? ORDER BY j.posted_at DESC LIMIT 30
+`).bind(cutoff).all();
+
+// ✅ GOOD — index scan + JOINs only on 30 rows
+const idResult = await db.prepare(
+  'SELECT id FROM jobs WHERE posted_at >= ? ORDER BY posted_at DESC LIMIT 30'
+).bind(cutoff).all();
+const ids = idResult.results.map(r => r.id as number);
+
+const result = await db.prepare(`
+  SELECT j.*, co.name, lo.name_cn, ct.flag_emoji
+  FROM jobs j LEFT JOIN ... WHERE j.id IN (${ids.join(',')})
+  ORDER BY j.posted_at DESC
+`).all();
+```
+
+When filtering by a slug from a related table, resolve the slug to an ID first:
+
+```typescript
+// ❌ BAD — requires JOIN just to filter
+WHERE ct.slug = ?
+
+// ✅ GOOD — resolve first, then filter on indexed FK
+const row = await db.prepare('SELECT id FROM countries WHERE slug = ?').bind(slug).first();
+// then: WHERE country_id = ?
+```
+
+## D1 Best Practices
+
+- Inline trusted integer IDs with `IN (${ids.join(',')})` instead of bind params to avoid D1's variable limit
+- Use `db.batch()` for multiple independent writes
+- Keep bind parameter count well under D1's limit (~100)
+
+## General
+
+- Prefer `const` over `let`; use `let` only when reassignment is needed
+- Extract shared SQL fragments into constants (e.g., `JOBS_HYDRATE`)
+- Use early returns to reduce nesting
+- Run independent DB queries in parallel with `Promise.all`

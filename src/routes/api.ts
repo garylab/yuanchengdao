@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Env, Job } from '../types';
 import { syncJobs } from '../services/jobSync';
-import { resolveThumbnail } from '../utils/helpers';
+import { resolveThumbnail, activeCutoff } from '../utils/helpers';
 import { tokenizeForFtsMatch } from '../utils/tokenizer';
 
 const api = new Hono<{ Bindings: Env }>();
@@ -14,22 +14,44 @@ api.get('/api/jobs', async (c) => {
   const country = url.searchParams.get('country') || '';
   const q = url.searchParams.get('q') || '';
 
-  const cutoff = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
+  const cutoff = activeCutoff();
 
-  let ftsIds: number[] | null = null;
+  // Stage 1: get job IDs (no JOINs)
+  let jobIds: number[] = [];
+
   if (q) {
     const ftsQuery = tokenizeForFtsMatch(q);
     const ftsResult = await c.env.DB.prepare(
       'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT ? OFFSET ?'
     ).bind(ftsQuery, cutoff, limit, offset).all();
-    ftsIds = (ftsResult.results || []).map((r: Record<string, unknown>) => r.rowid as number);
+    jobIds = (ftsResult.results || []).map((r: Record<string, unknown>) => r.rowid as number);
+  } else {
+    let idSql = 'SELECT id FROM jobs WHERE posted_at >= ?';
+    const idParams: (string | number)[] = [cutoff];
+
+    if (country) {
+      const row = await c.env.DB.prepare('SELECT id FROM countries WHERE slug = ?').bind(country).first<{ id: number }>();
+      if (row) {
+        idSql += ' AND country_id = ?';
+        idParams.push(row.id);
+      } else {
+        return c.json({ jobs: [], page, limit });
+      }
+    }
+
+    idSql += ' ORDER BY posted_at DESC LIMIT ? OFFSET ?';
+    idParams.push(limit, offset);
+
+    const idResult = await c.env.DB.prepare(idSql).bind(...idParams).all();
+    jobIds = (idResult.results || []).map((r: Record<string, unknown>) => r.id as number);
   }
 
-  if (ftsIds !== null && ftsIds.length === 0) {
+  if (jobIds.length === 0) {
     return c.json({ jobs: [], page, limit });
   }
 
-  let sql = `
+  // Stage 2: hydrate only the page-sized set with JOINs
+  const result = await c.env.DB.prepare(`
     SELECT j.*,
       co.name as company_name, co.thumbnail as company_thumbnail,
       lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
@@ -38,23 +60,9 @@ api.get('/api/jobs', async (c) => {
     LEFT JOIN companies co ON j.company_id = co.id
     LEFT JOIN locations lo ON j.location_id = lo.id
     LEFT JOIN countries ct ON j.country_id = ct.id
-    WHERE 1=1`;
-  const params: (string | number)[] = [];
-
-  if (ftsIds !== null) {
-    sql += ` AND j.id IN (${ftsIds.join(',')})`;
-  } else {
-    sql += ' AND j.posted_at >= ?';
-    params.push(cutoff);
-    if (country) {
-      sql += ' AND ct.slug = ?';
-      params.push(country);
-    }
-    sql += ' ORDER BY j.posted_at DESC LIMIT ? OFFSET ?';
-    params.push(limit, offset);
-  }
-
-  const result = await c.env.DB.prepare(sql).bind(...params).all();
+    WHERE j.id IN (${jobIds.join(',')})
+    ORDER BY j.posted_at DESC
+  `).all();
   const jobs = ((result.results || []) as unknown as Job[]).map(j => ({
     ...j,
     company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),

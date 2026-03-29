@@ -9,14 +9,20 @@ import { categoriesPage } from '../templates/categories';
 import { searchTermPage } from '../templates/searchTerm';
 import { locationsPage } from '../templates/locations';
 import { locationDetailPage } from '../templates/locationDetail';
-import { resolveThumbnail } from '../utils/helpers';
+import { resolveThumbnail, activeCutoff, expiredCutoff } from '../utils/helpers';
 import { tokenizeForFtsMatch } from '../utils/tokenizer';
 
 const pages = new Hono<{ Bindings: Env }>();
 
-function thirtyDaysAgo(): string {
-  return new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
-}
+const JOBS_HYDRATE = `
+  SELECT j.*,
+    co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
+    lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
+    ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
+  FROM jobs j
+  LEFT JOIN companies co ON j.company_id = co.id
+  LEFT JOIN locations lo ON j.location_id = lo.id
+  LEFT JOIN countries ct ON j.country_id = ct.id`;
 
 pages.get('/', async (c) => {
   const url = new URL(c.req.url);
@@ -28,95 +34,67 @@ pages.get('/', async (c) => {
   const limit = 30;
   const offset = (page - 1) * limit;
 
-  const cutoff = thirtyDaysAgo();
+  const cutoff = activeCutoff();
 
-  let ftsIds: number[] | null = null;
+  // Stage 1: get job IDs (no JOINs)
+  let allIds: number[] = [];
+
   if (query) {
     const ftsQuery = tokenizeForFtsMatch(query);
     const ftsResult = await c.env.DB.prepare(
       'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT ? OFFSET ?'
     ).bind(ftsQuery, cutoff, limit + 1, offset).all();
-    ftsIds = (ftsResult.results || []).map((r: Record<string, unknown>) => r.rowid as number);
-  }
-
-  if (ftsIds !== null && ftsIds.length === 0) {
-    const emptyJobs: Job[] = [];
-    const [countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
-      c.env.DB.prepare(
-        `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
-         FROM countries ct WHERE ct.is_active = 1 AND ct.job_count > 0 ORDER BY ct.job_count DESC`
-      ).all(),
-      c.env.DB.prepare(
-        `SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, lo.job_count
-         FROM locations lo WHERE lo.is_active = 1 AND lo.job_count > 0 ORDER BY lo.job_count DESC`
-      ).all(),
-      c.env.DB.prepare(
-        `SELECT term_cn, slug, job_count FROM search_terms
-         WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL ORDER BY job_count DESC LIMIT 7`
-      ).all(),
-      c.env.DB.prepare(
-        `SELECT lo.name_cn, lo.slug, lo.job_count, ct.flag_emoji as country_flag_emoji
-         FROM locations lo LEFT JOIN countries ct ON lo.country_id = ct.id
-         WHERE lo.is_active = 1 AND lo.job_count > 0 ORDER BY lo.job_count DESC LIMIT 5`
-      ).all(),
-    ]);
-    return c.html(homePage(emptyJobs,
-      (countriesResult.results || []) as any[], (locationsResult.results || []) as any[],
-      page, false, {
-        query, countrySlug, locationSlug, salaryRange,
-        gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL,
-        topSearchTerms: (topTermsResult.results || []) as any[],
-        topLocations: (topLocationsResult.results || []) as any[],
-      }));
-  }
-
-  let jobSql = `
-    SELECT j.*,
-      co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
-      ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
-    FROM jobs j
-    LEFT JOIN companies co ON j.company_id = co.id
-    LEFT JOIN locations lo ON j.location_id = lo.id
-    LEFT JOIN countries ct ON j.country_id = ct.id
-    WHERE 1=1`;
-  const params: (string | number)[] = [];
-
-  if (ftsIds !== null) {
-    jobSql += ` AND j.id IN (${ftsIds.join(',')})`;
+    allIds = (ftsResult.results || []).map((r: Record<string, unknown>) => r.rowid as number);
   } else {
-    jobSql += ' AND j.posted_at >= ?';
-    params.push(cutoff);
+    let idSql = 'SELECT id FROM jobs WHERE posted_at >= ?';
+    const idParams: (string | number)[] = [cutoff];
+    let valid = true;
 
-    if (countrySlug) {
-      jobSql += ' AND ct.slug = ?';
-      params.push(countrySlug);
-    }
-
-    if (locationSlug) {
-      jobSql += ' AND lo.slug = ?';
-      params.push(locationSlug);
-    }
-
-    if (salaryRange) {
-      const [minStr, maxStr] = salaryRange.split('-');
-      const salaryMin = parseInt(minStr, 10) || 0;
-      const salaryMax = maxStr ? parseInt(maxStr, 10) : 0;
-      if (salaryMax > 0) {
-        jobSql += ' AND j.salary_upper >= ? AND j.salary_lower <= ?';
-        params.push(salaryMin, salaryMax);
-      } else {
-        jobSql += ' AND j.salary_upper >= ?';
-        params.push(salaryMin);
+    if (countrySlug || locationSlug) {
+      const [cRow, lRow] = await Promise.all([
+        countrySlug ? c.env.DB.prepare('SELECT id FROM countries WHERE slug = ?').bind(countrySlug).first<{ id: number }>() : null,
+        locationSlug ? c.env.DB.prepare('SELECT id FROM locations WHERE slug = ?').bind(locationSlug).first<{ id: number }>() : null,
+      ]);
+      if (countrySlug) {
+        if (cRow) { idSql += ' AND country_id = ?'; idParams.push(cRow.id); }
+        else valid = false;
+      }
+      if (valid && locationSlug) {
+        if (lRow) { idSql += ' AND location_id = ?'; idParams.push(lRow.id); }
+        else valid = false;
       }
     }
 
-    jobSql += ' ORDER BY j.posted_at DESC LIMIT ? OFFSET ?';
-    params.push(limit + 1, offset);
+    if (valid) {
+      if (salaryRange) {
+        const [minStr, maxStr] = salaryRange.split('-');
+        const salaryMin = parseInt(minStr, 10) || 0;
+        const salaryMax = maxStr ? parseInt(maxStr, 10) : 0;
+        if (salaryMax > 0) {
+          idSql += ' AND salary_upper >= ? AND salary_lower <= ?';
+          idParams.push(salaryMin, salaryMax);
+        } else {
+          idSql += ' AND salary_upper >= ?';
+          idParams.push(salaryMin);
+        }
+      }
+
+      idSql += ' ORDER BY posted_at DESC LIMIT ? OFFSET ?';
+      idParams.push(limit + 1, offset);
+
+      const idResult = await c.env.DB.prepare(idSql).bind(...idParams).all();
+      allIds = (idResult.results || []).map((r: Record<string, unknown>) => r.id as number);
+    }
   }
 
+  const hasMore = allIds.length > limit;
+  const jobIds = hasMore ? allIds.slice(0, limit) : allIds;
+
+  // Stage 2: hydrate jobs (JOINs only on the page-sized set) + sidebar in parallel
   const [jobsResult, countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
-    c.env.DB.prepare(jobSql).bind(...params).all(),
+    jobIds.length > 0
+      ? c.env.DB.prepare(`${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.posted_at DESC`).all()
+      : { results: [] },
     c.env.DB.prepare(
       `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
        FROM countries ct
@@ -143,12 +121,10 @@ pages.get('/', async (c) => {
     ).all(),
   ]);
 
-  const allRows = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
+  const jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
     ...j,
     company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
   }));
-  const hasMore = allRows.length > limit;
-  const jobs = hasMore ? allRows.slice(0, limit) : allRows;
   const countries = (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>;
   const locations = (locationsResult.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_id: number; job_count: number }>;
   const topSearchTerms = (topTermsResult.results || []) as unknown as Array<{ term_cn: string; slug: string; job_count: number }>;
@@ -184,29 +160,49 @@ pages.get('/job/:slug', async (c) => {
     );
   }
 
+  const postedAt = job.posted_at || job.created_at;
+  const ageMs = Date.now() - new Date(postedAt).getTime();
+  const ageDays = ageMs / 86400000;
+
+  if (ageDays > 90) {
+    return c.html(
+      `<div class="text-center py-20"><h1 class="text-2xl">410 - 此职位已被删除</h1><p class="text-surface-500 mt-2">该职位发布时间已超过 90 天，已被移除。</p><a href="/" class="text-brand-500 mt-4 inline-block">返回首页</a></div>`,
+      410
+    );
+  }
+
+  const isExpired = ageDays > 30;
+
   job.company_thumbnail = resolveThumbnail(job.company_thumbnail, c.env.STATIC_URL) as string;
 
   let similarJobs: Job[] = [];
   if (job.search_term_id) {
-    const result = await c.env.DB.prepare(`
-      SELECT j.slug, j.title, j.posted_at,
-        co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-        lo.name_cn as location_name_cn, lo.slug as location_slug, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
-      FROM jobs j
-      LEFT JOIN companies co ON j.company_id = co.id
-      LEFT JOIN locations lo ON j.location_id = lo.id
-      LEFT JOIN countries ct ON j.country_id = ct.id
-      WHERE j.search_term_id = ? AND j.id != ?
-      ORDER BY j.posted_at DESC
-      LIMIT 10
-    `).bind(job.search_term_id, job.id).all();
-    similarJobs = ((result.results || []) as unknown as Job[]).map(j => ({
-      ...j,
-      company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
-    })) as Job[];
+    const activeDate = activeCutoff();
+    const simIdResult = await c.env.DB.prepare(
+      'SELECT id FROM jobs WHERE search_term_id = ? AND id != ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT 10'
+    ).bind(job.search_term_id, job.id, activeDate).all();
+    const simIds = (simIdResult.results || []).map((r: Record<string, unknown>) => r.id as number);
+
+    if (simIds.length > 0) {
+      const result = await c.env.DB.prepare(`
+        SELECT j.slug, j.title, j.posted_at,
+          co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
+          lo.name_cn as location_name_cn, lo.slug as location_slug, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
+        FROM jobs j
+        LEFT JOIN companies co ON j.company_id = co.id
+        LEFT JOIN locations lo ON j.location_id = lo.id
+        LEFT JOIN countries ct ON j.country_id = ct.id
+        WHERE j.id IN (${simIds.join(',')})
+        ORDER BY j.posted_at DESC
+      `).all();
+      similarJobs = ((result.results || []) as unknown as Job[]).map(j => ({
+        ...j,
+        company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
+      })) as Job[];
+    }
   }
 
-  return c.html(jobDetailPage(job, similarJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+  return c.html(jobDetailPage(job, similarJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL, isExpired));
 });
 
 pages.get('/companies', async (c) => {
@@ -277,27 +273,24 @@ pages.get('/company/:slug', async (c) => {
 
   company.thumbnail = resolveThumbnail(company.thumbnail as string | null, c.env.STATIC_URL) as any;
 
-  const cutoff = thirtyDaysAgo();
-  const jobsResult = await c.env.DB.prepare(`
-    SELECT j.*,
-      co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
-      ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
-    FROM jobs j
-    LEFT JOIN companies co ON j.company_id = co.id
-    LEFT JOIN locations lo ON j.location_id = lo.id
-    LEFT JOIN countries ct ON j.country_id = ct.id
-    WHERE j.company_id = ? AND j.posted_at >= ?
-    ORDER BY j.posted_at DESC
-    LIMIT ? OFFSET ?
-  `).bind(company.id, cutoff, limit + 1, offset).all();
+  const cutoff = activeCutoff();
+  const idResult = await c.env.DB.prepare(
+    'SELECT id FROM jobs WHERE company_id = ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT ? OFFSET ?'
+  ).bind(company.id, cutoff, limit + 1, offset).all();
+  const allIds = (idResult.results || []).map((r: Record<string, unknown>) => r.id as number);
+  const hasMore = allIds.length > limit;
+  const jobIds = hasMore ? allIds.slice(0, limit) : allIds;
 
-  const allJobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
-    ...j,
-    company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
-  }));
-  const hasMore = allJobs.length > limit;
-  const jobs = hasMore ? allJobs.slice(0, limit) : allJobs;
+  let jobs: Job[] = [];
+  if (jobIds.length > 0) {
+    const jobsResult = await c.env.DB.prepare(
+      `${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.posted_at DESC`
+    ).all();
+    jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
+      ...j,
+      company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
+    }));
+  }
 
   return c.html(companyDetailPage(company as any, jobs, page, hasMore, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
@@ -339,27 +332,24 @@ pages.get('/category/:slug', async (c) => {
     );
   }
 
-  const cutoff = thirtyDaysAgo();
-  const jobsResult = await c.env.DB.prepare(`
-    SELECT j.*,
-      co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
-      ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
-    FROM jobs j
-    LEFT JOIN companies co ON j.company_id = co.id
-    LEFT JOIN locations lo ON j.location_id = lo.id
-    LEFT JOIN countries ct ON j.country_id = ct.id
-    WHERE j.search_term_id = ? AND j.posted_at >= ?
-    ORDER BY j.posted_at DESC
-    LIMIT ? OFFSET ?
-  `).bind(term.id, cutoff, limit + 1, offset).all();
+  const cutoff = activeCutoff();
+  const idResult = await c.env.DB.prepare(
+    'SELECT id FROM jobs WHERE search_term_id = ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT ? OFFSET ?'
+  ).bind(term.id, cutoff, limit + 1, offset).all();
+  const allIds = (idResult.results || []).map((r: Record<string, unknown>) => r.id as number);
+  const hasMore = allIds.length > limit;
+  const jobIds = hasMore ? allIds.slice(0, limit) : allIds;
 
-  const allJobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
-    ...j,
-    company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
-  }));
-  const hasMore = allJobs.length > limit;
-  const jobs = hasMore ? allJobs.slice(0, limit) : allJobs;
+  let jobs: Job[] = [];
+  if (jobIds.length > 0) {
+    const jobsResult = await c.env.DB.prepare(
+      `${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.posted_at DESC`
+    ).all();
+    jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
+      ...j,
+      company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
+    }));
+  }
 
   return c.html(searchTermPage(term, jobs, page, hasMore, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
@@ -418,27 +408,24 @@ pages.get('/location/:slug', async (c) => {
     );
   }
 
-  const cutoff = thirtyDaysAgo();
-  const jobsResult = await c.env.DB.prepare(`
-    SELECT j.*,
-      co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
-      ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
-    FROM jobs j
-    LEFT JOIN companies co ON j.company_id = co.id
-    LEFT JOIN locations lo ON j.location_id = lo.id
-    LEFT JOIN countries ct ON j.country_id = ct.id
-    WHERE j.location_id = ? AND j.posted_at >= ?
-    ORDER BY j.posted_at DESC
-    LIMIT ? OFFSET ?
-  `).bind(location.id, cutoff, limit + 1, offset).all();
+  const cutoff = activeCutoff();
+  const idResult = await c.env.DB.prepare(
+    'SELECT id FROM jobs WHERE location_id = ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT ? OFFSET ?'
+  ).bind(location.id, cutoff, limit + 1, offset).all();
+  const allIds = (idResult.results || []).map((r: Record<string, unknown>) => r.id as number);
+  const hasMore = allIds.length > limit;
+  const jobIds = hasMore ? allIds.slice(0, limit) : allIds;
 
-  const allJobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
-    ...j,
-    company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
-  }));
-  const hasMore = allJobs.length > limit;
-  const jobs = hasMore ? allJobs.slice(0, limit) : allJobs;
+  let jobs: Job[] = [];
+  if (jobIds.length > 0) {
+    const jobsResult = await c.env.DB.prepare(
+      `${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.posted_at DESC`
+    ).all();
+    jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
+      ...j,
+      company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
+    }));
+  }
 
   return c.html(locationDetailPage(location, jobs, page, hasMore, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
