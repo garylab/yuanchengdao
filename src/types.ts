@@ -127,7 +127,7 @@ export interface Job {
   detected_extensions: string | null;
   job_highlights: string | null;
   apply_options: string | null;
-  location_req: number;
+  location_requirement: number;
   created_at: string;
   updated_at: string;
   // joined fields
@@ -161,5 +161,5 @@ export interface TranslationResult {
     title: string;
     items: string[];
   }>;
-  location_req: number;
+  location_requirement: number;
 }

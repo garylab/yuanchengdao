@@ -55,7 +55,7 @@ Return a JSON object with:
 - "salary_currency": always return "CNY".
 - "salary_pay_cycle": one of "hour", "day", "week", "month", "year". The ORIGINAL pay cycle before any conversion. Default "month".
 - "job_highlights_zh": translate the job_highlights array to Chinese. Keep the same structure [{title, items}]. Keep technical terms in English.
-- "location_req": determine the applicant location/eligibility requirement from the job description. Must be one of:
+- "location_requirement": determine the applicant location/eligibility requirement from the job description. Must be one of:
   - "anywhere": no geographic restrictions, open worldwide
   - "country": must reside in or be a citizen of a specific country
   - "region": must be in a specific geographic region (e.g. Americas, EMEA, APAC, EU)
@@ -86,7 +86,7 @@ function parseResult(r: Record<string, unknown>): TranslationResult {
     salary_currency: ((r.salary_currency as string) || 'CNY').substring(0, 3).toUpperCase(),
     salary_pay_cycle: (['hour', 'day', 'week', 'month', 'year'].includes(r.salary_pay_cycle as string) ? r.salary_pay_cycle : 'month') as 'hour' | 'day' | 'week' | 'month' | 'year',
     job_highlights_zh: Array.isArray(r.job_highlights_zh) ? r.job_highlights_zh : [],
-    location_req: ({ anywhere: 0, country: 1, region: 2, timezone: 3, authorized: 4 } as Record<string, number>)[r.location_req as string] ?? 0,
+    location_requirement: ({ anywhere: 0, country: 1, region: 2, timezone: 3, authorized: 4 } as Record<string, number>)[r.location_requirement as string] ?? 0,
   };
 }
 

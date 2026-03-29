@@ -240,7 +240,7 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         INSERT INTO jobs
           (crawled_id, slug, title, description, company_id, location_id, country_id, search_term_id, posted_at,
            salary_lower, salary_upper, salary_currency, salary_pay_cycle,
-           detected_extensions, job_highlights, apply_options, location_req)
+           detected_extensions, job_highlights, apply_options, location_requirement)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         crawled.id,
@@ -259,7 +259,7 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         crawled.detected_extensions,
         tr.job_highlights_zh.length > 0 ? JSON.stringify(tr.job_highlights_zh) : crawled.job_highlights,
         crawled.apply_options,
-        tr.location_req,
+        tr.location_requirement,
       ).run();
 
       const newJobId = jobInsert.meta.last_row_id;

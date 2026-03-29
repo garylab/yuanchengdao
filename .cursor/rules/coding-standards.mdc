@@ -66,6 +66,18 @@ const row = await db.prepare('SELECT id FROM countries WHERE slug = ?').bind(slu
 - Use `db.batch()` for multiple independent writes
 - Keep bind parameter count well under D1's limit (~100)
 
+## Naming
+
+Use full names for variables, functions, columns, and parameters. No abbreviations.
+
+```typescript
+// ❌ BAD
+location_req, compDet, btnTxt, usr, msg, idx, cnt
+
+// ✅ GOOD
+location_requirement, companyDetail, buttonText, user, message, index, count
+```
+
 ## General
 
 - Prefer `const` over `let`; use `let` only when reassignment is needed

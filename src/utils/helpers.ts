@@ -129,7 +129,7 @@ const LOCATION_REQ_BADGES: Record<number, { icon: string; label: string; css: st
   4: { icon: '📋', label: '需工作许可',  css: 'bg-red-50 text-red-700' },
 };
 
-export function locationReqBadge(req: number | null | undefined): string {
+export function locationRequirementBadge(req: number | null | undefined): string {
   if (!req) return '';
   const cfg = LOCATION_REQ_BADGES[req];
   if (!cfg) return '';
