@@ -440,7 +440,7 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
      JOIN search_terms st ON cp.search_term_id = st.id
      WHERE cp.processed_at IS NULL
         OR cp.processed_at <= datetime('now', '-' || MIN(cp.miss_count / (cp.hit_count + 1), 72) || ' hours')
-     ORDER BY (cp.hit_count * 1.0 / (cp.hit_count + cp.miss_count + 1)) DESC, cp.processed_at ASC
+     ORDER BY (CASE WHEN cp.processed_at IS NULL THEN 0 ELSE 1 END), cp.processed_at ASC, cp.miss_count ASC
      LIMIT 1`
   ).first<{ id: number; search_term_id: number; country_code: string; hit_count: number; miss_count: number; term: string }>();
 
