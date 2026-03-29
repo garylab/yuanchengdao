@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   detected_extensions TEXT,
   job_highlights TEXT,
   apply_options TEXT,
-  location_req TEXT DEFAULT 'anywhere',
+  location_req INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );

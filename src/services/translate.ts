@@ -86,9 +86,7 @@ function parseResult(r: Record<string, unknown>): TranslationResult {
     salary_currency: ((r.salary_currency as string) || 'CNY').substring(0, 3).toUpperCase(),
     salary_pay_cycle: (['hour', 'day', 'week', 'month', 'year'].includes(r.salary_pay_cycle as string) ? r.salary_pay_cycle : 'month') as 'hour' | 'day' | 'week' | 'month' | 'year',
     job_highlights_zh: Array.isArray(r.job_highlights_zh) ? r.job_highlights_zh : [],
-    location_req: (['anywhere', 'country', 'region', 'timezone', 'authorized'].includes(r.location_req as string)
-      ? r.location_req
-      : 'anywhere') as TranslationResult['location_req'],
+    location_req: ({ anywhere: 0, country: 1, region: 2, timezone: 3, authorized: 4 } as Record<string, number>)[r.location_req as string] ?? 0,
   };
 }
 

@@ -122,16 +122,16 @@ export function companyLogo(name: string | null | undefined, thumbnail: string |
   return `<div class="flex-shrink-0 ${c.wh}">${img}${fallback}</div>`;
 }
 
-const LOCATION_REQ_LABELS: Record<string, { icon: string; label: string; css: string }> = {
-  country:    { icon: '📍', label: '限本国',      css: 'bg-amber-50 text-amber-700' },
-  region:     { icon: '🗺️', label: '限特定地区',  css: 'bg-orange-50 text-orange-700' },
-  timezone:   { icon: '🕐', label: '限时区',      css: 'bg-violet-50 text-violet-700' },
-  authorized: { icon: '📋', label: '需工作许可',  css: 'bg-red-50 text-red-700' },
+const LOCATION_REQ_BADGES: Record<number, { icon: string; label: string; css: string }> = {
+  1: { icon: '📍', label: '限本国',      css: 'bg-amber-50 text-amber-700' },
+  2: { icon: '🗺️', label: '限特定地区',  css: 'bg-orange-50 text-orange-700' },
+  3: { icon: '🕐', label: '限时区',      css: 'bg-violet-50 text-violet-700' },
+  4: { icon: '📋', label: '需工作许可',  css: 'bg-red-50 text-red-700' },
 };
 
-export function locationReqBadge(req: string | null | undefined): string {
+export function locationReqBadge(req: number | null | undefined): string {
   if (!req) return '';
-  const cfg = LOCATION_REQ_LABELS[req];
+  const cfg = LOCATION_REQ_BADGES[req];
   if (!cfg) return '';
   return `<span class="tag-pill ${cfg.css} text-xs font-semibold">${cfg.icon} ${cfg.label}</span>`;
 }
