@@ -324,7 +324,15 @@ async function invalidateKey(keyUrl: string, apiKey: string): Promise<void> {
   }
 }
 
-async function ensureCrawlPlan(db: D1Database): Promise<number> {
+async function refreshCrawlPlan(db: D1Database): Promise<void> {
+  const lastRefresh = await db.prepare(
+    "SELECT MAX(created_at) as latest FROM crawl_plan"
+  ).first<{ latest: string | null }>();
+
+  const sixHoursAgo = new Date(Date.now() - 6 * 3600000).toISOString().slice(0, 19).replace('T', ' ');
+  const needsRefresh = !lastRefresh?.latest || lastRefresh.latest < sixHoursAgo;
+  if (!needsRefresh) return;
+
   const [termRows, countryRows] = await Promise.all([
     db.prepare('SELECT id FROM search_terms WHERE is_active = 1').all(),
     db.prepare('SELECT code FROM countries WHERE is_active = 1').all(),
@@ -332,7 +340,7 @@ async function ensureCrawlPlan(db: D1Database): Promise<number> {
   const terms = (termRows.results || []) as unknown as Array<{ id: number }>;
   const countries = (countryRows.results || []).map((r: Record<string, unknown>) => r.code as string);
 
-  if (terms.length === 0 || countries.length === 0) return 0;
+  if (terms.length === 0 || countries.length === 0) return;
 
   let inserted = 0;
   for (const t of terms) {
@@ -344,11 +352,8 @@ async function ensureCrawlPlan(db: D1Database): Promise<number> {
     }
   }
   if (inserted > 0) {
-    console.log(`Added ${inserted} new crawl plan entries`);
+    console.log(`Refreshed crawl plan: added ${inserted} new entries`);
   }
-
-  const total = await db.prepare('SELECT COUNT(*) as cnt FROM crawl_plan').first<{ cnt: number }>();
-  return total?.cnt || 0;
 }
 
 async function deleteExpiredJobs(db: D1Database): Promise<number> {
@@ -427,11 +432,7 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
     console.log(`Deleted ${deleted} jobs from inactive countries`);
   }
 
-  const totalEntries = await ensureCrawlPlan(env.DB);
-  if (totalEntries === 0) {
-    console.log('No crawl plan entries — check search_terms and countries tables');
-    return { fetched: 0, saved: 0 };
-  }
+  await refreshCrawlPlan(env.DB);
 
   const task = await env.DB.prepare(
     `SELECT cp.id, cp.search_term_id, cp.country_code, cp.hit_count, cp.miss_count, st.term
