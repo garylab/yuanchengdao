@@ -55,6 +55,14 @@ Return a JSON object with:
 - "salary_currency": always return "CNY".
 - "salary_pay_cycle": one of "hour", "day", "week", "month", "year". The ORIGINAL pay cycle before any conversion. Default "month".
 - "job_highlights_zh": translate the job_highlights array to Chinese. Keep the same structure [{title, items}]. Keep technical terms in English.
+- "location_req": determine the applicant location/eligibility requirement from the job description. Must be one of:
+  - "anywhere": no geographic restrictions, open worldwide
+  - "country": must reside in or be a citizen of a specific country
+  - "region": must be in a specific geographic region (e.g. Americas, EMEA, APAC, EU)
+  - "timezone": must work within a specific timezone or overlap hours
+  - "authorized": must have existing work authorization or visa for a specific country
+  - "unknown": cannot determine from the posting
+  Look for phrases like "must be based in", "work authorization required", "US time zones", "open to candidates worldwide", "EU residents only", visa requirements, etc.
 
 Job to process:
 ${JSON.stringify(job, null, 2)}
@@ -78,6 +86,9 @@ function parseResult(r: Record<string, unknown>): TranslationResult {
     salary_currency: ((r.salary_currency as string) || 'CNY').substring(0, 3).toUpperCase(),
     salary_pay_cycle: (['hour', 'day', 'week', 'month', 'year'].includes(r.salary_pay_cycle as string) ? r.salary_pay_cycle : 'month') as 'hour' | 'day' | 'week' | 'month' | 'year',
     job_highlights_zh: Array.isArray(r.job_highlights_zh) ? r.job_highlights_zh : [],
+    location_req: (['anywhere', 'country', 'region', 'timezone', 'authorized'].includes(r.location_req as string)
+      ? r.location_req
+      : 'anywhere') as TranslationResult['location_req'],
   };
 }
 

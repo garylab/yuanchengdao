@@ -1,6 +1,6 @@
 import { Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, formatSalary, escapeHtml, rewriteUtm, companyLogo } from '../utils/helpers';
+import { timeAgo, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationReqBadge } from '../utils/helpers';
 
 function renderJobRow(job: Job, isNew: boolean = false, staticUrl: string = ''): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
@@ -37,6 +37,7 @@ function renderJobRow(job: Job, isNew: boolean = false, staticUrl: string = ''):
           <div class="flex flex-wrap items-center gap-2 mt-1.5">
             ${locationLink}
             ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs font-semibold">💰 ${salary}</span>` : ''}
+            ${locationReqBadge(job.location_req)}
             <span class="text-xs text-surface-400 flex-shrink-0 sm:hidden">${posted}</span>
           </div>
         </div>

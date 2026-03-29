@@ -1,6 +1,6 @@
 import { Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo } from '../utils/helpers';
+import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationReqBadge } from '../utils/helpers';
 
 function payCycleToUnitText(cycle: string): string {
   switch (cycle) {
@@ -145,6 +145,7 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
                     : `<span>${f} ${loc}</span>`;
                 })()}
                 ${salary ? `<span class="text-green-600 font-medium">💰 ${salary}</span>` : ''}
+                ${locationReqBadge(job.location_req)}
                 <span>${posted}</span>
               </div>
             </div>

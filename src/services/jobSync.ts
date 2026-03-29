@@ -240,8 +240,8 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         INSERT INTO jobs
           (crawled_id, slug, title, description, company_id, location_id, country_id, search_term_id, posted_at,
            salary_lower, salary_upper, salary_currency, salary_pay_cycle,
-           detected_extensions, job_highlights, apply_options)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           detected_extensions, job_highlights, apply_options, location_req)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         crawled.id,
         slug,
@@ -259,6 +259,7 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         crawled.detected_extensions,
         tr.job_highlights_zh.length > 0 ? JSON.stringify(tr.job_highlights_zh) : crawled.job_highlights,
         crawled.apply_options,
+        tr.location_req,
       ).run();
 
       const newJobId = jobInsert.meta.last_row_id;
@@ -323,52 +324,31 @@ async function invalidateKey(keyUrl: string, apiKey: string): Promise<void> {
   }
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
 async function ensureCrawlPlan(db: D1Database): Promise<number> {
-  const pending = await db.prepare(
-    'SELECT COUNT(*) as cnt FROM crawl_plan WHERE status = 0'
-  ).first<{ cnt: number }>();
-
-  if (pending && pending.cnt > 0) {
-    return pending.cnt;
-  }
-
-  // No pending entries — generate a fresh plan
   const [termRows, countryRows] = await Promise.all([
-    db.prepare('SELECT id, term FROM search_terms WHERE is_active = 1').all(),
+    db.prepare('SELECT id FROM search_terms WHERE is_active = 1').all(),
     db.prepare('SELECT code FROM countries WHERE is_active = 1').all(),
   ]);
-  const terms = (termRows.results || []) as unknown as Array<{ id: number; term: string }>;
+  const terms = (termRows.results || []) as unknown as Array<{ id: number }>;
   const countries = (countryRows.results || []).map((r: Record<string, unknown>) => r.code as string);
 
   if (terms.length === 0 || countries.length === 0) return 0;
 
-  const entries: Array<{ termId: number; country: string }> = [];
+  let inserted = 0;
   for (const t of terms) {
     for (const c of countries) {
-      entries.push({ termId: t.id, country: c });
+      const res = await db.prepare(
+        'INSERT OR IGNORE INTO crawl_plan (search_term_id, country_code) VALUES (?, ?)'
+      ).bind(t.id, c).run();
+      if (res.meta.changes > 0) inserted++;
     }
   }
-  shuffle(entries);
-
-  // Delete old completed/failed rows, then insert new plan
-  await db.prepare('DELETE FROM crawl_plan').run();
-
-  for (const e of entries) {
-    await db.prepare(
-      'INSERT INTO crawl_plan (search_term_id, country_code) VALUES (?, ?)'
-    ).bind(e.termId, e.country).run();
+  if (inserted > 0) {
+    console.log(`Added ${inserted} new crawl plan entries`);
   }
 
-  console.log(`Generated new crawl plan: ${entries.length} queries`);
-  return entries.length;
+  const total = await db.prepare('SELECT COUNT(*) as cnt FROM crawl_plan').first<{ cnt: number }>();
+  return total?.cnt || 0;
 }
 
 async function deleteExpiredJobs(db: D1Database): Promise<number> {
@@ -447,28 +427,31 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
     console.log(`Deleted ${deleted} jobs from inactive countries`);
   }
 
-  const pendingCount = await ensureCrawlPlan(env.DB);
-  if (pendingCount === 0) {
+  const totalEntries = await ensureCrawlPlan(env.DB);
+  if (totalEntries === 0) {
     console.log('No crawl plan entries — check search_terms and countries tables');
     return { fetched: 0, saved: 0 };
   }
 
-  // Pick the next pending entry
   const task = await env.DB.prepare(
-    `SELECT cp.id, cp.search_term_id, cp.country_code, st.term
+    `SELECT cp.id, cp.search_term_id, cp.country_code, cp.hit_count, cp.miss_count, st.term
      FROM crawl_plan cp
      JOIN search_terms st ON cp.search_term_id = st.id
-     WHERE cp.status = 0
-     ORDER BY cp.id
+     WHERE cp.processed_at IS NULL
+        OR cp.processed_at <= datetime('now', '-' || MIN(cp.miss_count / (cp.hit_count + 1), 72) || ' hours')
+     ORDER BY (cp.hit_count * 1.0 / (cp.hit_count + cp.miss_count + 1)) DESC, cp.processed_at ASC
      LIMIT 1`
-  ).first<{ id: number; search_term_id: number; country_code: string; term: string }>();
+  ).first<{ id: number; search_term_id: number; country_code: string; hit_count: number; miss_count: number; term: string }>();
 
   if (!task) {
-    console.log('No pending crawl tasks');
+    console.log('All crawl plan entries on cooldown');
     return { fetched: 0, saved: 0 };
   }
 
-  console.log(`[${pendingCount} pending] "${task.term} remote" in ${task.country_code}`);
+  const hitRate = task.hit_count + task.miss_count > 0
+    ? Math.round(task.hit_count * 100 / (task.hit_count + task.miss_count))
+    : 100;
+  console.log(`[${hitRate}% hit, ${task.hit_count}/${task.hit_count + task.miss_count}] "${task.term} remote" in ${task.country_code}`);
 
   const keyIsUrl = isKeyUrl(env.SERPAPI_KEY);
   let serpApiKey = keyIsUrl ? await fetchKeyFromUrl(env.SERPAPI_KEY) : env.SERPAPI_KEY;
@@ -489,17 +472,22 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
     totalFetched = crawledCount;
     console.log(`  Saved ${crawledCount} to jobs_crawled`);
 
-    // Mark as done
-    await env.DB.prepare(
-      "UPDATE crawl_plan SET status = 1, processed_at = datetime('now') WHERE id = ?"
-    ).bind(task.id).run();
+    if (crawledCount > 0) {
+      await env.DB.prepare(
+        "UPDATE crawl_plan SET hit_count = hit_count + 1, processed_at = datetime('now') WHERE id = ?"
+      ).bind(task.id).run();
+    } else {
+      await env.DB.prepare(
+        "UPDATE crawl_plan SET miss_count = miss_count + 1, processed_at = datetime('now') WHERE id = ?"
+      ).bind(task.id).run();
+    }
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`SerpAPI error for "${task.term} remote" (${task.country_code}): ${msg}`);
 
     await env.DB.prepare(
-      'UPDATE crawl_plan SET status = 2 WHERE id = ?'
+      "UPDATE crawl_plan SET miss_count = miss_count + 1, processed_at = datetime('now') WHERE id = ?"
     ).bind(task.id).run();
 
     if (keyIsUrl) {
@@ -519,6 +507,6 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
     }
   }
 
-  console.log(`Sync complete: fetched ${totalFetched}, saved ${totalSaved}, ${pendingCount - 1} pending`);
+  console.log(`Sync complete: fetched ${totalFetched}, saved ${totalSaved}`);
   return { fetched: totalFetched, saved: totalSaved };
 }

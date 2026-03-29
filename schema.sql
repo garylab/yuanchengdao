@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   detected_extensions TEXT,
   job_highlights TEXT,
   apply_options TEXT,
+  location_req TEXT DEFAULT 'anywhere',
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -118,17 +119,19 @@ CREATE TABLE IF NOT EXISTS search_terms (
 CREATE INDEX IF NOT EXISTS idx_search_terms_active ON search_terms(is_active);
 CREATE INDEX IF NOT EXISTS idx_search_terms_slug ON search_terms(slug);
 
--- Crawl plan: each row is one (search_term, country) query to execute
+-- Crawl plan: one persistent row per (search_term, country) pair
 CREATE TABLE IF NOT EXISTS crawl_plan (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   search_term_id INTEGER NOT NULL REFERENCES search_terms(id),
   country_code TEXT NOT NULL,
-  status INTEGER DEFAULT 0,
+  hit_count INTEGER DEFAULT 0,
+  miss_count INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now')),
-  processed_at TEXT
+  processed_at TEXT,
+  UNIQUE(search_term_id, country_code)
 );
 
-CREATE INDEX IF NOT EXISTS idx_crawl_plan_status ON crawl_plan(status);
+CREATE INDEX IF NOT EXISTS idx_crawl_plan_next ON crawl_plan(miss_count, processed_at);
 
 -- Full-text search on job titles (pre-tokenized with jieba)
 CREATE VIRTUAL TABLE IF NOT EXISTS jobs_fts USING fts5(title, posted_at UNINDEXED);
