@@ -412,26 +412,12 @@ async function deleteExpiredJobs(db: D1Database): Promise<number> {
   return rows.length;
 }
 
-async function deleteJobsFromInactiveCountries(db: D1Database): Promise<number> {
-  const result = await db.prepare(`
-    DELETE FROM jobs
-    WHERE country_id IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM countries WHERE countries.id = jobs.country_id AND countries.is_active = 1)
-  `).run();
-  return result.meta.changes;
-}
-
 export async function syncJobs(env: Env): Promise<{ fetched: number; saved: number }> {
   console.log('Starting job sync...');
 
   const expiredDeleted = await deleteExpiredJobs(env.DB);
   if (expiredDeleted > 0) {
     console.log(`Cleaned up ${expiredDeleted} expired jobs (90+ days old)`);
-  }
-
-  const deleted = await deleteJobsFromInactiveCountries(env.DB);
-  if (deleted > 0) {
-    console.log(`Deleted ${deleted} jobs from inactive countries`);
   }
 
   await refreshCrawlPlan(env.DB);
