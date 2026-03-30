@@ -342,18 +342,20 @@ async function refreshCrawlPlan(db: D1Database): Promise<void> {
 
   if (terms.length === 0 || countries.length === 0) return;
 
-  let inserted = 0;
+  const stmts: D1PreparedStatement[] = [];
   for (const t of terms) {
     for (const c of countries) {
-      const res = await db.prepare(
-        'INSERT OR IGNORE INTO crawl_plan (search_term_id, country_code) VALUES (?, ?)'
-      ).bind(t.id, c).run();
-      if (res.meta.changes > 0) inserted++;
+      stmts.push(
+        db.prepare('INSERT OR IGNORE INTO crawl_plan (search_term_id, country_code) VALUES (?, ?)').bind(t.id, c)
+      );
     }
   }
-  if (inserted > 0) {
-    console.log(`Refreshed crawl plan: added ${inserted} new entries`);
+
+  const BATCH_LIMIT = 80;
+  for (let i = 0; i < stmts.length; i += BATCH_LIMIT) {
+    await db.batch(stmts.slice(i, i + BATCH_LIMIT));
   }
+  console.log(`Refreshed crawl plan (${stmts.length} entries checked)`);
 }
 
 async function deleteExpiredJobs(db: D1Database): Promise<number> {
@@ -496,17 +498,8 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
     }
   }
 
-  // Process unprocessed crawled jobs
-  let remaining = true;
-  while (remaining) {
-    const processed = await processUnprocessedJobs(env);
-    if (processed === 0) {
-      remaining = false;
-    } else {
-      totalSaved += processed;
-      console.log(`Processed ${processed} jobs (${totalSaved} total saved)`);
-    }
-  }
+  const processed = await processUnprocessedJobs(env);
+  totalSaved = processed;
 
   console.log(`Sync complete: fetched ${totalFetched}, saved ${totalSaved}`);
   return { fetched: totalFetched, saved: totalSaved };
