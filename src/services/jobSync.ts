@@ -325,37 +325,110 @@ async function invalidateKey(keyUrl: string, apiKey: string): Promise<void> {
 }
 
 async function refreshCrawlPlan(db: D1Database): Promise<void> {
-  const lastRefresh = await db.prepare(
-    "SELECT MAX(created_at) as latest FROM crawl_plan"
-  ).first<{ latest: string | null }>();
-
-  const sixHoursAgo = new Date(Date.now() - 6 * 3600000).toISOString().slice(0, 19).replace('T', ' ');
-  const needsRefresh = !lastRefresh?.latest || lastRefresh.latest < sixHoursAgo;
-  if (!needsRefresh) return;
-
-  const [termRows, countryRows] = await Promise.all([
+  const [termRows, countryRows, existingRows] = await Promise.all([
     db.prepare('SELECT id FROM search_terms WHERE is_active = 1').all(),
     db.prepare('SELECT code FROM countries WHERE is_active = 1').all(),
+    db.prepare('SELECT search_term_id, country_code FROM crawl_plan').all(),
   ]);
   const terms = (termRows.results || []) as unknown as Array<{ id: number }>;
   const countries = (countryRows.results || []).map((r: Record<string, unknown>) => r.code as string);
+  const existingPairs = new Set(
+    (existingRows.results || []).map(
+      (r: Record<string, unknown>) => `${r.search_term_id as number}:${r.country_code as string}`,
+    ),
+  );
 
   if (terms.length === 0 || countries.length === 0) return;
 
   const stmts: D1PreparedStatement[] = [];
-  for (const t of terms) {
-    for (const c of countries) {
+  for (const term of terms) {
+    for (const countryCode of countries) {
+      const pairKey = `${term.id}:${countryCode}`;
+      if (existingPairs.has(pairKey)) continue;
       stmts.push(
-        db.prepare('INSERT OR IGNORE INTO crawl_plan (search_term_id, country_code) VALUES (?, ?)').bind(t.id, c)
+        db.prepare('INSERT INTO crawl_plan (search_term_id, country_code) VALUES (?, ?)').bind(term.id, countryCode),
       );
     }
   }
+
+  if (stmts.length === 0) return;
 
   const BATCH_LIMIT = 80;
   for (let i = 0; i < stmts.length; i += BATCH_LIMIT) {
     await db.batch(stmts.slice(i, i + BATCH_LIMIT));
   }
-  console.log(`Refreshed crawl plan (${stmts.length} entries checked)`);
+  console.log(`Refreshed crawl plan (${stmts.length} new entries)`);
+}
+
+function crawlPlanCooldownHours(hit_count: number, miss_count: number): number {
+  return Math.min(miss_count / (hit_count + 1), 72);
+}
+
+function isCrawlPlanEligible(
+  processed_at: string | null,
+  hit_count: number,
+  miss_count: number,
+): boolean {
+  if (processed_at === null) return true;
+  const hours = crawlPlanCooldownHours(hit_count, miss_count);
+  const cutoffMs = Date.now() - hours * 3600000;
+  const processedMs = Date.parse(processed_at.replace(' ', 'T') + 'Z');
+  return processedMs <= cutoffMs;
+}
+
+async function pickNextCrawlTask(db: D1Database): Promise<{
+  id: number;
+  search_term_id: number;
+  country_code: string;
+  hit_count: number;
+  miss_count: number;
+  term: string;
+} | null> {
+  const planResult = await db.prepare(
+    'SELECT id, search_term_id, country_code, hit_count, miss_count, processed_at FROM crawl_plan',
+  ).all();
+  const rows = (planResult.results || []) as unknown as Array<{
+    id: number;
+    search_term_id: number;
+    country_code: string;
+    hit_count: number;
+    miss_count: number;
+    processed_at: string | null;
+  }>;
+  if (rows.length === 0) return null;
+
+  const eligible = rows.filter((row) =>
+    isCrawlPlanEligible(row.processed_at, row.hit_count, row.miss_count),
+  );
+  if (eligible.length === 0) return null;
+
+  eligible.sort((a, b) => {
+    const aUnprocessed = a.processed_at === null ? 0 : 1;
+    const bUnprocessed = b.processed_at === null ? 0 : 1;
+    if (aUnprocessed !== bUnprocessed) return aUnprocessed - bUnprocessed;
+    const aTime = a.processed_at ? Date.parse(a.processed_at.replace(' ', 'T') + 'Z') : 0;
+    const bTime = b.processed_at ? Date.parse(b.processed_at.replace(' ', 'T') + 'Z') : 0;
+    if (aTime !== bTime) return aTime - bTime;
+    if (a.miss_count !== b.miss_count) return a.miss_count - b.miss_count;
+    return a.id - b.id;
+  });
+
+  const picked = eligible[0];
+  if (!picked) return null;
+
+  const termRow = await db.prepare('SELECT term FROM search_terms WHERE id = ?')
+    .bind(picked.search_term_id)
+    .first<{ term: string }>();
+  if (!termRow) return null;
+
+  return {
+    id: picked.id,
+    search_term_id: picked.search_term_id,
+    country_code: picked.country_code,
+    hit_count: picked.hit_count,
+    miss_count: picked.miss_count,
+    term: termRow.term,
+  };
 }
 
 async function deleteExpiredJobs(db: D1Database): Promise<number> {
@@ -422,15 +495,7 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
 
   await refreshCrawlPlan(env.DB);
 
-  const task = await env.DB.prepare(
-    `SELECT cp.id, cp.search_term_id, cp.country_code, cp.hit_count, cp.miss_count, st.term
-     FROM crawl_plan cp
-     JOIN search_terms st ON cp.search_term_id = st.id
-     WHERE cp.processed_at IS NULL
-        OR cp.processed_at <= datetime('now', '-' || MIN(cp.miss_count / (cp.hit_count + 1), 72) || ' hours')
-     ORDER BY (CASE WHEN cp.processed_at IS NULL THEN 0 ELSE 1 END), cp.processed_at ASC, cp.miss_count ASC
-     LIMIT 1`
-  ).first<{ id: number; search_term_id: number; country_code: string; hit_count: number; miss_count: number; term: string }>();
+  const task = await pickNextCrawlTask(env.DB);
 
   if (!task) {
     console.log('All crawl plan entries on cooldown');
