@@ -5,7 +5,7 @@ import pages from './routes/pages';
 import api from './routes/api';
 import { syncJobs } from './services/jobSync';
 import { expiredCutoff } from './utils/helpers';
-import { appScript, appScriptVersion } from './public/app';
+import { appScript, appScriptAssetFilename } from './public/app';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -31,9 +31,9 @@ app.get('/r2/*', async (c) => {
   return c.body(object.body as ReadableStream);
 });
 
-app.get('/js/app.js', (c) => {
+app.get(`/js/${appScriptAssetFilename}`, (c) => {
   c.header('Content-Type', 'application/javascript');
-  c.header('Cache-Control', 'public, max-age=86400');
+  c.header('Cache-Control', 'public, max-age=31536000, immutable');
   return c.body(appScript);
 });
 

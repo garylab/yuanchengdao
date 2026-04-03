@@ -1,4 +1,4 @@
-import { appScriptVersion } from '../public/app';
+import { appScriptAssetFilename } from '../public/app';
 
 export interface LayoutOptions {
   description?: string;
@@ -106,7 +106,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
       <p class="mt-2">© ${new Date().getFullYear()} <a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition">yuanchengdao.com</a></p>
     </div>
   </footer>
-  <script src="/js/app.js?v=${appScriptVersion}" defer></script>
+  <script src="/js/${appScriptAssetFilename}" defer></script>
 </body>
 </html>`;
 }

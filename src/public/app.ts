@@ -142,4 +142,6 @@ document.addEventListener('click', function(e) {
 
 `;
 
-export const appScriptVersion = simpleHash(appScript);
+const appScriptContentHash = simpleHash(appScript);
+
+export const appScriptAssetFilename = `app.${appScriptContentHash}.js`;
