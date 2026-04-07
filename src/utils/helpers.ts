@@ -1,3 +1,5 @@
+import { parseEnglishLevel, type EnglishLevel } from '../constants/englishLevel';
+
 function dateCutoff(days: number): string {
   return new Date(Date.now() - days * 86400000).toISOString().slice(0, 19).replace('T', ' ');
 }
@@ -134,6 +136,27 @@ export function locationRequirementBadge(req: number | null | undefined): string
   const cfg = LOCATION_REQ_BADGES[req];
   if (!cfg) return '';
   return `<span class="tag-pill ${cfg.css} text-xs font-semibold">${cfg.icon} ${cfg.label}</span>`;
+}
+
+const ENGLISH_LEVEL_BADGES: Record<EnglishLevel, { label: string; css: string } | null> = {
+  none: null,
+  basic: { label: '英语·基础', css: 'bg-slate-50 text-slate-600' },
+  intermediate: { label: '英语·中级', css: 'bg-sky-50 text-sky-800' },
+  upper_intermediate: { label: '英语·中高级', css: 'bg-sky-50 text-sky-800' },
+  B2: { label: '英语·B2+', css: 'bg-indigo-50 text-indigo-800' },
+  C1: { label: '英语·C1', css: 'bg-indigo-50 text-indigo-800' },
+  C2: { label: '英语·C2', css: 'bg-violet-50 text-violet-800' },
+  advanced: { label: '英语·高级', css: 'bg-indigo-50 text-indigo-800' },
+  fluent: { label: '英语·流利', css: 'bg-violet-50 text-violet-800' },
+  native: { label: '英语·母语', css: 'bg-emerald-50 text-emerald-800' },
+};
+
+export function englishLevelBadge(level: EnglishLevel | string | null | undefined): string {
+  const normalized = parseEnglishLevel(level);
+  if (normalized === 'none') return '';
+  const cfg = ENGLISH_LEVEL_BADGES[normalized];
+  if (!cfg) return '';
+  return `<span class="tag-pill ${cfg.css} text-xs font-semibold">🗣️ ${cfg.label}</span>`;
 }
 
 export function rewriteUtm(url: string): string {

@@ -1,6 +1,6 @@
 import { Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge } from '../utils/helpers';
+import { timeAgo, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge, englishLevelBadge } from '../utils/helpers';
 
 function renderJobRow(job: Job, isNew: boolean = false, staticUrl: string = ''): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
@@ -38,6 +38,7 @@ function renderJobRow(job: Job, isNew: boolean = false, staticUrl: string = ''):
             ${locationLink}
             ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs font-semibold">💰 ${salary}</span>` : ''}
             ${locationRequirementBadge(job.location_requirement)}
+            ${englishLevelBadge(job.english_level_required)}
             <span class="text-xs text-surface-400 flex-shrink-0 sm:hidden">${posted}</span>
           </div>
         </div>

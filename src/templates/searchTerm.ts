@@ -1,6 +1,6 @@
 import { Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge } from '../utils/helpers';
+import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge } from '../utils/helpers';
 
 interface SearchTermInfo {
   id: number;
@@ -43,6 +43,7 @@ function renderJobRow(job: Job): string {
             ${locationLink}
             ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs font-semibold">💰 ${salary}</span>` : ''}
             ${locationRequirementBadge(job.location_requirement)}
+            ${englishLevelBadge(job.english_level_required)}
           </div>
         </div>
         <div class="flex items-center gap-3 flex-shrink-0">

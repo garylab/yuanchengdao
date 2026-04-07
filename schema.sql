@@ -79,6 +79,9 @@ CREATE TABLE IF NOT EXISTS jobs (
   job_highlights TEXT,
   apply_options TEXT,
   location_requirement INTEGER DEFAULT 0,
+  english_level_required TEXT NOT NULL DEFAULT 'none' CHECK (english_level_required IN (
+    'none', 'basic', 'intermediate', 'upper_intermediate', 'B2', 'C1', 'C2', 'advanced', 'fluent', 'native'
+  )),
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );

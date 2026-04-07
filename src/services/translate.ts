@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { TranslationResult, CrawledJob, DecodedJobId } from '../types';
+import { parseEnglishLevel } from '../constants/englishLevel';
 
 export interface TranslateInput {
   crawled: CrawledJob;
@@ -63,6 +64,18 @@ Return a JSON object with:
   - "authorized": must have existing work authorization or visa for a specific country
   - "unknown": cannot determine from the posting
   Look for phrases like "must be based in", "work authorization required", "US time zones", "open to candidates worldwide", "EU residents only", visa requirements, etc.
+- "english_level_required": minimum English proficiency required for the role, inferred ONLY from the job text (title + description + highlights). Job content is in English; ignore non-English requirements for other languages. Must be exactly one of:
+  - "none": no English requirement stated, or not applicable
+  - "basic": elementary / conversational / working English
+  - "intermediate": solid working English, mid-level
+  - "upper_intermediate": strong working English; solid B1; wording such as upper-intermediate or strong intermediate
+  - "B2": explicit B2 or equivalent (independent user, upper-intermediate threshold)
+  - "C1": explicit C1 or advanced professional English when aligned with CEFR
+  - "C2": explicit C2 or near-native
+  - "advanced": advanced English, excellent when clearly below native or C2 wording
+  - "fluent": fluent English, fluent written and spoken, without CEFR labels
+  - "native": native English, native speaker, mother tongue English
+  When multiple levels appear, choose the strictest (highest) bar stated as required. If only vague good English with no scale, prefer "intermediate" or "upper_intermediate" based on tone.
 
 Job to process:
 ${JSON.stringify(job, null, 2)}
@@ -87,6 +100,7 @@ function parseResult(r: Record<string, unknown>): TranslationResult {
     salary_pay_cycle: (['hour', 'day', 'week', 'month', 'year'].includes(r.salary_pay_cycle as string) ? r.salary_pay_cycle : 'month') as 'hour' | 'day' | 'week' | 'month' | 'year',
     job_highlights_zh: Array.isArray(r.job_highlights_zh) ? r.job_highlights_zh : [],
     location_requirement: ({ anywhere: 0, country: 1, region: 2, timezone: 3, authorized: 4 } as Record<string, number>)[r.location_requirement as string] ?? 0,
+    english_level_required: parseEnglishLevel(r.english_level_required),
   };
 }
 

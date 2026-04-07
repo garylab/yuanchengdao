@@ -1,3 +1,5 @@
+import type { EnglishLevel } from './constants/englishLevel';
+
 export interface Env {
   DB: D1Database;
   R2: R2Bucket;
@@ -128,6 +130,7 @@ export interface Job {
   job_highlights: string | null;
   apply_options: string | null;
   location_requirement: number;
+  english_level_required: EnglishLevel;
   created_at: string;
   updated_at: string;
   // joined fields
@@ -162,4 +165,5 @@ export interface TranslationResult {
     items: string[];
   }>;
   location_requirement: number;
+  english_level_required: EnglishLevel;
 }
