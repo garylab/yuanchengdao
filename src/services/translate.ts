@@ -64,7 +64,7 @@ Return a JSON object with:
   - "authorized": must have existing work authorization or visa for a specific country
   - "unknown": cannot determine from the posting
   Look for phrases like "must be based in", "work authorization required", "US time zones", "open to candidates worldwide", "EU residents only", visa requirements, etc.
-- "english_level_required": minimum English proficiency required for the role, inferred ONLY from the job text (title + description + highlights). Job content is in English; ignore non-English requirements for other languages. Must be exactly one of:
+- "english_level_required": minimum English proficiency required for the role, inferred ONLY if an English requirement is explicitly stated in the job text (title + description + highlights). If no English requirement is mentioned, use "none". Ignore requirements for other languages. Must be exactly one of:
   - "none": no English requirement stated, or not applicable
   - "basic": elementary / conversational / working English
   - "intermediate": solid working English, mid-level
@@ -75,7 +75,7 @@ Return a JSON object with:
   - "advanced": advanced English, excellent when clearly below native or C2 wording
   - "fluent": fluent English, fluent written and spoken, without CEFR labels
   - "native": native English, native speaker, mother tongue English
-  When multiple levels appear, choose the strictest (highest) bar stated as required. If only vague good English with no scale, prefer "intermediate" or "upper_intermediate" based on tone.
+  Logic Note: When multiple levels appear, choose the strictest (highest) bar stated as required. Only if a requirement is present but vague (e.g., "Good English") should you prefer "intermediate" or "upper_intermediate" based on tone. If the text is silent on English, use "none".
 
 Job to process:
 ${JSON.stringify(job, null, 2)}
