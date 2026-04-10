@@ -9,6 +9,8 @@ const D1_DIR = '.wrangler/state/v3/d1/miniflare-D1DatabaseObject';
 const CJK_RE = /[\u4e00-\u9fff\u3400-\u4dbf]+/;
 const SEGMENT_RE = /([\u4e00-\u9fff\u3400-\u4dbf]+)/;
 const BATCH_SIZE = 50;
+const REMOTE_FETCH_PAGE = 300;
+const EXEC_MAX_BUFFER_BYTES = 32 * 1024 * 1024;
 
 function tokenize(text: string): string {
   return text
@@ -72,8 +74,43 @@ function buildLocal() {
 function wranglerExec(sql: string): string {
   return execSync(
     `npx wrangler d1 execute ${DB_NAME} --remote --json --command="${sql.replace(/"/g, '\\"')}"`,
-    { encoding: 'utf-8' }
+    { encoding: 'utf-8', maxBuffer: EXEC_MAX_BUFFER_BYTES },
   );
+}
+
+function parseD1SelectResults<T extends Record<string, unknown>>(raw: string): T[] {
+  const parsed = JSON.parse(raw) as Array<{ results?: T[]; success?: boolean; error?: string }>;
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    throw new Error(`Unexpected D1 JSON (not an array): ${raw.slice(0, 200)}`);
+  }
+  const first = parsed[0];
+  if (first?.success === false) {
+    throw new Error(`D1 query failed: ${first?.error || raw.slice(0, 500)}`);
+  }
+  return (first?.results ?? []) as T[];
+}
+
+type JobFtsSourceRow = {
+  id: number;
+  title: string;
+  posted_at: string | null;
+  created_at: string;
+};
+
+function fetchAllJobsRemote(): JobFtsSourceRow[] {
+  const all: JobFtsSourceRow[] = [];
+  let offset = 0;
+  for (;;) {
+    const sql = `SELECT id, title, posted_at, created_at FROM jobs ORDER BY id LIMIT ${REMOTE_FETCH_PAGE} OFFSET ${offset}`;
+    const raw = wranglerExec(sql);
+    const batch = parseD1SelectResults<JobFtsSourceRow>(raw);
+    if (batch.length === 0) break;
+    all.push(...batch);
+    offset += batch.length;
+    console.log(`  Loaded ${all.length} job rows from remote...`);
+    if (batch.length < REMOTE_FETCH_PAGE) break;
+  }
+  return all;
 }
 
 function buildRemote() {
@@ -85,12 +122,12 @@ function buildRemote() {
     'CREATE VIRTUAL TABLE jobs_fts USING fts5(title, posted_at UNINDEXED, created_at UNINDEXED)'
   );
 
-  const raw = wranglerExec('SELECT id, title, posted_at, created_at FROM jobs');
-  const parsed = JSON.parse(raw);
-  const jobs: Array<{ id: number; title: string; posted_at: string | null; created_at: string }> =
-    parsed[0]?.results ?? [];
+  const jobs = fetchAllJobsRemote();
 
   console.log(`Found ${jobs.length} jobs to index`);
+  if (jobs.length === 0) {
+    console.log('jobs table is empty — nothing to put in jobs_fts. Add jobs via sync first.');
+  }
 
   for (let i = 0; i < jobs.length; i += BATCH_SIZE) {
     const batch = jobs.slice(i, i + BATCH_SIZE);
@@ -108,7 +145,10 @@ function buildRemote() {
     console.log(`  Indexed ${Math.min(i + BATCH_SIZE, jobs.length)}/${jobs.length}`);
   }
 
-  console.log(`Done — indexed ${jobs.length} jobs into remote jobs_fts`);
+  const countRaw = wranglerExec('SELECT COUNT(*) as c FROM jobs_fts');
+  const countRows = parseD1SelectResults<{ c: number }>(countRaw);
+  const ftsCount = countRows[0]?.c ?? 0;
+  console.log(`Done — indexed ${jobs.length} jobs into remote jobs_fts (rows in jobs_fts: ${ftsCount})`);
 }
 
 const remote = process.argv.includes('--remote');

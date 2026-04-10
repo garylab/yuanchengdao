@@ -1,10 +1,10 @@
 import { Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge, englishLevelBadge } from '../utils/helpers';
+import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge, englishLevelBadge } from '../utils/helpers';
 
 function renderJobRow(job: Job, isNew: boolean = false): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
-  const posted = timeAgo(job.posted_at || job.created_at);
+  const posted = timeAgo(jobDisplayTimestamp(job));
   const logo = companyLogo(job.company_name, job.company_thumbnail);
 
   const locationLabel = [job.location_name_cn, job.country_name_cn]

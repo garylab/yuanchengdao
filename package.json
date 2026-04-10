@@ -12,6 +12,8 @@
     "db:migrate:local": "wrangler d1 execute yuanchengdao --local --file=./schema.sql",
     "build:fts": "tsx scripts/build-fts.ts",
     "build:fts:remote": "tsx scripts/build-fts.ts --remote",
+    "db:fts:count": "wrangler d1 execute yuanchengdao --remote --command=\"SELECT COUNT(*) AS fts_rows FROM jobs_fts\"",
+    "db:fts:count:local": "wrangler d1 execute yuanchengdao --local --command=\"SELECT COUNT(*) AS fts_rows FROM jobs_fts\"",
     "tail": "wrangler tail"
   },
   "devDependencies": {

@@ -12,6 +12,13 @@ export function expiredCutoff(): string {
   return dateCutoff(90);
 }
 
+export function jobDisplayTimestamp(job: {
+  created_at?: string;
+  posted_at?: string | null;
+}): string | null {
+  return job.created_at || job.posted_at || null;
+}
+
 export function timeAgo(dateStr: string | null): string {
   if (!dateStr) return '最近';
   const now = Date.now();

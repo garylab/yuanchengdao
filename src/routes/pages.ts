@@ -185,7 +185,7 @@ pages.get('/job/:slug', async (c) => {
 
     if (simIds.length > 0) {
       const result = await c.env.DB.prepare(`
-        SELECT j.slug, j.title, j.posted_at,
+        SELECT j.slug, j.title, j.created_at, j.posted_at,
           co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
           lo.name_cn as location_name_cn, lo.slug as location_slug, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
         FROM jobs j

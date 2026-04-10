@@ -1,6 +1,6 @@
 import { Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge } from '../utils/helpers';
+import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge } from '../utils/helpers';
 
 function payCycleToUnitText(cycle: string): string {
   switch (cycle) {
@@ -15,7 +15,7 @@ function payCycleToUnitText(cycle: string): string {
 function buildJobJsonLd(job: Job, siteUrl?: string): string {
   const location = [job.location_name_cn, job.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || '远程';
 
-  const datePosted = job.posted_at || job.created_at;
+  const datePosted = jobDisplayTimestamp(job) || '';
   const validThrough = new Date(new Date(datePosted).getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   const ld: Record<string, unknown> = {
@@ -73,7 +73,7 @@ function buildJobJsonLd(job: Job, siteUrl?: string): string {
 
 export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, siteUrl?: string, staticUrl?: string, isExpired = false): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
-  const posted = timeAgo(job.posted_at || job.created_at);
+  const posted = timeAgo(jobDisplayTimestamp(job));
 
   const highlights = job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
   const applyOptions = job.apply_options ? JSON.parse(job.apply_options) as Array<{ title: string; link: string }> : [];
@@ -99,7 +99,7 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
           <div class="divide-y divide-surface-100">
           ${similarJobs.map(sj => {
             const sjLocation = [sj.location_name_cn, sj.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || '远程';
-            const sjPosted = timeAgo(sj.posted_at || '');
+            const sjPosted = timeAgo(jobDisplayTimestamp(sj));
             return `
               <a href="/job/${escapeHtml(sj.slug)}" class="flex items-center gap-2.5 px-3 py-2.5 hover:bg-brand-50 transition no-underline text-inherit">
                 ${companyLogo(sj.company_name, sj.company_thumbnail, 'sm')}
