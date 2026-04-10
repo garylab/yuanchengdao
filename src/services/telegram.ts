@@ -4,6 +4,20 @@ function escapeTelegramHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function formatLocationLine(
+  locationNameCn: string,
+  countryNameCn: string,
+  countryFlagEmoji: string,
+): string {
+  const parts = [locationNameCn, countryNameCn]
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .filter((value, index, array) => array.indexOf(value) === index);
+  const label = parts.length > 0 ? parts.join(', ') : '全球';
+  const flag = countryFlagEmoji.trim() || '🌍';
+  return `${flag} ${label}`;
+}
+
 function formatSalaryRange(
   salaryLower: number,
   salaryUpper: number,
@@ -34,6 +48,7 @@ export async function postNewJobToTelegram(
     companyName: string;
     locationNameCn: string;
     countryNameCn: string;
+    countryFlagEmoji: string;
     slug: string;
     salaryLower: number;
     salaryUpper: number;
@@ -46,12 +61,18 @@ export async function postNewJobToTelegram(
 
   const chatId = env.TELEGRAM_CHANNEL_CHAT_ID ?? '@yuanchengdao';
   const baseUrl = env.SITE_URL.replace(/\/$/, '');
-  const jobUrl = `${baseUrl}/job/${encodeURIComponent(payload.slug)}`;
+  const jobUrlObject = new URL(`${baseUrl}/job/${encodeURIComponent(payload.slug)}`);
+  jobUrlObject.searchParams.set('utm_source', 'telegram');
+  jobUrlObject.searchParams.set('utm_medium', 'social');
+  jobUrlObject.searchParams.set('utm_campaign', 'telegram_job_alert');
+  const jobUrl = jobUrlObject.toString();
 
   const title = escapeTelegramHtml(payload.titleZh);
   const jobUrlEscaped = escapeTelegramHtml(jobUrl);
   const company = escapeTelegramHtml(payload.companyName);
-  const place = escapeTelegramHtml(`${payload.countryNameCn} · ${payload.locationNameCn}`);
+  const place = escapeTelegramHtml(
+    formatLocationLine(payload.locationNameCn, payload.countryNameCn, payload.countryFlagEmoji),
+  );
   const salaryLine = formatSalaryRange(
     payload.salaryLower,
     payload.salaryUpper,
@@ -61,7 +82,6 @@ export async function postNewJobToTelegram(
 
   const lines = [
     `<a href="${jobUrlEscaped}"><b>${title}</b></a>`,
-    '',
     `公司：${company}`,
     `地点：${place}`,
   ];
@@ -101,6 +121,7 @@ type JobTelegramRow = {
   company_name: string | null;
   location_name_cn: string | null;
   country_name_cn: string | null;
+  country_flag_emoji: string | null;
 };
 
 export async function postHourlyTelegramDigest(env: Env): Promise<void> {
@@ -118,7 +139,8 @@ export async function postHourlyTelegramDigest(env: Env): Promise<void> {
     SELECT j.id, j.slug, j.title, j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle,
       co.name as company_name,
       lo.name_cn as location_name_cn,
-      ct.name_cn as country_name_cn
+      ct.name_cn as country_name_cn,
+      ct.flag_emoji as country_flag_emoji
     FROM jobs j
     LEFT JOIN companies co ON j.company_id = co.id
     LEFT JOIN locations lo ON j.location_id = lo.id
@@ -136,6 +158,7 @@ export async function postHourlyTelegramDigest(env: Env): Promise<void> {
       companyName: row.company_name ?? '',
       locationNameCn: row.location_name_cn ?? '',
       countryNameCn: row.country_name_cn ?? '',
+      countryFlagEmoji: row.country_flag_emoji ?? '',
       slug: row.slug,
       salaryLower: row.salary_lower,
       salaryUpper: row.salary_upper,
