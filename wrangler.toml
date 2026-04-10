@@ -19,4 +19,4 @@ binding = "R2"
 bucket_name = "yuanchengdao"
 
 [triggers]
-crons = ["*/3 * * * *"]
+crons = ["* * * * *"]
