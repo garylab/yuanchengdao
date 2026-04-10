@@ -110,7 +110,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
         <div class="text-left space-y-2 min-w-0">
           <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
             <a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition inline-flex items-center flex-shrink-0"><img src="/yuanchengdao-logo.png" alt="远程岛" class="h-5"></a>
-            <span class="text-surface-500">— 为中国人提供全球远程工作机会</span>
+            <span class="text-surface-500">— 为中国人提供全球<em class="not-italic">远程工作</em>机会</span>
           </div>
           <p>
             © ${new Date().getFullYear()}
