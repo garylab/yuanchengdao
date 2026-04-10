@@ -62,18 +62,29 @@ const CYCLE_LABELS: Record<string, string> = {
   year: '/年',
 };
 
+function formatSalaryAmountPart(amount: number): string {
+  const rounded = Math.round(amount);
+  if (rounded >= 10000) {
+    return `${Math.round(rounded / 10000)}万`;
+  }
+  if (rounded >= 1000) {
+    const inThousands = Math.round((rounded / 1000) * 10) / 10;
+    const nearestWholeK = Math.round(inThousands);
+    if (Math.abs(inThousands - nearestWholeK) < 1e-6) {
+      return `${nearestWholeK}k`;
+    }
+    return `${inThousands.toFixed(1)}k`;
+  }
+  return String(rounded);
+}
+
 export function formatSalary(lower: number, upper: number, currency: string, payCycle: string): string {
   if (!lower && !upper) return '';
   const sym = currency === 'CNY' ? '¥' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : `${currency} `;
-  const fmt = (n: number) => {
-    if (n >= 10000) return `${(n / 10000).toFixed(n % 10000 === 0 ? 0 : 1)}万`;
-    if (n >= 1000) return `${Math.round(n / 1000)}k`;
-    return n.toString();
-  };
   const cycle = CYCLE_LABELS[payCycle] || '/年';
-  if (lower && upper) return `${sym}${fmt(lower)} - ${sym}${fmt(upper)}${cycle}`;
-  if (lower) return `${sym}${fmt(lower)}+${cycle}`;
-  if (upper) return `最高 ${sym}${fmt(upper)}${cycle}`;
+  if (lower && upper) return `${sym}${formatSalaryAmountPart(lower)} - ${sym}${formatSalaryAmountPart(upper)}${cycle}`;
+  if (lower) return `${sym}${formatSalaryAmountPart(lower)}+${cycle}`;
+  if (upper) return `最高 ${sym}${formatSalaryAmountPart(upper)}${cycle}`;
   return '';
 }
 

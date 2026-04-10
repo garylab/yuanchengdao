@@ -1,5 +1,9 @@
 import { Env } from '../types';
-import { formatEnglishLevelPlainText, formatLocationRequirementPlainText } from '../utils/helpers';
+import {
+  formatEnglishLevelPlainText,
+  formatLocationRequirementPlainText,
+  formatSalary,
+} from '../utils/helpers';
 
 function escapeTelegramHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -17,29 +21,6 @@ function formatLocationLine(
   const label = parts.length > 0 ? parts.join(', ') : '全球';
   const flag = countryFlagEmoji.trim() || '🌍';
   return `${flag} ${label}`;
-}
-
-function formatSalaryRange(
-  salaryLower: number,
-  salaryUpper: number,
-  salaryCurrency: string,
-  salaryPayCycle: string,
-): string | null {
-  if (salaryLower <= 0 && salaryUpper <= 0) return null;
-  const cycleLabel: Record<string, string> = {
-    hour: '时薪',
-    day: '日薪',
-    week: '周薪',
-    month: '月薪',
-    year: '年薪',
-  };
-  const label = cycleLabel[salaryPayCycle] || '月薪';
-  const unit = salaryCurrency === 'CNY' ? '元' : salaryCurrency;
-  if (salaryLower > 0 && salaryUpper > 0 && salaryLower !== salaryUpper) {
-    return `${label} ${salaryLower.toLocaleString('zh-CN')}–${salaryUpper.toLocaleString('zh-CN')} ${unit}`;
-  }
-  const amount = salaryUpper > 0 ? salaryUpper : salaryLower;
-  return `${label} ${amount.toLocaleString('zh-CN')} ${unit}`;
 }
 
 export async function postNewJobToTelegram(
@@ -76,7 +57,7 @@ export async function postNewJobToTelegram(
   const place = escapeTelegramHtml(
     formatLocationLine(payload.locationNameCn, payload.countryNameCn, payload.countryFlagEmoji),
   );
-  const salaryLine = formatSalaryRange(
+  const salaryLine = formatSalary(
     payload.salaryLower,
     payload.salaryUpper,
     payload.salaryCurrency,
