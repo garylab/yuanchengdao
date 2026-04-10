@@ -1,4 +1,5 @@
 import { Env } from '../types';
+import { formatEnglishLevelPlainText, formatLocationRequirementPlainText } from '../utils/helpers';
 
 function escapeTelegramHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -54,6 +55,8 @@ export async function postNewJobToTelegram(
     salaryUpper: number;
     salaryCurrency: string;
     salaryPayCycle: string;
+    locationRequirement: number;
+    englishLevelRequired: string;
   },
 ): Promise<void> {
   const token = env.TELEGRAM_BOT_TOKEN;
@@ -80,11 +83,20 @@ export async function postNewJobToTelegram(
     payload.salaryPayCycle,
   );
 
+  const locationRequirementLine = formatLocationRequirementPlainText(payload.locationRequirement);
+  const englishRequirementLine = formatEnglishLevelPlainText(payload.englishLevelRequired);
+
   const lines = [
     `<a href="${jobUrlEscaped}"><b>${title}</b></a>`,
     `公司：${company}`,
     `地点：${place}`,
   ];
+  if (locationRequirementLine) {
+    lines.push(`限制：${escapeTelegramHtml(locationRequirementLine)}`);
+  }
+  if (englishRequirementLine) {
+    lines.push(`英语：${escapeTelegramHtml(englishRequirementLine)}`);
+  }
   if (salaryLine) {
     lines.push(`薪资：${escapeTelegramHtml(salaryLine)}`);
   }
@@ -122,6 +134,8 @@ type JobTelegramRow = {
   location_name_cn: string | null;
   country_name_cn: string | null;
   country_flag_emoji: string | null;
+  location_requirement: number;
+  english_level_required: string;
 };
 
 export async function postHourlyTelegramDigest(env: Env): Promise<void> {
@@ -137,6 +151,7 @@ export async function postHourlyTelegramDigest(env: Env): Promise<void> {
   const placeholders = jobIds.join(',');
   const hydrated = await env.DB.prepare(`
     SELECT j.id, j.slug, j.title, j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle,
+      j.location_requirement, j.english_level_required,
       co.name as company_name,
       lo.name_cn as location_name_cn,
       ct.name_cn as country_name_cn,
@@ -164,6 +179,8 @@ export async function postHourlyTelegramDigest(env: Env): Promise<void> {
       salaryUpper: row.salary_upper,
       salaryCurrency: row.salary_currency,
       salaryPayCycle: row.salary_pay_cycle,
+      locationRequirement: row.location_requirement,
+      englishLevelRequired: row.english_level_required,
     });
   }
 }

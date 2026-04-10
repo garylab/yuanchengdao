@@ -159,6 +159,19 @@ export function englishLevelBadge(level: EnglishLevel | string | null | undefine
   return `<span class="tag-pill ${cfg.css} text-xs font-semibold">🗣️ ${cfg.label}</span>`;
 }
 
+export function formatLocationRequirementPlainText(req: number | null | undefined): string {
+  if (!req) return '';
+  const cfg = LOCATION_REQ_BADGES[req];
+  return cfg ? `${cfg.icon} ${cfg.label}` : '';
+}
+
+export function formatEnglishLevelPlainText(level: EnglishLevel | string | null | undefined): string {
+  const normalized = parseEnglishLevel(level);
+  if (normalized === 'none') return '';
+  const cfg = ENGLISH_LEVEL_BADGES[normalized];
+  return cfg ? `🗣️ ${cfg.label}` : '';
+}
+
 export function rewriteUtm(url: string): string {
   try {
     const u = new URL(url);
