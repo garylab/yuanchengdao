@@ -140,15 +140,15 @@ export function locationRequirementBadge(req: number | null | undefined): string
 
 const ENGLISH_LEVEL_BADGES: Record<EnglishLevel, { label: string; css: string } | null> = {
   none: null,
-  basic: { label: '英语·基础', css: 'bg-slate-50 text-slate-600' },
-  intermediate: { label: '英语·中级', css: 'bg-sky-50 text-sky-800' },
-  upper_intermediate: { label: '英语·中高级', css: 'bg-sky-50 text-sky-800' },
-  B2: { label: '英语·B2+', css: 'bg-indigo-50 text-indigo-800' },
-  C1: { label: '英语·C1', css: 'bg-indigo-50 text-indigo-800' },
-  C2: { label: '英语·C2', css: 'bg-violet-50 text-violet-800' },
-  advanced: { label: '英语·高级', css: 'bg-indigo-50 text-indigo-800' },
-  fluent: { label: '英语·流利', css: 'bg-violet-50 text-violet-800' },
-  native: { label: '英语·母语', css: 'bg-emerald-50 text-emerald-800' },
+  basic: { label: '需英语基础', css: 'bg-slate-50 text-slate-600' },
+  intermediate: { label: '需英语中级', css: 'bg-sky-50 text-sky-800' },
+  upper_intermediate: { label: '需英语中高级', css: 'bg-sky-50 text-sky-800' },
+  B2: { label: '需英语B2+', css: 'bg-indigo-50 text-indigo-800' },
+  C1: { label: '需英语C1', css: 'bg-indigo-50 text-indigo-800' },
+  C2: { label: '需英语C2', css: 'bg-violet-50 text-violet-800' },
+  advanced: { label: '需英语高级', css: 'bg-indigo-50 text-indigo-800' },
+  fluent: { label: '需英语流利', css: 'bg-violet-50 text-violet-800' },
+  native: { label: '需英语母语', css: 'bg-emerald-50 text-emerald-800' },
 };
 
 export function englishLevelBadge(level: EnglishLevel | string | null | undefined): string {
