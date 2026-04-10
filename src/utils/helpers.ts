@@ -82,7 +82,12 @@ export function formatSalary(lower: number, upper: number, currency: string, pay
   if (!lower && !upper) return '';
   const sym = currency === 'CNY' ? '¥' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : `${currency} `;
   const cycle = CYCLE_LABELS[payCycle] || '/年';
-  if (lower && upper) return `${sym}${formatSalaryAmountPart(lower)} - ${sym}${formatSalaryAmountPart(upper)}${cycle}`;
+  if (lower && upper) {
+    if (Math.round(lower) === Math.round(upper)) {
+      return `${sym}${formatSalaryAmountPart(lower)}${cycle}`;
+    }
+    return `${sym}${formatSalaryAmountPart(lower)} - ${sym}${formatSalaryAmountPart(upper)}${cycle}`;
+  }
   if (lower) return `${sym}${formatSalaryAmountPart(lower)}+${cycle}`;
   if (upper) return `最高 ${sym}${formatSalaryAmountPart(upper)}${cycle}`;
   return '';
