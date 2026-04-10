@@ -64,8 +64,8 @@ Return a JSON object with:
   - "authorized": must have existing work authorization or visa for a specific country
   - "unknown": cannot determine from the posting
   Look for phrases like "must be based in", "work authorization required", "US time zones", "open to candidates worldwide", "EU residents only", visa requirements, etc.
-- "english_level_required": minimum English proficiency required for the role, inferred ONLY if an English requirement is explicitly stated in the job text (title + description + highlights). If no English requirement is mentioned, use "none". Ignore requirements for other languages. Must be exactly one of:
-  - "none": no English requirement stated, or not applicable
+- "english_level_required": Minimum English proficiency required for the role ONLY when the posting explicitly states an English (language) requirement, or clearly states a standard English-language credential or test (e.g. IELTS, TOEFL, CEFR B2 for English). Use "none" in all other cases. Must be exactly one of:
+  - "none": Use this whenever the posting does not explicitly say that English proficiency is required, or that candidates must speak/read/write English at some level, or name English-language credentials. Do NOT infer from: job location, country, remote work, time zone, team being international, or the posting being written in English. Do NOT infer from customer-facing or "excellent communication" unless the text ties communication to English explicitly. Ignore requirements for non-English languages.
   - "basic": elementary / conversational / working English
   - "intermediate": solid working English, mid-level
   - "upper_intermediate": strong working English; solid B1; wording such as upper-intermediate or strong intermediate
@@ -75,7 +75,7 @@ Return a JSON object with:
   - "advanced": advanced English, excellent when clearly below native or C2 wording
   - "fluent": fluent English, fluent written and spoken, without CEFR labels
   - "native": native English, native speaker, mother tongue English
-  Logic Note: When multiple levels appear, choose the strictest (highest) bar stated as required. Only if a requirement is present but vague (e.g., "Good English") should you prefer "intermediate" or "upper_intermediate" based on tone. If the text is silent on English, use "none".
+  Logic Note: When multiple levels appear, choose the strictest (highest) bar stated as required. Only if a requirement is present but vague (e.g. "Good English", "proficiency in English") should you pick a non-"none" level using "intermediate" or "upper_intermediate" based on tone. If the text is silent on English, use "none".
 
 Job to process:
 ${JSON.stringify(job, null, 2)}
