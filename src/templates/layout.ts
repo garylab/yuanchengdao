@@ -75,7 +75,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
     .job-row-header { transition: background-color 0.15s ease; }
     .job-row.expanded .job-row-header { background-color: #fef3ec; }
     .job-row.visited .job-row-header { background-color: #fef3ec; }
-    .tag-pill { @apply inline-block px-2 py-0.5 text-xs rounded-full; }
+    .tag-pill { @apply inline-block px-2 py-0.5 text-xs rounded; }
   </style>
 </head>
 <body class="bg-surface-50 text-surface-900 min-h-screen">
@@ -93,7 +93,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
           <button id="mobile-menu-btn" class="p-2 text-surface-600 hover:text-brand-500 transition" aria-label="菜单">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
           </button>
-          <div id="mobile-menu" class="hidden absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-surface-200 py-1 z-50">
+          <div id="mobile-menu" class="hidden absolute right-0 top-full mt-1 w-36 bg-white rounded shadow-lg border border-surface-200 py-1 z-50">
             ${mobileNav}
           </div>
         </div>

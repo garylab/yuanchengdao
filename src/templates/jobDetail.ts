@@ -92,7 +92,7 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
   const similarSection = similarJobs.length > 0 ? `
     <aside class="w-full lg:w-72 flex-shrink-0">
       <div>
-        <div class="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden">
+        <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden">
           <div class="px-3 py-2.5">
             <h2 class="text-sm font-bold text-surface-900">相似职位</h2>
           </div>
@@ -116,7 +116,7 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
 
   const expiredBanner = isExpired ? `
     <div class="max-w-5xl mx-auto px-4 mt-4">
-      <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-3 text-sm">
+      <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded px-4 py-3 text-sm">
         ⚠️ 此职位已过期，信息仅供参考。
       </div>
     </div>` : '';
@@ -126,7 +126,7 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
     ${expiredBanner}
     <div class="max-w-5xl mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6">
       <div class="flex-1 min-w-0 max-w-3xl">
-        <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-6">
+        <div class="bg-white rounded shadow-sm border border-surface-200 p-6">
           <!-- Header -->
           <div class="flex items-start gap-4">
             ${companyLogo(job.company_name, job.company_thumbnail, 'lg')}
@@ -155,7 +155,7 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
           ${primaryApply ? `
             <div class="mt-6">
               <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
-                class="apply-btn inline-block bg-brand-500 text-white px-8 py-3 rounded-xl font-semibold text-base hover:bg-brand-600 transition shadow-sm"
+                class="apply-btn inline-block bg-brand-500 text-white px-8 py-3 rounded font-semibold text-base hover:bg-brand-600 transition shadow-sm"
                 data-from="detail-top" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
                 立即申请
               </a>
@@ -191,7 +191,7 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
               <div class="space-y-2">
                 ${applyOptions.map((opt, i) => `
                   <a href="${escapeHtml(rewriteUtm(opt.link))}" target="_blank" rel="noopener noreferrer"
-                    class="apply-btn flex items-center p-3 rounded-lg hover:bg-brand-50 transition no-underline text-inherit"
+                    class="apply-btn flex items-center p-3 rounded hover:bg-brand-50 transition no-underline text-inherit"
                     data-from="detail-${escapeHtml(opt.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))}-link" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
                     <span class="text-sm font-medium">${escapeHtml(opt.title)}</span>
                     <span class="flex-1 border-b border-dashed border-surface-200 mx-3"></span>
@@ -205,7 +205,7 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
           ${primaryApply ? `
             <div class="mt-6 pt-6 border-t border-surface-100 text-center">
               <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
-                class="apply-btn inline-block bg-brand-500 text-white px-10 py-3.5 rounded-xl font-semibold text-lg hover:bg-brand-600 transition shadow-md"
+                class="apply-btn inline-block bg-brand-500 text-white px-10 py-3.5 rounded font-semibold text-lg hover:bg-brand-600 transition shadow-md"
                 data-from="detail-bottom" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
                 立即申请
               </a>

@@ -9,6 +9,7 @@ SITE_URL = "https://yuanchengdao.com"
 STATIC_URL = "https://static.yuanchengdao.com"
 GA_ID = "G-MZGV7SFZ9F"
 TELEGRAM_CHANNEL_CHAT_ID = "@yuanchengdao"
+MAX_LIST_PAGE = "10"
 
 [[d1_databases]]
 binding = "DB"

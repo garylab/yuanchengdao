@@ -3,12 +3,13 @@ import { Env, Job } from '../types';
 import { syncJobs } from '../services/jobSync';
 import { resolveThumbnail, activeCutoff } from '../utils/helpers';
 import { tokenizeForFtsMatch } from '../utils/tokenizer';
+import { clampedListPage } from '../constants/listPagination';
 
 const api = new Hono<{ Bindings: Env }>();
 
 api.get('/api/jobs', async (c) => {
   const url = new URL(c.req.url);
-  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const page = clampedListPage(url, c.env);
   const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '30', 10)));
   const offset = (page - 1) * limit;
   const country = url.searchParams.get('country') || '';

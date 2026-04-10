@@ -115,9 +115,9 @@ export function companyLogo(name: string | null | undefined, thumbnail: string |
   const alt = escapeHtml(companyName);
 
   const cfg: Record<string, { wh: string; rounded: string; pad: string; fontSize: string }> = {
-    sm:  { wh: 'w-8 h-8',   rounded: 'rounded-lg', pad: 'p-0.5', fontSize: label.length <= 2 ? 'text-xs' : 'text-[9px]' },
-    md:  { wh: 'w-12 h-12', rounded: 'rounded-lg', pad: 'p-1.5', fontSize: label.length <= 2 ? 'text-lg' : label.length <= 5 ? 'text-xs' : 'text-[10px]' },
-    lg:  { wh: 'w-16 h-16', rounded: 'rounded-xl', pad: 'p-2',   fontSize: label.length <= 2 ? 'text-xl' : label.length <= 5 ? 'text-sm' : 'text-xs' },
+    sm:  { wh: 'w-8 h-8',   rounded: 'rounded', pad: 'p-0.5', fontSize: label.length <= 2 ? 'text-xs' : 'text-[9px]' },
+    md:  { wh: 'w-12 h-12', rounded: 'rounded', pad: 'p-1.5', fontSize: label.length <= 2 ? 'text-lg' : label.length <= 5 ? 'text-xs' : 'text-[10px]' },
+    lg:  { wh: 'w-16 h-16', rounded: 'rounded', pad: 'p-2',   fontSize: label.length <= 2 ? 'text-xl' : label.length <= 5 ? 'text-sm' : 'text-xs' },
   };
   const c = cfg[size];
 

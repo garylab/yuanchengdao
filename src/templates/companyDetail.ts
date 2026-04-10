@@ -67,7 +67,7 @@ function renderJobRow(job: Job): string {
             <div class="flex items-center gap-3">
               ${primaryApply ? `
                 <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
-                  class="apply-btn inline-block bg-brand-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-600 transition no-underline"
+                  class="apply-btn inline-block bg-brand-500 text-white px-6 py-2 rounded text-sm font-medium hover:bg-brand-600 transition no-underline"
                   data-from="company-list" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
                   申请
                 </a>
@@ -99,7 +99,7 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
   const content = `
     ${bc}
     <div class="max-w-5xl mx-auto px-4 mt-4">
-      <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-6 mb-4">
+      <div class="bg-white rounded shadow-sm border border-surface-200 p-6 mb-4">
         <div class="flex items-center gap-4">
           ${logo}
           <div>
@@ -112,13 +112,13 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
         </div>
       </div>
 
-      <div class="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden">
+      <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden">
         ${jobs.map(j => renderJobRow(j)).join('')}
       </div>
       ${(page > 1 || hasMore) ? `
         <div class="flex justify-center gap-2 mt-6">
-          ${page > 1 ? `<a href="/company/${escapeHtml(company.slug)}?page=${page - 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">← 上一页</a>` : ''}
-          ${hasMore ? `<a href="/company/${escapeHtml(company.slug)}?page=${page + 1}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
+          ${page > 1 ? `<a href="/company/${escapeHtml(company.slug)}?page=${page - 1}" class="px-4 py-2 rounded bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">← 上一页</a>` : ''}
+          ${hasMore ? `<a href="/company/${escapeHtml(company.slug)}?page=${page + 1}" class="px-4 py-2 rounded bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
         </div>
       ` : ''}
     </div>`;

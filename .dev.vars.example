@@ -6,3 +6,4 @@ CF_AIG_TOKEN=your_cf_aig_token_here
 STATIC_URL=https://static.yuanchengdao.com
 GA_ID=G-XXXXXXXXXX
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
+MAX_LIST_PAGE=10

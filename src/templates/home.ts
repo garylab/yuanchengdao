@@ -71,7 +71,7 @@ function renderJobRow(job: Job, isNew: boolean = false): string {
             <div class="flex items-center gap-3">
               ${primaryApply ? `
                 <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
-                  class="apply-btn inline-block bg-brand-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-600 transition no-underline"
+                  class="apply-btn inline-block bg-brand-500 text-white px-6 py-2 rounded text-sm font-medium hover:bg-brand-600 transition no-underline"
                   data-from="home-list" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
                   申请
                 </a>
@@ -171,18 +171,18 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
       <form action="/" method="GET" class="relative flex-1 min-w-[200px] max-w-md">
         <input type="text" name="q" value="${query ? escapeHtml(query) : ''}"
           placeholder="搜索职位..."
-          class="w-full px-3 py-1.5 rounded-lg border border-surface-200 text-sm outline-none focus:ring-1 focus:ring-brand-300 focus:border-brand-300 placeholder:text-surface-400">
+          class="w-full px-3 py-1.5 rounded border border-surface-200 text-sm outline-none focus:ring-1 focus:ring-brand-300 focus:border-brand-300 placeholder:text-surface-400">
         <button type="submit" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-surface-400 hover:text-brand-500 transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         </button>
       </form>
 
       <div class="filter-dropdown relative" data-param="location">
-        <button type="button" class="filter-btn flex items-center justify-between w-32 px-3 py-1.5 rounded-lg border text-sm transition ${locationSlug ? 'border-brand-300 bg-brand-50 text-brand-600' : 'border-surface-200 bg-white text-surface-600 hover:border-surface-300'}">
+        <button type="button" class="filter-btn flex items-center justify-between w-32 px-3 py-1.5 rounded border text-sm transition ${locationSlug ? 'border-brand-300 bg-brand-50 text-brand-600' : 'border-surface-200 bg-white text-surface-600 hover:border-surface-300'}">
           <span class="filter-label">${activeLocation ? escapeHtml(activeLocation.name_cn) : '位置'}</span>
           <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </button>
-        <div class="filter-panel hidden absolute top-full left-0 mt-1 bg-white border border-surface-200 rounded-lg shadow-lg z-50 w-72 max-h-72 overflow-hidden">
+        <div class="filter-panel hidden absolute top-full left-0 mt-1 bg-white border border-surface-200 rounded shadow-lg z-50 w-72 max-h-72 overflow-hidden">
           <div class="p-2 border-b border-surface-100">
             <input type="text" class="filter-search w-full px-2 py-1.5 text-sm border border-surface-200 rounded outline-none focus:ring-1 focus:ring-brand-300" placeholder="搜索位置...">
           </div>
@@ -194,11 +194,11 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
       </div>
 
       <div class="filter-dropdown relative" data-param="salary">
-        <button type="button" class="filter-btn flex items-center justify-between w-32 px-3 py-1.5 rounded-lg border text-sm transition ${salaryRange ? 'border-brand-300 bg-brand-50 text-brand-600' : 'border-surface-200 bg-white text-surface-600 hover:border-surface-300'}">
+        <button type="button" class="filter-btn flex items-center justify-between w-32 px-3 py-1.5 rounded border text-sm transition ${salaryRange ? 'border-brand-300 bg-brand-50 text-brand-600' : 'border-surface-200 bg-white text-surface-600 hover:border-surface-300'}">
           <span class="filter-label">${activeSalary && salaryRange ? activeSalary.label : '薪资'}</span>
           <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </button>
-        <div class="filter-panel hidden absolute top-full left-0 mt-1 bg-white border border-surface-200 rounded-lg shadow-lg z-50 w-56 max-h-72 overflow-hidden">
+        <div class="filter-panel hidden absolute top-full left-0 mt-1 bg-white border border-surface-200 rounded shadow-lg z-50 w-56 max-h-72 overflow-hidden">
           <ul class="overflow-y-auto max-h-60">
             ${salaryOptions}
           </ul>
@@ -228,15 +228,15 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
 
   const jobList = jobs.length > 0
     ? `<div class="max-w-5xl mx-auto mt-6">
-        <div class="bg-white rounded-xl border border-surface-200 relative">${filterBar}</div>
-        <div class="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden mt-3">
+        <div class="bg-white rounded border border-surface-200 relative">${filterBar}</div>
+        <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden mt-3">
           ${jobStats}
           ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3)).join('')}
         </div>
        </div>`
     : `<div class="max-w-5xl mx-auto mt-6">
-        <div class="bg-white rounded-xl border border-surface-200 relative">${filterBar}</div>
-        <div class="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden mt-3">
+        <div class="bg-white rounded border border-surface-200 relative">${filterBar}</div>
+        <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden mt-3">
           ${jobStats}
           <div class="text-center py-20 text-surface-400">
             <p class="text-4xl mb-4">🔍</p>
@@ -257,8 +257,8 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
 
   const pagination = (page > 1 || hasMore) ? `
     <div class="max-w-5xl mx-auto px-4 py-6 flex justify-center gap-2">
-      ${page > 1 ? `<a href="/?page=${page - 1}${paginationSuffix}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition">← 上一页</a>` : ''}
-      ${hasMore ? `<a href="/?page=${page + 1}${paginationSuffix}" class="px-4 py-2 rounded-lg bg-white border border-surface-200 text-sm hover:bg-surface-50 transition">下一页 →</a>` : ''}
+      ${page > 1 ? `<a href="/?page=${page - 1}${paginationSuffix}" class="px-4 py-2 rounded bg-white border border-surface-200 text-sm hover:bg-surface-50 transition">← 上一页</a>` : ''}
+      ${hasMore ? `<a href="/?page=${page + 1}${paginationSuffix}" class="px-4 py-2 rounded bg-white border border-surface-200 text-sm hover:bg-surface-50 transition">下一页 →</a>` : ''}
     </div>` : '';
 
   const subParts: string[] = [];

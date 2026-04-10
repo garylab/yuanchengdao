@@ -11,6 +11,7 @@ import { locationsPage } from '../templates/locations';
 import { locationDetailPage } from '../templates/locationDetail';
 import { resolveThumbnail, activeCutoff, expiredCutoff } from '../utils/helpers';
 import { tokenizeForFtsMatch } from '../utils/tokenizer';
+import { maxListPage, normalizedListPage } from '../constants/listPagination';
 
 const pages = new Hono<{ Bindings: Env }>();
 
@@ -26,7 +27,9 @@ const JOBS_HYDRATE = `
 
 pages.get('/', async (c) => {
   const url = new URL(c.req.url);
-  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const { page, redirectPath } = normalizedListPage(url, c.env);
+  if (redirectPath) return c.redirect(redirectPath, 302);
+  const listPageCap = maxListPage(c.env);
   const query = url.searchParams.get('q')?.trim() || '';
   const countrySlug = url.searchParams.get('country') || '';
   const locationSlug = url.searchParams.get('location') || '';
@@ -87,8 +90,9 @@ pages.get('/', async (c) => {
     }
   }
 
-  const hasMore = allIds.length > limit;
-  const jobIds = hasMore ? allIds.slice(0, limit) : allIds;
+  const hasMoreRaw = allIds.length > limit;
+  const hasMore = hasMoreRaw && page < listPageCap;
+  const jobIds = hasMoreRaw ? allIds.slice(0, limit) : allIds;
 
   // Stage 2: hydrate jobs (JOINs only on the page-sized set) + sidebar in parallel
   const [jobsResult, countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
@@ -207,7 +211,9 @@ pages.get('/job/:slug', async (c) => {
 
 pages.get('/companies', async (c) => {
   const url = new URL(c.req.url);
-  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const { page, redirectPath } = normalizedListPage(url, c.env);
+  if (redirectPath) return c.redirect(redirectPath, 302);
+  const listPageCap = maxListPage(c.env);
   const query = url.searchParams.get('q')?.trim() || '';
   const limit = 30;
   const offset = (page - 1) * limit;
@@ -237,8 +243,9 @@ pages.get('/companies', async (c) => {
     ...r,
     thumbnail: resolveThumbnail(r.thumbnail as string | null, c.env.STATIC_URL),
   }));
-  const hasMore = allCompanies.length > limit;
-  const companies = hasMore ? allCompanies.slice(0, limit) : allCompanies;
+  const hasMoreRaw = allCompanies.length > limit;
+  const hasMore = hasMoreRaw && page < listPageCap;
+  const companies = hasMoreRaw ? allCompanies.slice(0, limit) : allCompanies;
 
   return c.html(companiesPage(
     companies as any[], page, hasMore, query,
@@ -249,7 +256,9 @@ pages.get('/companies', async (c) => {
 pages.get('/company/:slug', async (c) => {
   const slug = c.req.param('slug');
   const url = new URL(c.req.url);
-  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const { page, redirectPath } = normalizedListPage(url, c.env);
+  if (redirectPath) return c.redirect(redirectPath, 302);
+  const listPageCap = maxListPage(c.env);
   const limit = 30;
   const offset = (page - 1) * limit;
 
@@ -278,8 +287,9 @@ pages.get('/company/:slug', async (c) => {
     'SELECT id FROM jobs WHERE company_id = ? AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
   ).bind(company.id, cutoff, limit + 1, offset).all();
   const allIds = (idResult.results || []).map((r: Record<string, unknown>) => r.id as number);
-  const hasMore = allIds.length > limit;
-  const jobIds = hasMore ? allIds.slice(0, limit) : allIds;
+  const hasMoreRaw = allIds.length > limit;
+  const hasMore = hasMoreRaw && page < listPageCap;
+  const jobIds = hasMoreRaw ? allIds.slice(0, limit) : allIds;
 
   let jobs: Job[] = [];
   if (jobIds.length > 0) {
@@ -317,7 +327,9 @@ pages.get('/categories', async (c) => {
 pages.get('/category/:slug', async (c) => {
   const slug = c.req.param('slug');
   const url = new URL(c.req.url);
-  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const { page, redirectPath } = normalizedListPage(url, c.env);
+  if (redirectPath) return c.redirect(redirectPath, 302);
+  const listPageCap = maxListPage(c.env);
   const limit = 30;
   const offset = (page - 1) * limit;
 
@@ -337,8 +349,9 @@ pages.get('/category/:slug', async (c) => {
     'SELECT id FROM jobs WHERE search_term_id = ? AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
   ).bind(term.id, cutoff, limit + 1, offset).all();
   const allIds = (idResult.results || []).map((r: Record<string, unknown>) => r.id as number);
-  const hasMore = allIds.length > limit;
-  const jobIds = hasMore ? allIds.slice(0, limit) : allIds;
+  const hasMoreRaw = allIds.length > limit;
+  const hasMore = hasMoreRaw && page < listPageCap;
+  const jobIds = hasMoreRaw ? allIds.slice(0, limit) : allIds;
 
   let jobs: Job[] = [];
   if (jobIds.length > 0) {
@@ -356,7 +369,9 @@ pages.get('/category/:slug', async (c) => {
 
 pages.get('/locations', async (c) => {
   const url = new URL(c.req.url);
-  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const { page, redirectPath } = normalizedListPage(url, c.env);
+  if (redirectPath) return c.redirect(redirectPath, 302);
+  const listPageCap = maxListPage(c.env);
   const query = url.searchParams.get('q')?.trim() || '';
   const limit = 30;
   const offset = (page - 1) * limit;
@@ -380,8 +395,9 @@ pages.get('/locations', async (c) => {
   const result = await c.env.DB.prepare(listSql).bind(...params).all();
 
   const allLocations = (result.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_name_cn: string | null; country_flag_emoji: string | null; job_count: number }>;
-  const hasMore = allLocations.length > limit;
-  const locations = hasMore ? allLocations.slice(0, limit) : allLocations;
+  const hasMoreRaw = allLocations.length > limit;
+  const hasMore = hasMoreRaw && page < listPageCap;
+  const locations = hasMoreRaw ? allLocations.slice(0, limit) : allLocations;
 
   return c.html(locationsPage(locations, page, hasMore, query, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
 });
@@ -389,7 +405,9 @@ pages.get('/locations', async (c) => {
 pages.get('/location/:slug', async (c) => {
   const slug = c.req.param('slug');
   const url = new URL(c.req.url);
-  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const { page, redirectPath } = normalizedListPage(url, c.env);
+  if (redirectPath) return c.redirect(redirectPath, 302);
+  const listPageCap = maxListPage(c.env);
   const limit = 30;
   const offset = (page - 1) * limit;
 
@@ -413,8 +431,9 @@ pages.get('/location/:slug', async (c) => {
     'SELECT id FROM jobs WHERE location_id = ? AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
   ).bind(location.id, cutoff, limit + 1, offset).all();
   const allIds = (idResult.results || []).map((r: Record<string, unknown>) => r.id as number);
-  const hasMore = allIds.length > limit;
-  const jobIds = hasMore ? allIds.slice(0, limit) : allIds;
+  const hasMoreRaw = allIds.length > limit;
+  const hasMore = hasMoreRaw && page < listPageCap;
+  const jobIds = hasMoreRaw ? allIds.slice(0, limit) : allIds;
 
   let jobs: Job[] = [];
   if (jobIds.length > 0) {

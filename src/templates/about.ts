@@ -10,7 +10,7 @@ export function aboutPage(gaId?: string, staticUrl?: string): string {
   const content = `
     ${bc}
     <div class="max-w-3xl mx-auto px-4 py-8">
-      <div class="bg-white rounded-xl shadow-sm border border-surface-200 p-8">
+      <div class="bg-white rounded shadow-sm border border-surface-200 p-8">
         <h1 class="text-3xl font-bold mb-6 flex items-center gap-2"><img src="/yuanchengdao-logo.png" alt="远程岛" class="h-8"> 关于远程岛</h1>
         
         <div class="prose text-surface-700 leading-relaxed space-y-4">

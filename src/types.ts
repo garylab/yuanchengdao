@@ -13,6 +13,7 @@ export interface Env {
   GA_ID?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHANNEL_CHAT_ID?: string;
+  MAX_LIST_PAGE?: string;
 }
 
 // Raw SerpAPI response shape for a single job
