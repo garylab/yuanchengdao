@@ -11,6 +11,8 @@ export interface Env {
   SITE_URL: string;
   STATIC_URL: string;
   GA_ID?: string;
+  TELEGRAM_BOT_TOKEN?: string;
+  TELEGRAM_CHANNEL_CHAT_ID?: string;
 }
 
 // Raw SerpAPI response shape for a single job

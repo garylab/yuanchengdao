@@ -4,6 +4,7 @@ import { Env } from './types';
 import pages from './routes/pages';
 import api from './routes/api';
 import { syncJobs } from './services/jobSync';
+import { postHourlyTelegramDigest } from './services/telegram';
 import { expiredCutoff } from './utils/helpers';
 import { appScript, appScriptAssetFilename } from './public/app';
 
@@ -162,10 +163,18 @@ export default {
   fetch: app.fetch,
 
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    if (event.cron === '0 * * * *') {
+      ctx.waitUntil(
+        postHourlyTelegramDigest(env).catch((err) => {
+          console.error('Telegram hourly digest failed:', err);
+        }),
+      );
+      return;
+    }
     ctx.waitUntil(
       syncJobs(env).catch((err) => {
         console.error('Scheduled sync failed:', err);
-      })
+      }),
     );
   },
 };

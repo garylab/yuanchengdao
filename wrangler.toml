@@ -8,6 +8,7 @@ workers_dev = false
 SITE_URL = "https://yuanchengdao.com"
 STATIC_URL = "https://static.yuanchengdao.com"
 GA_ID = "G-MZGV7SFZ9F"
+TELEGRAM_CHANNEL_CHAT_ID = "@yuanchengdao"
 
 [[d1_databases]]
 binding = "DB"
@@ -19,4 +20,4 @@ binding = "R2"
 bucket_name = "yuanchengdao"
 
 [triggers]
-crons = ["* * * * *"]
+crons = ["* * * * *", "0 * * * *"]
