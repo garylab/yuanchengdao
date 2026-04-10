@@ -2,7 +2,7 @@ import { Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge, englishLevelBadge } from '../utils/helpers';
 
-function renderJobRow(job: Job, isNew: boolean = false, staticUrl: string = ''): string {
+function renderJobRow(job: Job, isNew: boolean = false): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(job.posted_at || job.created_at);
   const logo = companyLogo(job.company_name, job.company_thumbnail);
@@ -32,7 +32,7 @@ function renderJobRow(job: Job, isNew: boolean = false, staticUrl: string = ''):
               ? `<a href="/company/${escapeHtml(job.company_slug)}" class="text-sm text-surface-500 hover:text-brand-500 transition no-underline flex-shrink-0">${escapeHtml(job.company_name || '')}</a>`
               : `<span class="text-sm text-surface-500 flex-shrink-0">${escapeHtml(job.company_name || '')}</span>`
             }
-            ${isNew ? `<img src="${staticUrl}/new2x.webp" alt="New" class="h-4 flex-shrink-0">` : ''}
+            ${isNew ? `<img src="/new2x.webp" alt="New" class="h-4 flex-shrink-0">` : ''}
           </div>
           <div class="flex flex-wrap items-center gap-2 mt-1.5">
             ${locationLink}
@@ -231,7 +231,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
         <div class="bg-white rounded-xl border border-surface-200 relative">${filterBar}</div>
         <div class="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden mt-3">
           ${jobStats}
-          ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3, staticUrl)).join('')}
+          ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3)).join('')}
         </div>
        </div>`
     : `<div class="max-w-5xl mx-auto mt-6">
