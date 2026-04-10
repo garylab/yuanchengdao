@@ -42,7 +42,7 @@ pages.get('/', async (c) => {
   if (query) {
     const ftsQuery = tokenizeForFtsMatch(query);
     const ftsResult = await c.env.DB.prepare(
-      'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT ? OFFSET ?'
+      'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
     ).bind(ftsQuery, cutoff, limit + 1, offset).all();
     allIds = (ftsResult.results || []).map((r: Record<string, unknown>) => r.rowid as number);
   } else {
@@ -79,7 +79,7 @@ pages.get('/', async (c) => {
         }
       }
 
-      idSql += ' ORDER BY posted_at DESC LIMIT ? OFFSET ?';
+      idSql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
       idParams.push(limit + 1, offset);
 
       const idResult = await c.env.DB.prepare(idSql).bind(...idParams).all();
@@ -93,7 +93,7 @@ pages.get('/', async (c) => {
   // Stage 2: hydrate jobs (JOINs only on the page-sized set) + sidebar in parallel
   const [jobsResult, countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
     jobIds.length > 0
-      ? c.env.DB.prepare(`${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.posted_at DESC`).all()
+      ? c.env.DB.prepare(`${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.created_at DESC`).all()
       : { results: [] },
     c.env.DB.prepare(
       `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
@@ -179,7 +179,7 @@ pages.get('/job/:slug', async (c) => {
   if (job.search_term_id) {
     const activeDate = activeCutoff();
     const simIdResult = await c.env.DB.prepare(
-      'SELECT id FROM jobs WHERE search_term_id = ? AND id != ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT 10'
+      'SELECT id FROM jobs WHERE search_term_id = ? AND id != ? AND posted_at >= ? ORDER BY created_at DESC LIMIT 10'
     ).bind(job.search_term_id, job.id, activeDate).all();
     const simIds = (simIdResult.results || []).map((r: Record<string, unknown>) => r.id as number);
 
@@ -193,7 +193,7 @@ pages.get('/job/:slug', async (c) => {
         LEFT JOIN locations lo ON j.location_id = lo.id
         LEFT JOIN countries ct ON j.country_id = ct.id
         WHERE j.id IN (${simIds.join(',')})
-        ORDER BY j.posted_at DESC
+        ORDER BY j.created_at DESC
       `).all();
       similarJobs = ((result.results || []) as unknown as Job[]).map(j => ({
         ...j,
@@ -275,7 +275,7 @@ pages.get('/company/:slug', async (c) => {
 
   const cutoff = activeCutoff();
   const idResult = await c.env.DB.prepare(
-    'SELECT id FROM jobs WHERE company_id = ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT ? OFFSET ?'
+    'SELECT id FROM jobs WHERE company_id = ? AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
   ).bind(company.id, cutoff, limit + 1, offset).all();
   const allIds = (idResult.results || []).map((r: Record<string, unknown>) => r.id as number);
   const hasMore = allIds.length > limit;
@@ -284,7 +284,7 @@ pages.get('/company/:slug', async (c) => {
   let jobs: Job[] = [];
   if (jobIds.length > 0) {
     const jobsResult = await c.env.DB.prepare(
-      `${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.posted_at DESC`
+      `${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.created_at DESC`
     ).all();
     jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
       ...j,
@@ -334,7 +334,7 @@ pages.get('/category/:slug', async (c) => {
 
   const cutoff = activeCutoff();
   const idResult = await c.env.DB.prepare(
-    'SELECT id FROM jobs WHERE search_term_id = ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT ? OFFSET ?'
+    'SELECT id FROM jobs WHERE search_term_id = ? AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
   ).bind(term.id, cutoff, limit + 1, offset).all();
   const allIds = (idResult.results || []).map((r: Record<string, unknown>) => r.id as number);
   const hasMore = allIds.length > limit;
@@ -343,7 +343,7 @@ pages.get('/category/:slug', async (c) => {
   let jobs: Job[] = [];
   if (jobIds.length > 0) {
     const jobsResult = await c.env.DB.prepare(
-      `${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.posted_at DESC`
+      `${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.created_at DESC`
     ).all();
     jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
       ...j,
@@ -410,7 +410,7 @@ pages.get('/location/:slug', async (c) => {
 
   const cutoff = activeCutoff();
   const idResult = await c.env.DB.prepare(
-    'SELECT id FROM jobs WHERE location_id = ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT ? OFFSET ?'
+    'SELECT id FROM jobs WHERE location_id = ? AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
   ).bind(location.id, cutoff, limit + 1, offset).all();
   const allIds = (idResult.results || []).map((r: Record<string, unknown>) => r.id as number);
   const hasMore = allIds.length > limit;
@@ -419,7 +419,7 @@ pages.get('/location/:slug', async (c) => {
   let jobs: Job[] = [];
   if (jobIds.length > 0) {
     const jobsResult = await c.env.DB.prepare(
-      `${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.posted_at DESC`
+      `${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.created_at DESC`
     ).all();
     jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
       ...j,

@@ -22,7 +22,7 @@ api.get('/api/jobs', async (c) => {
   if (q) {
     const ftsQuery = tokenizeForFtsMatch(q);
     const ftsResult = await c.env.DB.prepare(
-      'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ? ORDER BY posted_at DESC LIMIT ? OFFSET ?'
+      'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
     ).bind(ftsQuery, cutoff, limit, offset).all();
     jobIds = (ftsResult.results || []).map((r: Record<string, unknown>) => r.rowid as number);
   } else {
@@ -39,7 +39,7 @@ api.get('/api/jobs', async (c) => {
       }
     }
 
-    idSql += ' ORDER BY posted_at DESC LIMIT ? OFFSET ?';
+    idSql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     idParams.push(limit, offset);
 
     const idResult = await c.env.DB.prepare(idSql).bind(...idParams).all();
@@ -61,7 +61,7 @@ api.get('/api/jobs', async (c) => {
     LEFT JOIN locations lo ON j.location_id = lo.id
     LEFT JOIN countries ct ON j.country_id = ct.id
     WHERE j.id IN (${jobIds.join(',')})
-    ORDER BY j.posted_at DESC
+    ORDER BY j.created_at DESC
   `).all();
   const jobs = ((result.results || []) as unknown as Job[]).map(j => ({
     ...j,

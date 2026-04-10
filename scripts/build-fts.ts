@@ -42,23 +42,24 @@ function buildLocal() {
 
   db.exec('DROP TABLE IF EXISTS jobs_fts');
   db.exec(
-    'CREATE VIRTUAL TABLE jobs_fts USING fts5(title, posted_at UNINDEXED)'
+    'CREATE VIRTUAL TABLE jobs_fts USING fts5(title, posted_at UNINDEXED, created_at UNINDEXED)'
   );
 
-  const jobs = db.prepare('SELECT id, title, posted_at FROM jobs').all() as Array<{
+  const jobs = db.prepare('SELECT id, title, posted_at, created_at FROM jobs').all() as Array<{
     id: number;
     title: string;
     posted_at: string | null;
+    created_at: string;
   }>;
 
   const insert = db.prepare(
-    'INSERT INTO jobs_fts(rowid, title, posted_at) VALUES (?, ?, ?)'
+    'INSERT INTO jobs_fts(rowid, title, posted_at, created_at) VALUES (?, ?, ?, ?)'
   );
 
   const insertAll = db.transaction(
-    (rows: Array<{ id: number; title: string; posted_at: string | null }>) => {
+    (rows: Array<{ id: number; title: string; posted_at: string | null; created_at: string }>) => {
       for (const row of rows) {
-        insert.run(row.id, tokenize(row.title), row.posted_at);
+        insert.run(row.id, tokenize(row.title), row.posted_at, row.created_at);
       }
     }
   );
@@ -81,12 +82,12 @@ function buildRemote() {
 
   wranglerExec('DROP TABLE IF EXISTS jobs_fts');
   wranglerExec(
-    'CREATE VIRTUAL TABLE jobs_fts USING fts5(title, posted_at UNINDEXED)'
+    'CREATE VIRTUAL TABLE jobs_fts USING fts5(title, posted_at UNINDEXED, created_at UNINDEXED)'
   );
 
-  const raw = wranglerExec('SELECT id, title, posted_at FROM jobs');
+  const raw = wranglerExec('SELECT id, title, posted_at, created_at FROM jobs');
   const parsed = JSON.parse(raw);
-  const jobs: Array<{ id: number; title: string; posted_at: string | null }> =
+  const jobs: Array<{ id: number; title: string; posted_at: string | null; created_at: string }> =
     parsed[0]?.results ?? [];
 
   console.log(`Found ${jobs.length} jobs to index`);
@@ -97,11 +98,12 @@ function buildRemote() {
       .map((row) => {
         const title = escSql(tokenize(row.title));
         const posted = row.posted_at ? `'${escSql(row.posted_at)}'` : 'NULL';
-        return `(${row.id}, '${title}', ${posted})`;
+        const created = row.created_at ? `'${escSql(row.created_at)}'` : 'NULL';
+        return `(${row.id}, '${title}', ${posted}, ${created})`;
       })
       .join(',');
     wranglerExec(
-      `INSERT INTO jobs_fts(rowid, title, posted_at) VALUES ${values}`
+      `INSERT INTO jobs_fts(rowid, title, posted_at, created_at) VALUES ${values}`
     );
     console.log(`  Indexed ${Math.min(i + BATCH_SIZE, jobs.length)}/${jobs.length}`);
   }

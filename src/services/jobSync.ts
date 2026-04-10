@@ -266,9 +266,10 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
       const newJobId = jobInsert.meta.last_row_id;
       if (newJobId) {
         const titleSeg = segmentChinese(tr.title_zh);
-        await env.DB.prepare(
-          'INSERT INTO jobs_fts(rowid, title, posted_at) VALUES (?, ?, ?)'
-        ).bind(newJobId, titleSeg, postedAt).run();
+        await env.DB.prepare(`
+          INSERT INTO jobs_fts(rowid, title, posted_at, created_at)
+          SELECT id, ?, posted_at, created_at FROM jobs WHERE id = ?
+        `).bind(titleSeg, newJobId).run();
       }
 
       if (companyId) {

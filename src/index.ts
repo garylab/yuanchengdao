@@ -125,7 +125,7 @@ app.get('/sitemap-jobs.xml', async (c) => {
   const site = c.env.SITE_URL;
   const cutoff = expiredCutoff();
   const jobs = await c.env.DB.prepare(
-    'SELECT slug, updated_at FROM jobs WHERE posted_at >= ? ORDER BY posted_at DESC LIMIT 5000'
+    'SELECT slug, updated_at FROM jobs WHERE posted_at >= ? ORDER BY created_at DESC LIMIT 5000'
   ).bind(cutoff).all();
   const urls = (jobs.results || []).map((j: Record<string, unknown>) => {
     const raw = (j.updated_at as string) || new Date().toISOString();
