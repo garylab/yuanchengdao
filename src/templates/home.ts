@@ -268,7 +268,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
   if (page > 1) subParts.push(`第${page}页`);
   const pageTitle = subParts.length > 0
     ? `${subParts.join(' - ')} - 远程岛`
-    : '远程岛 - 华人全球远程工作机会平台';
+    : '远程岛 - 全球远程工作机会平台';
 
   const pageDesc = query
     ? `"${query}"相关的远程工作机会。在远程岛轻松发现适合你的全球远程岗位。`

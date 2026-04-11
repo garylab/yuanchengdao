@@ -83,7 +83,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
       <a href="/" class="flex items-center gap-2 no-underline flex-shrink-0">
         <img src="/yuanchengdao-logo.png" alt="远程岛" class="h-8">
-        <span class="text-xs text-surface-400 hidden sm:inline ml-1">华人全球远程工作机会平台</span>
+        <span class="text-xs text-surface-400 hidden sm:inline ml-1">全球<em class="not-italic">远程工作</em>机会平台</span>
       </a>
       <div class="flex items-center gap-1 sm:gap-4">
         <nav class="hidden sm:flex items-center gap-4 text-sm">
