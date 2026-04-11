@@ -106,22 +106,22 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   <!-- Footer -->
   <footer class="border-t border-surface-200 bg-white mt-16">
     <div class="max-w-5xl mx-auto px-4 py-8 text-sm text-surface-400">
-      <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <div class="text-left space-y-2 min-w-0">
+      <div class="flex flex-row items-center justify-between gap-4">
+        <div class="text-left space-y-2 min-w-0 flex-1">
           <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
             <a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition inline-flex items-center flex-shrink-0"><img src="/yuanchengdao-logo.png" alt="远程岛" class="h-5"></a>
-            <span class="text-surface-500">— 为中国人提供全球<em class="not-italic">远程工作</em>机会</span>
+            <span class="text-surface-500">— 全球<em class="not-italic">远程工作</em>机会</span>
           </div>
           <p>
             © ${new Date().getFullYear()}
             <a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition">yuanchengdao.com</a>
           </p>
         </div>
-        <div class="flex items-center justify-end gap-4 sm:shrink-0">
+        <div class="flex items-center justify-end gap-3 sm:gap-4 shrink-0">
           <a href="/about" class="no-underline transition ${ap.startsWith('/about') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">关于</a>
           <a href="${telegramChannelUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-[#26A5E4] hover:text-brand-500 transition-colors no-underline" title="Telegram 频道" aria-label="Telegram 频道">
             <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.692-1.653-1.124-2.678-1.8-1.185-.896-.42-1.391.258-2.196.177-.221 3.246-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-            <span>频道</span>
+            <span>订阅</span>
           </a>
         </div>
       </div>
