@@ -145,24 +145,47 @@ pages.get('/', async (c) => {
 pages.get('/job/:slug', async (c) => {
   const slug = c.req.param('slug');
 
-  const job = await c.env.DB.prepare(`
-    SELECT j.*,
-      co.name as company_name, co.slug as company_slug, co.thumbnail as company_thumbnail,
-      lo.name as location_name, lo.name_cn as location_name_cn, lo.slug as location_slug,
-      ct.code as country_code, ct.name_cn as country_name_cn, ct.flag_emoji as country_flag_emoji
-    FROM jobs j
-    LEFT JOIN companies co ON j.company_id = co.id
-    LEFT JOIN locations lo ON j.location_id = lo.id
-    LEFT JOIN countries ct ON j.country_id = ct.id
-    WHERE j.slug = ?
-  `).bind(slug).first<Job>();
+  const baseJob = await c.env.DB.prepare(
+    'SELECT * FROM jobs WHERE slug = ?'
+  ).bind(slug).first<Job>();
 
-  if (!job) {
+  if (!baseJob) {
     return c.html(
       `<div class="text-center py-20"><h1 class="text-2xl">404 - 职位未找到</h1><a href="/" class="text-brand-500">返回首页</a></div>`,
       404
     );
   }
+
+  const [companyRow, locationRow, countryRow] = await Promise.all([
+    baseJob.company_id
+      ? c.env.DB.prepare('SELECT id, name, slug, thumbnail FROM companies WHERE id = ?').bind(baseJob.company_id).first<{
+        id: number; name: string; slug: string; thumbnail: string | null;
+      }>()
+      : null,
+    baseJob.location_id
+      ? c.env.DB.prepare('SELECT id, name, name_cn, slug, country_id FROM locations WHERE id = ?').bind(baseJob.location_id).first<{
+        id: number; name: string; name_cn: string; slug: string; country_id: number | null;
+      }>()
+      : null,
+    baseJob.country_id
+      ? c.env.DB.prepare('SELECT id, code, name_cn, flag_emoji FROM countries WHERE id = ?').bind(baseJob.country_id).first<{
+        id: number; code: string; name_cn: string; flag_emoji: string | null;
+      }>()
+      : null,
+  ]);
+
+  const job: Job = {
+    ...baseJob,
+    company_name: companyRow?.name,
+    company_slug: companyRow?.slug,
+    company_thumbnail: companyRow?.thumbnail ? resolveThumbnail(companyRow.thumbnail, c.env.STATIC_URL) : undefined,
+    location_name: locationRow?.name,
+    location_name_cn: locationRow?.name_cn,
+    location_slug: locationRow?.slug,
+    country_code: countryRow?.code,
+    country_name_cn: countryRow?.name_cn,
+    country_flag_emoji: countryRow?.flag_emoji ?? undefined,
+  };
 
   const postedAt = job.posted_at || job.created_at;
   const ageMs = Date.now() - new Date(postedAt).getTime();
@@ -176,8 +199,6 @@ pages.get('/job/:slug', async (c) => {
   }
 
   const isExpired = ageDays > 30;
-
-  job.company_thumbnail = resolveThumbnail(job.company_thumbnail, c.env.STATIC_URL) as string;
 
   let similarJobs: Job[] = [];
   if (job.search_term_id) {

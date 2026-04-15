@@ -342,28 +342,20 @@ async function invalidateKey(keyUrl: string, apiKey: string): Promise<void> {
 }
 
 async function refreshCrawlPlan(db: D1Database): Promise<void> {
-  const [termRows, countryRows, existingRows] = await Promise.all([
+  const [termRows, countryRows] = await Promise.all([
     db.prepare('SELECT id FROM search_terms WHERE is_active = 1').all(),
     db.prepare('SELECT code FROM countries WHERE is_active = 1').all(),
-    db.prepare('SELECT search_term_id, country_code FROM crawl_plan').all(),
   ]);
   const terms = (termRows.results || []) as unknown as Array<{ id: number }>;
   const countries = (countryRows.results || []).map((r: Record<string, unknown>) => r.code as string);
-  const existingPairs = new Set(
-    (existingRows.results || []).map(
-      (r: Record<string, unknown>) => `${r.search_term_id as number}:${r.country_code as string}`,
-    ),
-  );
 
   if (terms.length === 0 || countries.length === 0) return;
 
   const stmts: D1PreparedStatement[] = [];
   for (const term of terms) {
     for (const countryCode of countries) {
-      const pairKey = `${term.id}:${countryCode}`;
-      if (existingPairs.has(pairKey)) continue;
       stmts.push(
-        db.prepare('INSERT INTO crawl_plan (search_term_id, country_code) VALUES (?, ?)').bind(term.id, countryCode),
+        db.prepare('INSERT OR IGNORE INTO crawl_plan (search_term_id, country_code) VALUES (?, ?)').bind(term.id, countryCode),
       );
     }
   }
@@ -401,36 +393,19 @@ async function pickNextCrawlTask(db: D1Database): Promise<{
   miss_count: number;
   term: string;
 } | null> {
-  const planResult = await db.prepare(
-    'SELECT id, search_term_id, country_code, hit_count, miss_count, processed_at FROM crawl_plan',
-  ).all();
-  const rows = (planResult.results || []) as unknown as Array<{
-    id: number;
-    search_term_id: number;
-    country_code: string;
-    hit_count: number;
-    miss_count: number;
-    processed_at: string | null;
-  }>;
-  if (rows.length === 0) return null;
+  const picked = await db.prepare(
+    `SELECT id, search_term_id, country_code, hit_count, miss_count
+     FROM crawl_plan
+     WHERE processed_at IS NULL
+        OR julianday(processed_at) <= julianday('now') - (MIN(miss_count * 1.0 / (hit_count + 1), 72) / 24.0)
+     ORDER BY
+       CASE WHEN processed_at IS NULL THEN 0 ELSE 1 END,
+       processed_at ASC,
+       miss_count ASC,
+       id ASC
+     LIMIT 1`,
+  ).first<{ id: number; search_term_id: number; country_code: string; hit_count: number; miss_count: number }>();
 
-  const eligible = rows.filter((row) =>
-    isCrawlPlanEligible(row.processed_at, row.hit_count, row.miss_count),
-  );
-  if (eligible.length === 0) return null;
-
-  eligible.sort((a, b) => {
-    const aUnprocessed = a.processed_at === null ? 0 : 1;
-    const bUnprocessed = b.processed_at === null ? 0 : 1;
-    if (aUnprocessed !== bUnprocessed) return aUnprocessed - bUnprocessed;
-    const aTime = a.processed_at ? Date.parse(a.processed_at.replace(' ', 'T') + 'Z') : 0;
-    const bTime = b.processed_at ? Date.parse(b.processed_at.replace(' ', 'T') + 'Z') : 0;
-    if (aTime !== bTime) return aTime - bTime;
-    if (a.miss_count !== b.miss_count) return a.miss_count - b.miss_count;
-    return a.id - b.id;
-  });
-
-  const picked = eligible[0];
   if (!picked) return null;
 
   const termRow = await db.prepare('SELECT term FROM search_terms WHERE id = ?')

@@ -103,10 +103,12 @@ CREATE INDEX IF NOT EXISTS idx_jobs_company_posted ON jobs(company_id, posted_at
 CREATE INDEX IF NOT EXISTS idx_jobs_location_posted ON jobs(location_id, posted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_jobs_country_posted ON jobs(country_id, posted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_jobs_search_term_posted ON jobs(search_term_id, posted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_search_term_created_at ON jobs(search_term_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_jobs_salary_posted ON jobs(salary_upper, posted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_companies_slug ON companies(slug);
 CREATE INDEX IF NOT EXISTS idx_companies_job_count ON companies(job_count DESC);
 CREATE INDEX IF NOT EXISTS idx_locations_job_count ON locations(job_count DESC);
+CREATE INDEX IF NOT EXISTS idx_locations_active_job_count ON locations(is_active, job_count DESC);
 CREATE INDEX IF NOT EXISTS idx_countries_job_count ON countries(job_count DESC);
 
 -- Search terms for job crawling
