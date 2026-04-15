@@ -1,6 +1,6 @@
 import { Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge } from '../utils/helpers';
+import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge } from '../utils/helpers';
 
 function payCycleToUnitText(cycle: string): string {
   switch (cycle) {
@@ -74,6 +74,7 @@ function buildJobJsonLd(job: Job, siteUrl?: string): string {
 export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, siteUrl?: string, staticUrl?: string, isExpired = false): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(jobDisplayTimestamp(job));
+  const scheduleBadge = scheduleTypeBadge(job.detected_extensions);
 
   const highlights = job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
   const applyOptions = job.apply_options ? JSON.parse(job.apply_options) as Array<{ title: string; link: string }> : [];
@@ -145,6 +146,7 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
                     : `<span>${f} ${loc}</span>`;
                 })()}
                 ${salary ? `<span class="text-green-600 font-medium">💰 ${salary}</span>` : ''}
+                ${scheduleBadge}
                 ${locationRequirementBadge(job.location_requirement)}
                 ${englishLevelBadge(job.english_level_required)}
                 <span>${posted}</span>

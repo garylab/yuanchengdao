@@ -195,6 +195,30 @@ export function formatEnglishLevelPlainText(level: EnglishLevel | string | null 
   return cfg ? `🗣️ ${cfg.label}` : '';
 }
 
+export function scheduleTypeBadge(detectedExtensions: string | null | undefined): string {
+  if (!detectedExtensions) return '';
+  let scheduleType: string | undefined;
+  try {
+    const parsed = JSON.parse(detectedExtensions) as Record<string, unknown>;
+    scheduleType = typeof parsed.schedule_type === 'string' ? parsed.schedule_type.trim() : undefined;
+  } catch {
+    scheduleType = undefined;
+  }
+  if (!scheduleType) return '';
+
+  const normalized = scheduleType.toLowerCase();
+  const label =
+    normalized === 'full-time' ? '全职' :
+    normalized === 'part-time' ? '兼职' :
+    normalized === 'contractor' ? '合同' :
+    normalized === 'contract' ? '合同' :
+    normalized === 'internship' ? '实习' :
+    normalized === 'temporary' ? '临时' :
+    scheduleType;
+
+  return `<span class="tag-pill bg-surface-100 text-surface-700 text-xs font-semibold">⏱ ${escapeHtml(label)}</span>`;
+}
+
 export function rewriteUtm(url: string): string {
   try {
     const u = new URL(url);

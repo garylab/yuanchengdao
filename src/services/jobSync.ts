@@ -37,6 +37,14 @@ function getTimezoneOffsetMs(timezone: string): number {
   }
 }
 
+function isLikelyRemoteJob(crawled: CrawledJob): boolean {
+  const title = crawled.title || '';
+  const description = crawled.description || '';
+  const highlights = crawled.job_highlights || '';
+  const combined = `${title}\n${description}\n${highlights}`.toLowerCase();
+  return combined.includes('remote') || combined.includes('远程');
+}
+
 function parsePostedAt(detectedExtensions: string | null, timezone: string): string | null {
   if (!detectedExtensions) return null;
   try {
@@ -188,7 +196,14 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
       ).bind(crawled.id).run();
       console.log(`  Skipped crawled #${crawled.id} — already in jobs table`);
     } else {
-      toTranslate.push(crawled);
+      if (!isLikelyRemoteJob(crawled)) {
+        await env.DB.prepare(
+          'UPDATE jobs_crawled SET process_status = 44, failed_reason = ? WHERE id = ?'
+        ).bind('not remote', crawled.id).run();
+        console.log(`  Skipped crawled #${crawled.id} — not a remote job`);
+      } else {
+        toTranslate.push(crawled);
+      }
     }
   }
 

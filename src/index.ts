@@ -163,18 +163,31 @@ export default {
   fetch: app.fetch,
 
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    if (event.cron === '0 * * * *') {
-      ctx.waitUntil(
-        postHourlyTelegramDigest(env).catch((err) => {
-          console.error('Telegram hourly digest failed:', err);
-        }),
-      );
-      return;
+    try {
+      const waitUntil = typeof ctx?.waitUntil === 'function' ? ctx.waitUntil.bind(ctx) : null;
+      const cron = typeof (event as unknown as { cron?: unknown })?.cron === 'string'
+        ? (event as unknown as { cron: string }).cron
+        : '';
+
+      if (cron === '0 * * * *') {
+        const job = postHourlyTelegramDigest(env).catch((err) => {
+          const message = err instanceof Error ? (err.stack || err.message) : String(err);
+          console.error(`Telegram hourly digest failed: ${message}`);
+        });
+        if (waitUntil) waitUntil(job);
+        else await job;
+        return;
+      }
+
+      const job = syncJobs(env).catch((err) => {
+        const message = err instanceof Error ? (err.stack || err.message) : String(err);
+        console.error(`Scheduled sync failed: ${message}`);
+      });
+      if (waitUntil) waitUntil(job);
+      else await job;
+    } catch (err) {
+      const message = err instanceof Error ? (err.stack || err.message) : String(err);
+      console.error(`Scheduled handler crashed: ${message}`);
     }
-    ctx.waitUntil(
-      syncJobs(env).catch((err) => {
-        console.error('Scheduled sync failed:', err);
-      }),
-    );
   },
 };
