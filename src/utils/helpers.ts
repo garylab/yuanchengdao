@@ -206,10 +206,14 @@ export function scheduleTypeBadge(detectedExtensions: string | null | undefined)
   }
   if (!scheduleType) return '';
 
-  const normalized = scheduleType.toLowerCase();
+  const normalized = scheduleType
+    .replace(/[‐‑‒–—−]/g, '-')
+    .toLowerCase();
   const label =
     normalized === 'full-time' ? '全职' :
     normalized === 'part-time' ? '兼职' :
+    normalized === 'vollzeit' ? '全职' :
+    normalized === 'teilzeit' ? '兼职' :
     normalized === 'contractor' ? '合同' :
     normalized === 'contract' ? '合同' :
     normalized === 'internship' ? '实习' :
