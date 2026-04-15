@@ -119,10 +119,15 @@ export function layout(title: string, content: string, options?: LayoutOptions):
           <p>
             © ${new Date().getFullYear()}
             <a href="/" class="no-underline text-surface-400 hover:text-brand-500 transition">yuanchengdao.com</a>
+            <span class="mx-2 text-surface-300">·</span>
+            <a href="/about" class="no-underline transition ${ap.startsWith('/about') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">关于</a>
           </p>
         </div>
         <div class="flex items-center justify-end gap-3 sm:gap-4 shrink-0">
-          <a href="/about" class="no-underline transition ${ap.startsWith('/about') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">关于</a>
+          <a href="https://hirelala.com" target="_blank" class="no-underline text-surface-400 hover:text-brand-500 transition">海拉拉</a>
+          <a href="https://mockreal.com/zh" target="_blank" class="inline-flex items-center no-underline text-surface-400 hover:text-brand-500 transition">
+            <span class="relative z-10">英语模拟面试</span>
+          </a>
         </div>
       </div>
     </div>
