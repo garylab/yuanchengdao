@@ -179,7 +179,7 @@ export function englishLevelBadge(level: EnglishLevel | string | null | undefine
   if (normalized === 'none') return '';
   const cfg = ENGLISH_LEVEL_BADGES[normalized];
   if (!cfg) return '';
-  return `<span class="tag-pill ${cfg.css} text-xs font-semibold">🗣️ ${cfg.label}</span>`;
+  return `<span class="tag-pill ${cfg.css} text-xs">🗣️ ${cfg.label}</span>`;
 }
 
 export function formatLocationRequirementPlainText(req: number | null | undefined): string {
@@ -233,7 +233,7 @@ export function scheduleTypeBadge(detectedExtensions: string | null | undefined)
 
   const label = parts.length > 0 ? parts.join(' / ') : scheduleType;
 
-  return `<span class="tag-pill bg-surface-100 text-surface-700 text-xs font-semibold">⏱ ${escapeHtml(label)}</span>`;
+  return `<span class="tag-pill bg-surface-100 text-surface-700 text-xs">⏱ ${escapeHtml(label)}</span>`;
 }
 
 export function rewriteUtm(url: string): string {
