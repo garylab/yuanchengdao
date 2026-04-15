@@ -209,16 +209,29 @@ export function scheduleTypeBadge(detectedExtensions: string | null | undefined)
   const normalized = scheduleType
     .replace(/[‐‑‒–—−]/g, '-')
     .toLowerCase();
-  const label =
-    normalized === 'full-time' ? '全职' :
-    normalized === 'part-time' ? '兼职' :
-    normalized === 'vollzeit' ? '全职' :
-    normalized === 'teilzeit' ? '兼职' :
-    normalized === 'contractor' ? '合同' :
-    normalized === 'contract' ? '合同' :
-    normalized === 'internship' ? '实习' :
-    normalized === 'temporary' ? '临时' :
-    scheduleType;
+
+  const parts: string[] = [];
+  const add = (label: string) => { if (!parts.includes(label)) parts.push(label); };
+
+  const containsAny = (needles: string[]) => needles.some((needle) => normalized.includes(needle));
+
+  if (containsAny(['full-time', 'fulltime', 'vollzeit', 'fuld tid', 'tiempo completo', 'a tiempo completo', 'tempo integral', 'à plein temps', 'fulltime en', 'フルタイム', 'دوام كامل'])) {
+    add('全职');
+  }
+  if (containsAny(['part-time', 'parttime', 'teilzeit', 'deltid', 'medio tiempo', 'a tiempo parcial', 'tempo partiel', 'à temps partiel', 'meio período', 'meio periodo', 'fulltime, parttime', 'parttime en', 'دوام جزئي'])) {
+    add('兼职');
+  }
+  if (containsAny(['contractor', 'contract', 'auftragnehmer', 'kontraktansat', 'prestataire', 'prestador de serviços', 'prestador de servicos', 'contratista', 'متعاقد', '契約社員', 'freelance'])) {
+    add('合同');
+  }
+  if (containsAny(['internship', 'stage', 'praktik', 'praktikum', 'prácticas', 'practicas', 'pasantía', 'pasantia', 'estágio', 'estagio', 'インターン', 'فترة تدريب'])) {
+    add('实习');
+  }
+  if (containsAny(['temporary'])) {
+    add('临时');
+  }
+
+  const label = parts.length > 0 ? parts.join(' / ') : scheduleType;
 
   return `<span class="tag-pill bg-surface-100 text-surface-700 text-xs font-semibold">⏱ ${escapeHtml(label)}</span>`;
 }
