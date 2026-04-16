@@ -37,12 +37,34 @@ function getTimezoneOffsetMs(timezone: string): number {
   }
 }
 
+const REMOTE_KEYWORDS = [
+  'remote',
+  '远程',
+  'fernarbeit',
+  'homeoffice',
+  'fjernarbejde',
+  'trabajo remoto',
+  'teletrabajo',
+  'trabalho remoto',
+  'teletrabalho',
+  'télétravail',
+  'travail à distance',
+  'thuiswerken',
+  'op afstand',
+  'リモート',
+  'テレワーク',
+  'عن بعد',
+  'عمل عن بُعد',
+];
+
 function isLikelyRemoteJob(crawled: CrawledJob): boolean {
   const title = crawled.title || '';
   const description = crawled.description || '';
   const highlights = crawled.job_highlights || '';
-  const combined = `${title}\n${description}\n${highlights}`.toLowerCase();
-  return combined.includes('remote') || combined.includes('远程');
+  const extensions = crawled.extensions || '';
+  const detectedExtensions = crawled.detected_extensions || '';
+  const combined = `${title}\n${description}\n${highlights}\n${extensions}\n${detectedExtensions}`.toLowerCase();
+  return REMOTE_KEYWORDS.some((keyword) => combined.includes(keyword));
 }
 
 function parsePostedAt(detectedExtensions: string | null, timezone: string): string | null {
