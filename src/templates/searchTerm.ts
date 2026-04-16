@@ -41,7 +41,7 @@ function renderJobRow(job: Job): string {
           </div>
           <div class="flex flex-wrap items-center gap-2 mt-1.5">
             ${locationLink}
-            ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs font-semibold">💰 ${salary}</span>` : ''}
+            ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs">💰 ${salary}</span>` : ''}
             ${locationRequirementBadge(job.location_requirement)}
             ${englishLevelBadge(job.english_level_required)}
           </div>

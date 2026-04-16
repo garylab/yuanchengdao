@@ -158,7 +158,7 @@ export function locationRequirementBadge(req: number | null | undefined): string
   if (!req) return '';
   const cfg = LOCATION_REQ_BADGES[req];
   if (!cfg) return '';
-  return `<span class="tag-pill ${cfg.css} text-xs font-semibold">${cfg.icon} ${cfg.label}</span>`;
+  return `<span class="tag-pill ${cfg.css} text-xs">${cfg.icon} ${cfg.label}</span>`;
 }
 
 const ENGLISH_LEVEL_BADGES: Record<EnglishLevel, { label: string; css: string } | null> = {
