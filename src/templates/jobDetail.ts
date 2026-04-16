@@ -154,15 +154,20 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
             </div>
           </div>
 
-          ${primaryApply ? `
-            <div class="mt-6">
+          <div class="mt-6 flex items-center gap-3">
+            ${primaryApply ? `
               <a href="${escapeHtml(primaryApply)}" target="_blank" rel="noopener noreferrer"
                 class="apply-btn inline-block bg-brand-500 text-white px-8 py-3 rounded font-semibold text-base hover:bg-brand-600 transition shadow-sm"
                 data-from="detail-top" data-job="${escapeHtml(job.title)}" data-company="${escapeHtml(job.company_name || '')}">
                 立即申请
               </a>
-            </div>
-          ` : ''}
+            ` : ''}
+            <button id="share-btn" type="button"
+              class="inline-flex items-center gap-1.5 px-4 py-3 rounded border border-surface-200 text-sm text-surface-600 hover:bg-surface-50 hover:border-surface-300 transition cursor-pointer bg-white">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              分享
+            </button>
+          </div>
 
           <!-- Highlights -->
           ${highlights.length > 0 ? `

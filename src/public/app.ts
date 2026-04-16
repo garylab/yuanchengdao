@@ -80,6 +80,25 @@ document.addEventListener('click', function(e) {
   }
 })();
 
+/* Share button */
+(function() {
+  var btn = document.getElementById('share-btn');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    var title = document.title;
+    var url = window.location.href;
+    if (navigator.share) {
+      navigator.share({ title: title, url: url }).catch(function() {});
+    } else {
+      navigator.clipboard.writeText(url).then(function() {
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 已复制';
+        setTimeout(function() { btn.innerHTML = orig; }, 2000);
+      }).catch(function() {});
+    }
+  });
+})();
+
 /* Filter dropdowns */
 (function() {
   var openPanel = null;
