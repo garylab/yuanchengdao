@@ -128,7 +128,7 @@ export function companyLogo(name: string | null | undefined, thumbnail: string |
   const firstWord = companyName.split(/\s+/)[0];
   const label = firstWord.length <= 7 ? firstWord : companyName[0];
   const escaped = escapeHtml(label);
-  const alt = escapeHtml(companyName);
+  const alt = escapeHtml(`${companyName} logo`);
 
   const cfg: Record<string, { wh: string; rounded: string; pad: string; fontSize: string }> = {
     sm:  { wh: 'w-8 h-8',   rounded: 'rounded', pad: 'p-0.5', fontSize: label.length <= 2 ? 'text-xs' : 'text-[9px]' },
