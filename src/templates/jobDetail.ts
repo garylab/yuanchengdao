@@ -145,8 +145,8 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
                     ? `<a href="/location/${escapeHtml(job.location_slug)}" class="hover:text-brand-500 transition no-underline">${f} ${loc}</a>`
                     : `<span>${f} ${loc}</span>`;
                 })()}
-                ${salary ? `<span class="text-green-600 font-medium">💰 ${salary}</span>` : ''}
                 ${scheduleBadge}
+                ${salary ? `<span class="text-green-600 font-medium">💰 ${salary}</span>` : ''}
                 ${locationRequirementBadge(job.location_requirement)}
                 ${englishLevelBadge(job.english_level_required)}
                 <span>${posted}</span>
