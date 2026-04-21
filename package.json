@@ -5,8 +5,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "build:assets": "tsx scripts/build-assets.ts",
+    "dev": "npm run build:assets && wrangler dev",
+    "deploy": "npm run build:assets && wrangler deploy",
     "db:create": "wrangler d1 create yuanchengdao",
     "db:migrate": "wrangler d1 execute yuanchengdao --file=./schema.sql",
     "db:migrate:local": "wrangler d1 execute yuanchengdao --local --file=./schema.sql",
@@ -18,8 +19,11 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241230.0",
+    "@types/clean-css": "^4.2.11",
     "better-sqlite3": "^11.0.0",
+    "clean-css": "^5.3.3",
     "nodejieba": "^2.6.0",
+    "terser": "^5.46.1",
     "tsx": "^4.0.0",
     "typescript": "^5.7.0",
     "wrangler": "^4.73.0"
