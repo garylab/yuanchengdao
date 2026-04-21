@@ -25,4 +25,4 @@ bucket_name = "yuanchengdao"
 directory = "public"
 
 [triggers]
-crons = ["* * * * *", "0 * * * *"]
+crons = ["* * * * *", "0 22,23,0-15 * * *"]
