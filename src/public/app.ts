@@ -159,13 +159,27 @@ document.addEventListener('click', function(e) {
   });
 })();
 
-/* Feishu QR popover on hover */
+/* QR popover on hover with lazy image load */
 (function() {
-  var wrap = document.querySelector('.feishu-qr-wrap');
-  if (!wrap) return;
-  var pop = wrap.querySelector('.feishu-qr-popover');
-  wrap.addEventListener('mouseenter', function() { pop.classList.remove('hidden'); });
-  wrap.addEventListener('mouseleave', function() { pop.classList.add('hidden'); });
+  document.querySelectorAll('.qr-hover-wrap').forEach(function(wrap) {
+    var pop = wrap.querySelector('.qr-hover-popover');
+    var loaded = false;
+    wrap.addEventListener('mouseenter', function() {
+      if (!loaded) {
+        var src = pop.dataset.qrSrc;
+        if (src) {
+          var img = document.createElement('img');
+          img.alt = 'QR Code';
+          img.style.cssText = 'width:176px;height:176px;object-fit:contain';
+          pop.insertBefore(img, pop.firstChild);
+          img.src = src;
+        }
+        loaded = true;
+      }
+      pop.classList.remove('hidden');
+    });
+    wrap.addEventListener('mouseleave', function() { pop.classList.add('hidden'); });
+  });
 })();
 
 `;

@@ -170,7 +170,7 @@ export default {
         ? (event as unknown as { cron: string }).cron
         : '';
 
-      if (cron === '0 * * * *') {
+      if (cron === '0 22,23,0-15 * * *') {
         const telegramJob = postHourlyTelegramDigest(env).catch((err) => {
           const message = err instanceof Error ? (err.stack || err.message) : String(err);
           console.error(`Telegram hourly digest failed: ${message}`);
