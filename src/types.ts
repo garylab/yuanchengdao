@@ -14,6 +14,7 @@ export interface Env {
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHANNEL_CHAT_ID?: string;
   FEISHU_BOT_WEBHOOK_URL?: string;
+  FEISHU_GROUP_LINK?: string;
   MAX_LIST_PAGE?: string;
 }
 

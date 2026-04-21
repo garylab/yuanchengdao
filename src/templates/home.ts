@@ -132,6 +132,8 @@ interface HomePageOptions {
   staticUrl?: string;
   topSearchTerms?: SearchTermPill[];
   topLocations?: LocationPill[];
+  feishuGroupLink?: string;
+  telegramChannelUrl?: string;
 }
 
 const SALARY_OPTIONS = [
@@ -151,7 +153,7 @@ const SALARY_OPTIONS = [
 ];
 
 export function homePage(jobs: Job[], countries: CountryFilter[], locations: LocationFilter[], page: number, hasMore: boolean, opts: HomePageOptions = {}): string {
-  const { query, countrySlug, locationSlug, salaryRange = '', gaId, siteUrl, staticUrl, topSearchTerms = [], topLocations = [] } = opts;
+  const { query, countrySlug, locationSlug, salaryRange = '', gaId, siteUrl, staticUrl, topSearchTerms = [], topLocations = [], feishuGroupLink, telegramChannelUrl } = opts;
   const activeLocation = locationSlug ? locations.find(l => l.slug === locationSlug) : null;
 
   const locationOptions = locations.map(l =>
@@ -208,6 +210,19 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
       </div>
 
       ${hasFilters || query ? `<a href="/" class="text-xs text-surface-400 hover:text-brand-500 transition">清除</a>` : ''}
+
+      <div class="flex items-center gap-4 ml-auto text-xs">
+        ${feishuGroupLink ? `
+        <div class="feishu-qr-wrap relative inline-flex">
+          <a href="${escapeHtml(feishuGroupLink)}" target="_blank" class="inline-flex items-center gap-0.5 no-underline text-brand-500 hover:text-brand-600 font-medium transition"><img src="/feishu.svg" alt="" class="w-3.5 h-3.5">飞书群</a>
+          <div class="feishu-qr-popover hidden absolute right-0 top-full mt-2 bg-white border border-surface-200 rounded-lg shadow-xl z-50 p-3" style="width:200px;height:228px">
+            <img src="/yuanchengdao-feishu-group.png" alt="飞书群二维码" style="width:176px;height:176px;object-fit:contain">
+            <p class="text-xs text-surface-400 text-center mt-1">扫码加入飞书群</p>
+          </div>
+        </div>
+        ` : ''}
+        ${telegramChannelUrl ? `<a href="${escapeHtml(telegramChannelUrl)}" target="_blank" class="inline-flex items-center gap-1 no-underline text-surface-400 hover:text-brand-500 transition"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="#26A5E4"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.12.12 0 00-.07-.2c-.08-.06-.2-.04-.28-.02-.12.03-2.07 1.32-5.84 3.87-.55.38-1.05.56-1.5.55-.49-.01-1.44-.28-2.15-.51-.87-.28-1.56-.43-1.5-.92.03-.25.38-.51 1.05-.78 4.12-1.79 6.87-2.97 8.26-3.54 3.93-1.64 4.75-1.92 5.28-1.93.12 0 .37.03.54.18.14.12.18.28.2.46 0 .06.01.24 0 .37z"/></svg>TG频道</a>` : ''}
+      </div>
     </div>
     ${hasShortcuts ? `
     <div class="px-4 pt-1 pb-3 mt-1 flex items-center gap-x-3 gap-y-1 flex-wrap overflow-x-auto text-xs text-surface-400">

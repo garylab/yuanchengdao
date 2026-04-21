@@ -159,6 +159,15 @@ document.addEventListener('click', function(e) {
   });
 })();
 
+/* Feishu QR popover on hover */
+(function() {
+  var wrap = document.querySelector('.feishu-qr-wrap');
+  if (!wrap) return;
+  var pop = wrap.querySelector('.feishu-qr-popover');
+  wrap.addEventListener('mouseenter', function() { pop.classList.remove('hidden'); });
+  wrap.addEventListener('mouseleave', function() { pop.classList.add('hidden'); });
+})();
+
 `;
 
 const appScriptContentHash = simpleHash(appScript);

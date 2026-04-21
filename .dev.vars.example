@@ -7,4 +7,5 @@ STATIC_URL=https://static.yuanchengdao.com
 GA_ID=G-XXXXXXXXXX
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 FEISHU_BOT_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/your_webhook_id_here
+FEISHU_GROUP_LINK=https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=your_token_here
 MAX_LIST_PAGE=10

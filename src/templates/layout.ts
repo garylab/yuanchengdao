@@ -35,7 +35,6 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   const mobileNav = navItems.map(n =>
     `<a href="${n.href}" class="block px-4 py-2 text-sm no-underline ${isActive(n.href) ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">${n.label}</a>`
   ).join('\n          ');
-  const telegramChannelUrl = 'https://t.me/yuanchengdao';
   const cdnStatic = (options?.staticUrl || '').trim().replace(/\/$/, '');
   const tailwindSrc = cdnStatic ? `${cdnStatic}/js/tailwindcss.js` : '/js/tailwindcss.js';
   return `<!DOCTYPE html>
@@ -112,7 +111,6 @@ export function layout(title: string, content: string, options?: LayoutOptions):
             <span class="text-surface-500">© ${new Date().getFullYear()}</span>
             <a href="/" class="ml-2 no-underline text-surface-400 hover:text-brand-500 transition inline-flex items-center flex-shrink-0">远程岛</a>
             <a href="/about" class="ml-2 no-underline transition ${ap.startsWith('/about') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">关于</a>
-            <a href="${telegramChannelUrl}" target="_blank" class="ml-2 no-underline text-surface-400 hover:text-brand-500 transition" title="Telegram 频道" aria-label="Telegram 频道">Telegram频道</a>
           </div>
           
         </div>

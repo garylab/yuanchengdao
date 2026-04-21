@@ -138,6 +138,8 @@ pages.get('/', async (c) => {
     query, countrySlug, locationSlug, salaryRange,
     gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL,
     topSearchTerms, topLocations,
+    feishuGroupLink: c.env.FEISHU_GROUP_LINK,
+    telegramChannelUrl: 'https://t.me/yuanchengdao',
   });
   return c.html(html);
 });
