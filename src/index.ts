@@ -8,6 +8,7 @@ import { postHourlyTelegramDigest } from './services/telegram';
 import { postHourlyFeishuDigest } from './services/feishu';
 import { expiredCutoff } from './utils/helpers';
 import { appScript, appScriptAssetFilename } from './public/app';
+import { appStyles, appStylesAssetFilename } from './public/styles';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -37,6 +38,12 @@ app.get(`/js/${appScriptAssetFilename}`, (c) => {
   c.header('Content-Type', 'application/javascript');
   c.header('Cache-Control', 'public, max-age=31536000, immutable');
   return c.body(appScript);
+});
+
+app.get(`/css/${appStylesAssetFilename}`, (c) => {
+  c.header('Content-Type', 'text/css');
+  c.header('Cache-Control', 'public, max-age=31536000, immutable');
+  return c.body(appStyles);
 });
 
 app.route('/', pages);

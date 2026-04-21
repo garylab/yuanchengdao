@@ -1,4 +1,5 @@
 import { appScriptAssetFilename } from '../public/app';
+import { appStylesAssetFilename } from '../public/styles';
 
 export interface LayoutOptions {
   description?: string;
@@ -68,14 +69,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
       }
     }
   </script>
-  <style>
-    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
-    .job-row-header:hover { background-color: #fef3ec; }
-    .job-row-header { transition: background-color 0.15s ease; }
-    .job-row.expanded .job-row-header { background-color: #fef3ec; }
-    .job-row.visited .job-row-header { background-color: #fef3ec; }
-    .tag-pill { @apply inline-block px-2 py-0.5 text-xs rounded; }
-  </style>
+  <link rel="stylesheet" href="/css/${appStylesAssetFilename}">
 </head>
 <body class="bg-surface-50 text-surface-900 min-h-screen">
   <header class="bg-white border-b border-surface-200 sticky top-0 z-50">

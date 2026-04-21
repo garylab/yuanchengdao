@@ -1,12 +1,6 @@
-function simpleHash(str: string): string {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
-  }
-  return (h >>> 0).toString(36);
-}
+import { simpleHash, minifyJs } from './minify';
 
-export const appScript = `
+const rawScript = `
 /* Job row expand/collapse */
 document.addEventListener('click', function(e) {
   var collapse = e.target.closest('.job-collapse');
@@ -183,6 +177,8 @@ document.addEventListener('click', function(e) {
 })();
 
 `;
+
+export const appScript = minifyJs(rawScript);
 
 const appScriptContentHash = simpleHash(appScript);
 
