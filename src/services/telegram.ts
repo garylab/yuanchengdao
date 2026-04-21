@@ -124,7 +124,7 @@ export async function postHourlyTelegramDigest(env: Env): Promise<void> {
   if (!token) return;
 
   const idResult = await env.DB.prepare(
-    `SELECT id FROM jobs WHERE created_at >= datetime('now', '-1 hour') ORDER BY created_at DESC`
+    `SELECT id FROM jobs WHERE created_at >= datetime('now', '-1 hour') AND salary_upper > 0 AND location_requirement = 0 ORDER BY created_at DESC`
   ).all<{ id: number }>();
   const jobIds = (idResult.results || []).map((row) => row.id);
   if (jobIds.length === 0) return;
