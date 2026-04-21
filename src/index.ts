@@ -5,6 +5,7 @@ import pages from './routes/pages';
 import api from './routes/api';
 import { syncJobs } from './services/jobSync';
 import { postHourlyTelegramDigest } from './services/telegram';
+import { postHourlyFeishuDigest } from './services/feishu';
 import { expiredCutoff } from './utils/helpers';
 import { appScript, appScriptAssetFilename } from './public/app';
 
@@ -170,12 +171,17 @@ export default {
         : '';
 
       if (cron === '0 * * * *') {
-        const job = postHourlyTelegramDigest(env).catch((err) => {
+        const telegramJob = postHourlyTelegramDigest(env).catch((err) => {
           const message = err instanceof Error ? (err.stack || err.message) : String(err);
           console.error(`Telegram hourly digest failed: ${message}`);
         });
-        if (waitUntil) waitUntil(job);
-        else await job;
+        const feishuJob = postHourlyFeishuDigest(env).catch((err) => {
+          const message = err instanceof Error ? (err.stack || err.message) : String(err);
+          console.error(`Feishu hourly digest failed: ${message}`);
+        });
+        const combined = Promise.all([telegramJob, feishuJob]);
+        if (waitUntil) waitUntil(combined);
+        else await combined;
         return;
       }
 

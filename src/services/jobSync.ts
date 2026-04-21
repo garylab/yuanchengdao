@@ -245,6 +245,17 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
     cfAigToken: env.CF_AIG_TOKEN,
   });
 
+  const translatedIndices = new Set(translations.map(tr => tr.index));
+  for (let i = 0; i < toTranslate.length; i++) {
+    if (!translatedIndices.has(i)) {
+      const skipped = toTranslate[i];
+      await env.DB.prepare(
+        "UPDATE jobs_crawled SET process_status = 44, failed_reason = ? WHERE id = ?"
+      ).bind('empty content or translation failed', skipped.id).run();
+      console.log(`  Marked crawled #${skipped.id} as failed — no translation result`);
+    }
+  }
+
   let saved = 0;
   for (const tr of translations) {
     const crawled = toTranslate[tr.index];

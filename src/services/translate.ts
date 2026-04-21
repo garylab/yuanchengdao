@@ -124,6 +124,12 @@ export async function translateBatch(
   const results: TranslationResult[] = [];
 
   for (let i = 0; i < inputs.length; i++) {
+    const { crawled } = inputs[i];
+    if (!crawled.title?.trim() || !crawled.description?.trim()) {
+      console.error(`Skipping job ${i} (crawled #${crawled.id}): empty title or description`);
+      continue;
+    }
+
     const job = buildJobPayload(inputs[i]);
     const prompt = buildPrompt(job);
 
