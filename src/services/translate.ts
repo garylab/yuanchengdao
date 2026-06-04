@@ -5,6 +5,8 @@ import { parseEnglishLevel } from '../constants/englishLevel';
 export interface TranslateInput {
   crawled: CrawledJob;
   decoded: DecodedJobId;
+  searchTerm?: string;
+  searchTermCn?: string;
 }
 
 export interface TranslateOptions {
@@ -30,10 +32,16 @@ function buildJobPayload(input: TranslateInput) {
     extensions: crawled.extensions ? JSON.parse(crawled.extensions) : [],
     detected_extensions: detected,
     job_highlights: highlights,
+    search_term: input.searchTerm || '',
+    search_term_cn: input.searchTermCn || '',
   };
 }
 
 function buildPrompt(job: Record<string, unknown>): string {
+  const searchTermHint = (job.search_term && job.search_term_cn)
+    ? `\n\nIMPORTANT: When translating this job listing, use the following terminology mapping:\n- "${job.search_term}" should be translated as "${job.search_term_cn}" (not alternative translations).`
+    : '';
+
   return `You are a professional translator and data extractor. Process the following job listing.
 
 The job has these location-related fields:
@@ -48,10 +56,10 @@ Return a JSON object with:
 - "country_code": 2-letter lowercase country code (ISO 3166-1 alpha-2) for the ACTUAL job location. Determine from "location" first, then "address_city". Only fall back to "gl" if both "location" and "address_city" are generic (e.g. "Anywhere", "Remote"). Examples: "us", "gb", "de", "ca", "au", "sg", "jp", "ae".
 - "country_name": The English name of the country. Examples: "United States", "United Kingdom", "Germany", "Japan", "Singapore".
 - "country_name_cn": The Chinese name of the country. Examples: "美国", "英国", "德国", "日本", "新加坡".
-- "country_timezone": IANA timezone string for the country's primary/capital timezone. Examples: "America/New_York" (US), "Europe/London" (UK), "Europe/Berlin" (Germany), "Asia/Tokyo" (Japan), "Asia/Singapore" (Singapore), "Australia/Sydney" (Australia), "America/Toronto" (Canada).
-- "location_name": The city or region name in English. Extract from "address_city" first, then "location" field. If it contains a city (e.g. "Denver, CO"), use just the city name ("Denver"). If it's just a country name or "Anywhere", use the country name. NEVER use "Remote" — always return at least the country name.
-- "location_name_cn": Chinese translation of location_name. Examples: "San Francisco" -> "旧金山", "New York" -> "纽约", "London" -> "伦敦", "Denver" -> "丹佛", "United States" -> "美国", "Germany" -> "德国", "Tokyo" -> "东京", "Singapore" -> "新加坡"
-- "salary_lower": integer, lower bound of salary CONVERTED TO CNY (Chinese Yuan). Extract from detected_extensions.salary or description first, then convert to CNY using approximate exchange rates (e.g. 1 USD ≈ 7.2 CNY, 1 EUR ≈ 7.8 CNY, 1 GBP ≈ 9.1 CNY, 1 CAD ≈ 5.3 CNY, 1 AUD ≈ 4.7 CNY, 1 SGD ≈ 5.4 CNY, 1 JPY ≈ 0.048 CNY). If not found, use 0.
+- "country_timezone": IANA timezone string for the country's primary/capital timezone. Examples: "America/New_York" (US), "Europe/London" (UK), "Europe/Berlin" (Germany), "Asia/Tokyo" (Japan), "Asia/S[...]
+- "location_name": The city or region name in English. Extract from "address_city" first, then "location" field. If it contains a city (e.g. "Denver, CO"), use just the city name ("Denver"). If it's j[...]
+- "location_name_cn": Chinese translation of location_name. Examples: "San Francisco" -> "旧金山", "New York" -> "纽约", "London" -> "伦敦", "Denver" -> "丹佛", "United States" -> "美国", "[...]
+- "salary_lower": integer, lower bound of salary CONVERTED TO CNY (Chinese Yuan). Extract from detected_extensions.salary or description first, then convert to CNY using approximate exchange rates (e.[...]
 - "salary_upper": integer, upper bound of salary CONVERTED TO CNY. Same conversion rules. If not found, use 0.
 - "salary_currency": always return "CNY".
 - "salary_pay_cycle": one of "hour", "day", "week", "month", "year". The ORIGINAL pay cycle before any conversion. Default "month".
@@ -64,8 +72,8 @@ Return a JSON object with:
   - "authorized": must have existing work authorization or visa for a specific country
   - "unknown": cannot determine from the posting
   Look for phrases like "must be based in", "work authorization required", "US time zones", "open to candidates worldwide", "EU residents only", visa requirements, etc.
-- "english_level_required": Minimum English proficiency required for the role ONLY when the posting explicitly states an English (language) requirement, or clearly states a standard English-language credential or test (e.g. IELTS, TOEFL, CEFR B2 for English). Use "none" in all other cases. Must be exactly one of:
-  - "none": Use this whenever the posting does not explicitly say that English proficiency is required, or that candidates must speak/read/write English at some level, or name English-language credentials. Do NOT infer from: job location, country, remote work, time zone, team being international, or the posting being written in English. Do NOT infer from customer-facing or "excellent communication" unless the text ties communication to English explicitly. Ignore requirements for non-English languages.
+- "english_level_required": Minimum English proficiency required for the role ONLY when the posting explicitly states an English (language) requirement, or clearly states a standard English-language c[...]
+  - "none": Use this whenever the posting does not explicitly say that English proficiency is required, or that candidates must speak/read/write English at some level, or name English-language credent[...]
   - "basic": elementary / conversational / working English
   - "intermediate": solid working English, mid-level
   - "upper_intermediate": strong working English; solid B1; wording such as upper-intermediate or strong intermediate
@@ -75,10 +83,10 @@ Return a JSON object with:
   - "advanced": advanced English, excellent when clearly below native or C2 wording
   - "fluent": fluent English, fluent written and spoken, without CEFR labels
   - "native": native English, native speaker, mother tongue English
-  Logic Note: When multiple levels appear, choose the strictest (highest) bar stated as required. Only if a requirement is present but vague (e.g. "Good English", "proficiency in English") should you pick a non-"none" level using "intermediate" or "upper_intermediate" based on tone. If the text is silent on English, use "none".
+  Logic Note: When multiple levels appear, choose the strictest (highest) bar stated as required. Only if a requirement is present but vague (e.g. "Good English", "proficiency in English") should you [...]
 
 Job to process:
-${JSON.stringify(job, null, 2)}
+${JSON.stringify(job, null, 2)}${searchTermHint}
 
 Return ONLY a valid JSON object. No markdown, no explanation.`;
 }
