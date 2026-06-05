@@ -8,25 +8,6 @@ function toSlug(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-const CJK_RE = /[\u4e00-\u9fff\u3400-\u4dbf]+/;
-const SEGMENT_RE = /([\u4e00-\u9fff\u3400-\u4dbf]+)/;
-
-function segmentChinese(text: string): string {
-  const segmenter = new Intl.Segmenter('zh-CN', { granularity: 'word' });
-  return text
-    .split(SEGMENT_RE)
-    .flatMap((seg) => {
-      if (CJK_RE.test(seg)) {
-        return [...segmenter.segment(seg)]
-          .filter((s) => s.isWordLike)
-          .map((s) => s.segment);
-      }
-      const trimmed = seg.trim();
-      return trimmed ? [trimmed] : [];
-    })
-    .join(' ');
-}
-
 function getTimezoneOffsetMs(timezone: string): number {
   try {
     const now = new Date();
@@ -314,12 +295,6 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
 
       const newJobId = jobInsert.meta.last_row_id;
       if (newJobId) {
-        const titleSeg = segmentChinese(tr.title_zh);
-        await env.DB.prepare(`
-          INSERT INTO jobs_fts(rowid, title, posted_at, created_at)
-          SELECT id, ?, posted_at, created_at FROM jobs WHERE id = ?
-        `).bind(titleSeg, newJobId).run();
-
         try {
           await upsertJobVector(env.AI, env.VECTORIZE, newJobId as number, tr.title_zh, tr.description_zh);
         } catch (vectorError) {
@@ -499,7 +474,6 @@ async function deleteExpiredJobs(env: Env): Promise<number> {
   for (let i = 0; i < ids.length; i += BATCH) {
     const batch = ids.slice(i, i + BATCH);
     const placeholders = batch.join(',');
-    await env.DB.prepare(`DELETE FROM jobs_fts WHERE rowid IN (${placeholders})`).run();
     await env.DB.prepare(`DELETE FROM jobs WHERE id IN (${placeholders})`).run();
   }
 

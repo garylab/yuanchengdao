@@ -139,7 +139,4 @@ CREATE TABLE IF NOT EXISTS crawl_plan (
 
 CREATE INDEX IF NOT EXISTS idx_crawl_plan_next ON crawl_plan(miss_count, processed_at);
 
--- Full-text search on job titles (pre-tokenized with jieba)
-CREATE VIRTUAL TABLE IF NOT EXISTS jobs_fts USING fts5(title, posted_at UNINDEXED, created_at UNINDEXED);
-
 -- No seed data; countries are auto-created by the LLM during job processing

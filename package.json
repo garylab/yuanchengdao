@@ -11,12 +11,8 @@
     "db:create": "wrangler d1 create yuanchengdao",
     "db:migrate": "wrangler d1 execute yuanchengdao --file=./schema.sql",
     "db:migrate:local": "wrangler d1 execute yuanchengdao --local --file=./schema.sql",
-    "build:fts": "tsx scripts/build-fts.ts",
-    "build:fts:remote": "tsx scripts/build-fts.ts --remote",
     "vectorize:create": "wrangler vectorize create jobs-search --dimensions=1024 --metric=cosine",
     "build:vectors": "tsx scripts/build-vectors.ts",
-    "db:fts:count": "wrangler d1 execute yuanchengdao --remote --command=\"SELECT COUNT(*) AS fts_rows FROM jobs_fts\"",
-    "db:fts:count:local": "wrangler d1 execute yuanchengdao --local --command=\"SELECT COUNT(*) AS fts_rows FROM jobs_fts\"",
     "tail": "wrangler tail"
   },
   "devDependencies": {
@@ -24,7 +20,6 @@
     "@types/clean-css": "^4.2.11",
     "better-sqlite3": "^11.0.0",
     "clean-css": "^5.3.3",
-    "nodejieba": "^2.6.0",
     "terser": "^5.46.1",
     "tsx": "^4.0.0",
     "typescript": "^5.7.0",
