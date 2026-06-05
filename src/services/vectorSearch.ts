@@ -3,11 +3,11 @@ const MAX_TEXT_LENGTH = 2000;
 const DESCRIPTION_SLICE = 500;
 
 export function prepareSearchText(title: string, description?: string | null): string {
-  let text = title;
+  let text = title || '';
   if (description) {
     text += '\n' + description.slice(0, DESCRIPTION_SLICE);
   }
-  return text.slice(0, MAX_TEXT_LENGTH);
+  return text.trim().slice(0, MAX_TEXT_LENGTH) || 'untitled';
 }
 
 export async function generateEmbedding(ai: Ai, text: string): Promise<number[]> {
