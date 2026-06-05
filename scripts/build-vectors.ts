@@ -78,21 +78,30 @@ async function buildRemote() {
   let offset = startOffset;
   let done = false;
   let totalVectorized = 0;
+  const failedOffsets: number[] = [];
 
   while (!done) {
-    const data = await callWithRetry(offset);
-    totalVectorized += data.processed;
-    offset = data.nextOffset;
-    done = data.done;
+    try {
+      const data = await callWithRetry(offset);
+      totalVectorized += data.processed;
+      offset = data.nextOffset;
+      done = data.done;
+      console.log(`  Vectorized ${offset}/${data.total}`);
+    } catch (error) {
+      console.error(`  Skipping batch at offset ${offset}: ${error instanceof Error ? error.message : error}`);
+      failedOffsets.push(offset);
+      offset += BATCH_SIZE;
+    }
 
     saveProgress(offset);
-    console.log(`  Vectorized ${offset}/${data.total}`);
-
     if (!done) await sleep(DELAY_MS);
   }
 
   clearProgress();
   console.log(`Done — vectorized ${totalVectorized} jobs`);
+  if (failedOffsets.length > 0) {
+    console.warn(`Failed batches (${failedOffsets.length}): offsets ${failedOffsets.join(', ')}`);
+  }
 }
 
 buildRemote();

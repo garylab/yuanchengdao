@@ -144,17 +144,35 @@ api.post('/api/build-vectors', async (c) => {
   const jobRows = (jobsResult.results || []) as unknown as JobVectorRow[];
 
   if (jobRows.length === 0) {
-    return c.json({ processed: 0, total, done: true });
+    return c.json({ processed: 0, total, done: true, failed: 0 });
   }
 
-  const texts = jobRows.map((j) => prepareSearchText(j.title, j.description));
-  const embeddings = await generateEmbeddings(c.env.AI, texts);
+  let processed = 0;
+  let failed = 0;
 
-  const vectors = jobRows.map((j, i) => ({ id: String(j.id), values: embeddings[i] }));
-  await c.env.VECTORIZE.upsert(vectors);
+  try {
+    const texts = jobRows.map((j) => prepareSearchText(j.title, j.description));
+    const embeddings = await generateEmbeddings(c.env.AI, texts);
+    const vectors = jobRows.map((j, i) => ({ id: String(j.id), values: embeddings[i] }));
+    await c.env.VECTORIZE.upsert(vectors);
+    processed = jobRows.length;
+  } catch (batchError) {
+    console.error(`Batch embed failed (offset=${offset}), falling back to one-by-one:`, batchError);
+    for (const job of jobRows) {
+      try {
+        const text = prepareSearchText(job.title, job.description);
+        const [embedding] = await generateEmbeddings(c.env.AI, [text]);
+        await c.env.VECTORIZE.upsert([{ id: String(job.id), values: embedding }]);
+        processed++;
+      } catch (singleError) {
+        console.error(`Skipped job ${job.id}:`, singleError);
+        failed++;
+      }
+    }
+  }
 
   const nextOffset = offset + jobRows.length;
-  return c.json({ processed: jobRows.length, offset, nextOffset, total, done: nextOffset >= total });
+  return c.json({ processed, failed, offset, nextOffset, total, done: nextOffset >= total });
 });
 
 api.post('/api/sync', async (c) => {
