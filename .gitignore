@@ -6,3 +6,4 @@ dist/
 
 .DS_Store
 .vectors-tmp.ndjson
+.vectors-progress
