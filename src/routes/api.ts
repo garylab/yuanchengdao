@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { Env, Job } from '../types';
 import { syncJobs } from '../services/jobSync';
 import { resolveThumbnail, activeCutoff } from '../utils/helpers';
-import { searchByVector, prepareSearchText, generateEmbeddings } from '../services/vectorSearch';
+import { searchByVector } from '../services/vectorSearch';
 import { clampedListPage } from '../constants/listPagination';
 
 const api = new Hono<{ Bindings: Env }>();
@@ -121,58 +121,6 @@ api.get('/api/companies', async (c) => {
   `).all();
 
   return c.json({ companies: result.results });
-});
-
-api.post('/api/build-vectors', async (c) => {
-  const authHeader = c.req.header('Authorization');
-  if (!authHeader || authHeader !== `Bearer ${c.env.SERPAPI_KEY}`) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
-  const body = await c.req.json().catch(() => ({})) as { offset?: number; batchSize?: number };
-  const batchSize = Math.min(body.batchSize || 100, 100);
-  const offset = body.offset || 0;
-
-  const countResult = await c.env.DB.prepare('SELECT COUNT(*) as total FROM jobs').first<{ total: number }>();
-  const total = countResult?.total || 0;
-
-  const jobsResult = await c.env.DB.prepare(
-    `SELECT id, title, SUBSTR(COALESCE(description, ''), 1, 500) as description FROM jobs ORDER BY id LIMIT ? OFFSET ?`
-  ).bind(batchSize, offset).all();
-
-  type JobVectorRow = { id: number; title: string; description: string | null };
-  const jobRows = (jobsResult.results || []) as unknown as JobVectorRow[];
-
-  if (jobRows.length === 0) {
-    return c.json({ processed: 0, total, done: true, failed: 0 });
-  }
-
-  let processed = 0;
-  let failed = 0;
-
-  try {
-    const texts = jobRows.map((j) => prepareSearchText(j.title, j.description));
-    const embeddings = await generateEmbeddings(c.env.AI, texts);
-    const vectors = jobRows.map((j, i) => ({ id: String(j.id), values: embeddings[i] }));
-    await c.env.VECTORIZE.upsert(vectors);
-    processed = jobRows.length;
-  } catch (batchError) {
-    console.error(`Batch embed failed (offset=${offset}), falling back to one-by-one:`, batchError);
-    for (const job of jobRows) {
-      try {
-        const text = prepareSearchText(job.title, job.description);
-        const [embedding] = await generateEmbeddings(c.env.AI, [text]);
-        await c.env.VECTORIZE.upsert([{ id: String(job.id), values: embedding }]);
-        processed++;
-      } catch (singleError) {
-        console.error(`Skipped job ${job.id}:`, singleError);
-        failed++;
-      }
-    }
-  }
-
-  const nextOffset = offset + jobRows.length;
-  return c.json({ processed, failed, offset, nextOffset, total, done: nextOffset >= total });
 });
 
 api.post('/api/sync', async (c) => {

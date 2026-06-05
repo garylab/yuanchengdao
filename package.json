@@ -12,7 +12,6 @@
     "db:migrate": "wrangler d1 execute yuanchengdao --file=./schema.sql",
     "db:migrate:local": "wrangler d1 execute yuanchengdao --local --file=./schema.sql",
     "vectorize:create": "wrangler vectorize create jobs-search --dimensions=1024 --metric=cosine",
-    "build:vectors": "tsx scripts/build-vectors.ts",
     "tail": "wrangler tail"
   },
   "devDependencies": {
