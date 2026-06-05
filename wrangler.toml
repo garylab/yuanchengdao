@@ -21,6 +21,13 @@ database_id = "4950fa7a-ca80-4948-9ec9-7eda9592ea44"
 binding = "R2"
 bucket_name = "yuanchengdao"
 
+[ai]
+binding = "AI"
+
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "jobs-search"
+
 [assets]
 directory = "public"
 

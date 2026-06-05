@@ -2,6 +2,7 @@ import { Env, SerpApiJob, CrawledJob } from '../types';
 import { fetchOneQuery, decodeJobId } from './serpapi';
 import { translateBatch, TranslateInput } from './translate';
 import { uploadThumbnail } from './thumbnail';
+import { upsertJobVector, deleteJobVectors } from './vectorSearch';
 
 function toSlug(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -318,6 +319,12 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
           INSERT INTO jobs_fts(rowid, title, posted_at, created_at)
           SELECT id, ?, posted_at, created_at FROM jobs WHERE id = ?
         `).bind(titleSeg, newJobId).run();
+
+        try {
+          await upsertJobVector(env.AI, env.VECTORIZE, newJobId as number, tr.title_zh, tr.description_zh);
+        } catch (vectorError) {
+          console.error(`Vector upsert failed for job ${newJobId}:`, vectorError);
+        }
       }
 
       if (companyId) {
@@ -456,10 +463,10 @@ async function pickNextCrawlTask(db: D1Database): Promise<{
   };
 }
 
-async function deleteExpiredJobs(db: D1Database): Promise<number> {
+async function deleteExpiredJobs(env: Env): Promise<number> {
   const cutoff = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
 
-  const expired = await db.prepare(
+  const expired = await env.DB.prepare(
     'SELECT id, company_id, location_id, country_id, search_term_id FROM jobs WHERE posted_at < ?'
   ).bind(cutoff).all();
 
@@ -482,29 +489,35 @@ async function deleteExpiredJobs(db: D1Database): Promise<number> {
     if (r.search_term_id) termCount.set(r.search_term_id, (termCount.get(r.search_term_id) || 0) + 1);
   }
 
+  try {
+    await deleteJobVectors(env.VECTORIZE, ids);
+  } catch (vectorError) {
+    console.error('Vector delete failed for expired jobs:', vectorError);
+  }
+
   const BATCH = 50;
   for (let i = 0; i < ids.length; i += BATCH) {
     const batch = ids.slice(i, i + BATCH);
     const placeholders = batch.join(',');
-    await db.prepare(`DELETE FROM jobs_fts WHERE rowid IN (${placeholders})`).run();
-    await db.prepare(`DELETE FROM jobs WHERE id IN (${placeholders})`).run();
+    await env.DB.prepare(`DELETE FROM jobs_fts WHERE rowid IN (${placeholders})`).run();
+    await env.DB.prepare(`DELETE FROM jobs WHERE id IN (${placeholders})`).run();
   }
 
   const stmts: D1PreparedStatement[] = [];
   for (const [id, cnt] of companyCount) {
-    stmts.push(db.prepare('UPDATE companies SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
+    stmts.push(env.DB.prepare('UPDATE companies SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
   }
   for (const [id, cnt] of locationCount) {
-    stmts.push(db.prepare('UPDATE locations SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
+    stmts.push(env.DB.prepare('UPDATE locations SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
   }
   for (const [id, cnt] of countryCount) {
-    stmts.push(db.prepare('UPDATE countries SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
+    stmts.push(env.DB.prepare('UPDATE countries SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
   }
   for (const [id, cnt] of termCount) {
-    stmts.push(db.prepare('UPDATE search_terms SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
+    stmts.push(env.DB.prepare('UPDATE search_terms SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
   }
   if (stmts.length > 0) {
-    await db.batch(stmts);
+    await env.DB.batch(stmts);
   }
 
   return rows.length;
@@ -513,7 +526,7 @@ async function deleteExpiredJobs(db: D1Database): Promise<number> {
 export async function syncJobs(env: Env): Promise<{ fetched: number; saved: number }> {
   console.log('Starting job sync...');
 
-  const expiredDeleted = await deleteExpiredJobs(env.DB);
+  const expiredDeleted = await deleteExpiredJobs(env);
   if (expiredDeleted > 0) {
     console.log(`Cleaned up ${expiredDeleted} expired jobs (90+ days old)`);
   }

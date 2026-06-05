@@ -5,3 +5,4 @@ dist/
 .mf/
 
 .DS_Store
+.vectors-tmp.ndjson

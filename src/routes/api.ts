@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { Env, Job } from '../types';
 import { syncJobs } from '../services/jobSync';
 import { resolveThumbnail, activeCutoff } from '../utils/helpers';
-import { tokenizeForFtsMatch } from '../utils/tokenizer';
+import { searchByVector, prepareSearchText, generateEmbeddings } from '../services/vectorSearch';
 import { clampedListPage } from '../constants/listPagination';
 
 const api = new Hono<{ Bindings: Env }>();
@@ -17,15 +17,20 @@ api.get('/api/jobs', async (c) => {
 
   const cutoff = activeCutoff();
 
-  // Stage 1: get job IDs (no JOINs)
   let jobIds: number[] = [];
+  let orderedByRelevance = false;
 
   if (q) {
-    const ftsQuery = tokenizeForFtsMatch(q);
-    const ftsResult = await c.env.DB.prepare(
-      'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
-    ).bind(ftsQuery, cutoff, limit, offset).all();
-    jobIds = (ftsResult.results || []).map((r: Record<string, unknown>) => r.rowid as number);
+    const vectorIds = await searchByVector(c.env.AI, c.env.VECTORIZE, q);
+    if (vectorIds.length > 0) {
+      const activeResult = await c.env.DB.prepare(
+        `SELECT id FROM jobs WHERE id IN (${vectorIds.join(',')}) AND posted_at >= ?`
+      ).bind(cutoff).all();
+      const activeIdSet = new Set((activeResult.results || []).map((r: Record<string, unknown>) => r.id as number));
+      const orderedActiveIds = vectorIds.filter((id) => activeIdSet.has(id));
+      jobIds = orderedActiveIds.slice(offset, offset + limit);
+      orderedByRelevance = true;
+    }
   } else {
     let idSql = 'SELECT id FROM jobs WHERE posted_at >= ?';
     const idParams: (string | number)[] = [cutoff];
@@ -51,7 +56,6 @@ api.get('/api/jobs', async (c) => {
     return c.json({ jobs: [], page, limit });
   }
 
-  // Stage 2: hydrate only the page-sized set with JOINs
   const result = await c.env.DB.prepare(`
     SELECT j.*,
       co.name as company_name, co.thumbnail as company_thumbnail,
@@ -62,12 +66,22 @@ api.get('/api/jobs', async (c) => {
     LEFT JOIN locations lo ON j.location_id = lo.id
     LEFT JOIN countries ct ON j.country_id = ct.id
     WHERE j.id IN (${jobIds.join(',')})
-    ORDER BY j.created_at DESC
+    ${orderedByRelevance ? '' : 'ORDER BY j.created_at DESC'}
   `).all();
-  const jobs = ((result.results || []) as unknown as Job[]).map(j => ({
-    ...j,
-    company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
-  }));
+
+  let jobs: Job[];
+  if (orderedByRelevance) {
+    const jobMap = new Map((result.results as unknown as Job[]).map((j) => [j.id, j]));
+    jobs = jobIds
+      .map((id) => jobMap.get(id))
+      .filter((j): j is Job => j !== undefined)
+      .map((j) => ({ ...j, company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL) }));
+  } else {
+    jobs = ((result.results || []) as unknown as Job[]).map((j) => ({
+      ...j,
+      company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
+    }));
+  }
 
   return c.json({ jobs, page, limit });
 });
@@ -107,6 +121,40 @@ api.get('/api/companies', async (c) => {
   `).all();
 
   return c.json({ companies: result.results });
+});
+
+api.post('/api/build-vectors', async (c) => {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader || authHeader !== `Bearer ${c.env.SERPAPI_KEY}`) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const body = await c.req.json().catch(() => ({})) as { offset?: number; batchSize?: number };
+  const batchSize = Math.min(body.batchSize || 100, 100);
+  const offset = body.offset || 0;
+
+  const countResult = await c.env.DB.prepare('SELECT COUNT(*) as total FROM jobs').first<{ total: number }>();
+  const total = countResult?.total || 0;
+
+  const jobsResult = await c.env.DB.prepare(
+    `SELECT id, title, SUBSTR(COALESCE(description, ''), 1, 500) as description FROM jobs ORDER BY id LIMIT ? OFFSET ?`
+  ).bind(batchSize, offset).all();
+
+  type JobVectorRow = { id: number; title: string; description: string | null };
+  const jobRows = (jobsResult.results || []) as unknown as JobVectorRow[];
+
+  if (jobRows.length === 0) {
+    return c.json({ processed: 0, total, done: true });
+  }
+
+  const texts = jobRows.map((j) => prepareSearchText(j.title, j.description));
+  const embeddings = await generateEmbeddings(c.env.AI, texts);
+
+  const vectors = jobRows.map((j, i) => ({ id: String(j.id), values: embeddings[i] }));
+  await c.env.VECTORIZE.upsert(vectors);
+
+  const nextOffset = offset + jobRows.length;
+  return c.json({ processed: jobRows.length, offset, nextOffset, total, done: nextOffset >= total });
 });
 
 api.post('/api/sync', async (c) => {

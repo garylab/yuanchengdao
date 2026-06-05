@@ -10,7 +10,7 @@ import { searchTermPage } from '../templates/searchTerm';
 import { locationsPage } from '../templates/locations';
 import { locationDetailPage } from '../templates/locationDetail';
 import { resolveThumbnail, activeCutoff, expiredCutoff } from '../utils/helpers';
-import { tokenizeForFtsMatch } from '../utils/tokenizer';
+import { searchByVector } from '../services/vectorSearch';
 import { maxListPage, normalizedListPage } from '../constants/listPagination';
 
 const pages = new Hono<{ Bindings: Env }>();
@@ -39,15 +39,20 @@ pages.get('/', async (c) => {
 
   const cutoff = activeCutoff();
 
-  // Stage 1: get job IDs (no JOINs)
   let allIds: number[] = [];
+  let orderedByRelevance = false;
 
   if (query) {
-    const ftsQuery = tokenizeForFtsMatch(query);
-    const ftsResult = await c.env.DB.prepare(
-      'SELECT rowid FROM jobs_fts WHERE jobs_fts MATCH ? AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
-    ).bind(ftsQuery, cutoff, limit + 1, offset).all();
-    allIds = (ftsResult.results || []).map((r: Record<string, unknown>) => r.rowid as number);
+    const vectorIds = await searchByVector(c.env.AI, c.env.VECTORIZE, query);
+    if (vectorIds.length > 0) {
+      const activeResult = await c.env.DB.prepare(
+        `SELECT id FROM jobs WHERE id IN (${vectorIds.join(',')}) AND posted_at >= ?`
+      ).bind(cutoff).all();
+      const activeIdSet = new Set((activeResult.results || []).map((r: Record<string, unknown>) => r.id as number));
+      const orderedActiveIds = vectorIds.filter((id) => activeIdSet.has(id));
+      allIds = orderedActiveIds.slice(offset, offset + limit + 1);
+      orderedByRelevance = true;
+    }
   } else {
     let idSql = 'SELECT id FROM jobs WHERE posted_at >= ?';
     const idParams: (string | number)[] = [cutoff];
@@ -94,10 +99,10 @@ pages.get('/', async (c) => {
   const hasMore = hasMoreRaw && page < listPageCap;
   const jobIds = hasMoreRaw ? allIds.slice(0, limit) : allIds;
 
-  // Stage 2: hydrate jobs (JOINs only on the page-sized set) + sidebar in parallel
+  const hydrateOrderClause = orderedByRelevance ? '' : ' ORDER BY j.created_at DESC';
   const [jobsResult, countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
     jobIds.length > 0
-      ? c.env.DB.prepare(`${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.created_at DESC`).all()
+      ? c.env.DB.prepare(`${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')})${hydrateOrderClause}`).all()
       : { results: [] },
     c.env.DB.prepare(
       `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
@@ -125,10 +130,19 @@ pages.get('/', async (c) => {
     ).all(),
   ]);
 
-  const jobs = ((jobsResult.results || []) as unknown as Job[]).map(j => ({
-    ...j,
-    company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
-  }));
+  let jobs: Job[];
+  if (orderedByRelevance) {
+    const jobMap = new Map((jobsResult.results as unknown as Job[]).map((j) => [j.id, j]));
+    jobs = jobIds
+      .map((id) => jobMap.get(id))
+      .filter((j): j is Job => j !== undefined)
+      .map((j) => ({ ...j, company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL) }));
+  } else {
+    jobs = ((jobsResult.results || []) as unknown as Job[]).map((j) => ({
+      ...j,
+      company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
+    }));
+  }
   const countries = (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>;
   const locations = (locationsResult.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_id: number; job_count: number }>;
   const topSearchTerms = (topTermsResult.results || []) as unknown as Array<{ term_cn: string; slug: string; job_count: number }>;

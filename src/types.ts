@@ -3,6 +3,8 @@ import type { EnglishLevel } from './constants/englishLevel';
 export interface Env {
   DB: D1Database;
   R2: R2Bucket;
+  AI: Ai;
+  VECTORIZE: VectorizeIndex;
   SERPAPI_KEY: string;
   OPENAI_API_KEY: string;
   OPENAI_API_BASE?: string;
