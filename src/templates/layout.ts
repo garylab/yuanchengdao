@@ -82,6 +82,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
         <nav class="hidden sm:flex items-center gap-4 text-sm">
           ${desktopNav}
         </nav>
+        <a href="/post-job" class="inline-flex items-center justify-center bg-brand-500 text-white text-sm font-medium px-3 py-1.5 rounded hover:bg-brand-600 transition no-underline whitespace-nowrap ${ap.startsWith('/post-job') ? 'ring-2 ring-brand-200' : ''}">发布职位</a>
         <div class="relative sm:hidden">
           <button id="mobile-menu-btn" class="p-2 text-surface-600 hover:text-brand-500 transition" aria-label="菜单">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>

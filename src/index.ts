@@ -76,6 +76,7 @@ app.get('/sitemap-pages.xml', (c) => {
   <url><loc>${site}/locations</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>${site}/categories</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>${site}/about</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>${site}/post-job</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 </urlset>`;
   c.header('Content-Type', 'application/xml');
   return c.body(xml);

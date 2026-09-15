@@ -3,6 +3,7 @@ import { Env, Job } from '../types';
 import { homePage } from '../templates/home';
 import { jobDetailPage } from '../templates/jobDetail';
 import { aboutPage } from '../templates/about';
+import { postJobPage } from '../templates/postJob';
 import { companiesPage } from '../templates/companies';
 import { companyDetailPage } from '../templates/companyDetail';
 import { categoriesPage } from '../templates/categories';
@@ -488,6 +489,10 @@ pages.get('/location/:slug', async (c) => {
 
 pages.get('/about', (c) => {
   return c.html(aboutPage(c.env.GA_ID, c.env.STATIC_URL));
+});
+
+pages.get('/post-job', (c) => {
+  return c.html(postJobPage(c.env.GA_ID, c.env.STATIC_URL));
 });
 
 export default pages;
