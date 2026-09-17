@@ -1,8 +1,8 @@
-import { Job } from '../types';
+import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge } from '../utils/helpers';
 
-function renderJobRow(job: Job, isNew: boolean = false): string {
+function renderJobRow(job: Job, isNew: boolean = false, favorited = false, showFavorite = false): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(jobDisplayTimestamp(job));
   const logo = companyLogo(job.company_name, job.company_thumbnail);
@@ -20,6 +20,12 @@ function renderJobRow(job: Job, isNew: boolean = false): string {
   const highlights = job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
   const applyOptions = job.apply_options ? JSON.parse(job.apply_options) as Array<{ title: string; link: string }> : [];
   const primaryApply = applyOptions[0]?.link ? rewriteUtm(applyOptions[0].link) : null;
+  const favoriteButton = showFavorite
+    ? `<button type="button" class="favorite-btn inline-flex items-center gap-1 text-sm ${favorited ? 'text-brand-500' : 'text-surface-500 hover:text-brand-500'} transition" data-job-id="${job.id}" data-favorited="${favorited ? '1' : '0'}" aria-label="收藏">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="${favorited ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M12 17.3l-6.18 3.25 1.18-6.88L2 8.97l6.91-1L12 1.5l3.09 6.47 6.91 1-5 4.7 1.18 6.88z"/></svg>
+        <span>${favorited ? '已收藏' : '收藏'}</span>
+      </button>`
+    : '';
 
   return `
     <div class="job-row border-b border-surface-100" data-job-id="${job.id}">
@@ -78,6 +84,7 @@ function renderJobRow(job: Job, isNew: boolean = false): string {
                   申请
                 </a>
               ` : ''}
+              ${favoriteButton}
               <a href="/job/${escapeHtml(job.slug)}" class="text-sm text-brand-500 hover:text-brand-600 transition no-underline">
                 详情
               </a>
@@ -134,6 +141,8 @@ interface HomePageOptions {
   topLocations?: LocationPill[];
   feishuGroupLink?: string;
   telegramChannelUrl?: string;
+  user?: AuthUser | null;
+  favoritedJobIds?: Set<number>;
 }
 
 const SALARY_OPTIONS = [
@@ -153,7 +162,7 @@ const SALARY_OPTIONS = [
 ];
 
 export function homePage(jobs: Job[], countries: CountryFilter[], locations: LocationFilter[], page: number, hasMore: boolean, opts: HomePageOptions = {}): string {
-  const { query, countrySlug, locationSlug, salaryRange = '', gaId, siteUrl, staticUrl, topSearchTerms = [], topLocations = [], feishuGroupLink, telegramChannelUrl } = opts;
+  const { query, countrySlug, locationSlug, salaryRange = '', gaId, siteUrl, staticUrl, topSearchTerms = [], topLocations = [], feishuGroupLink, telegramChannelUrl, user, favoritedJobIds } = opts;
   const activeLocation = locationSlug ? locations.find(l => l.slug === locationSlug) : null;
 
   const locationOptions = locations.map(l =>
@@ -254,7 +263,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
         <div class="bg-white rounded border border-surface-200 relative">${filterBar}</div>
         <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden mt-3">
           ${jobStats}
-          ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3)).join('')}
+          ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3, favoritedJobIds?.has(job.id) ?? false, !!user)).join('')}
         </div>
        </div>`
     : `<div class="max-w-5xl mx-auto mt-6">
@@ -314,5 +323,5 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
     query,
   ].filter(Boolean).join(',');
 
-  return layout(pageTitle, jobList + pagination, { gaId, description: pageDesc, canonical, keywords, staticUrl, activePath: '/' });
+  return layout(pageTitle, jobList + pagination, { gaId, description: pageDesc, canonical, keywords, staticUrl, activePath: '/', user });
 }

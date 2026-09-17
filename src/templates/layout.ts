@@ -1,5 +1,7 @@
 import { appScriptAssetFilename } from '../public/app';
 import { appStylesAssetFilename } from '../public/styles';
+import { AuthUser } from '../types';
+import { escapeHtml } from '../utils/helpers';
 
 export interface LayoutOptions {
   description?: string;
@@ -10,6 +12,7 @@ export interface LayoutOptions {
   keywords?: string;
   staticUrl?: string;
   activePath?: string;
+  user?: AuthUser | null;
 }
 
 export function layout(title: string, content: string, options?: LayoutOptions): string {
@@ -23,6 +26,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   const keywords = options?.keywords || '远程工作,远程岗位,remote jobs,海外远程,远程招聘,在家工作,远程办公,华人远程工作';
   const jsonLd = options?.jsonLd ? `\n  <script type="application/ld+json">${options.jsonLd}</script>` : '';
   const ap = options?.activePath || '/';
+  const user = options?.user;
   const navItems = [
     { href: '/', label: '首页' },
     { href: '/companies', label: '企业' },
@@ -36,6 +40,29 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   const mobileNav = navItems.map(n =>
     `<a href="${n.href}" class="block px-4 py-2 text-sm no-underline ${isActive(n.href) ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">${n.label}</a>`
   ).join('\n          ');
+
+  const accountLabel = user?.name ? escapeHtml(user.name) : '账户';
+  const authNavDesktop = user
+    ? `<a href="/favorites" class="px-2 py-1 transition no-underline ${ap.startsWith('/favorites') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">收藏</a>
+          <div class="relative group">
+            <button type="button" class="px-2 py-1 text-sm ${ap.startsWith('/account') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'} transition">${accountLabel}</button>
+            <div class="hidden group-hover:block absolute right-0 top-full mt-1 w-36 bg-white rounded shadow-lg border border-surface-200 py-1 z-50">
+              <a href="/account" class="block px-4 py-2 text-sm no-underline text-surface-600 hover:bg-brand-50 hover:text-brand-500">账户设置</a>
+              <form method="post" action="/api/auth/logout">
+                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 bg-transparent border-0 cursor-pointer">退出</button>
+              </form>
+            </div>
+          </div>`
+    : `<a href="/login" class="px-2 py-1 transition no-underline ${ap.startsWith('/login') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">登录</a>`;
+
+  const authNavMobile = user
+    ? `<a href="/favorites" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/favorites') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">收藏</a>
+            <a href="/account" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/account') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">账户</a>
+            <form method="post" action="/api/auth/logout">
+              <button type="submit" class="w-full text-left px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 bg-transparent border-0 cursor-pointer">退出</button>
+            </form>`
+    : `<a href="/login" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/login') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">登录</a>`;
+
   const cdnStatic = (options?.staticUrl || '').trim().replace(/\/$/, '');
   const tailwindSrc = cdnStatic ? `${cdnStatic}/js/tailwindcss.js` : '/js/tailwindcss.js';
   return `<!DOCTYPE html>
@@ -81,14 +108,16 @@ export function layout(title: string, content: string, options?: LayoutOptions):
       <div class="flex items-center gap-2 sm:gap-4">
         <nav class="hidden sm:flex items-center gap-4 text-sm">
           ${desktopNav}
+          ${authNavDesktop}
         </nav>
         <a href="/post-job" class="inline-flex items-center justify-center bg-brand-500 text-white text-sm font-medium px-3 py-1.5 rounded hover:bg-brand-600 transition no-underline whitespace-nowrap ${ap.startsWith('/post-job') ? 'ring-2 ring-brand-200' : ''}">发布职位</a>
         <div class="relative sm:hidden">
           <button id="mobile-menu-btn" class="p-2 text-surface-600 hover:text-brand-500 transition" aria-label="菜单">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
           </button>
-          <div id="mobile-menu" class="hidden absolute right-0 top-full mt-1 w-36 bg-white rounded shadow-lg border border-surface-200 py-1 z-50">
+          <div id="mobile-menu" class="hidden absolute right-0 top-full mt-1 w-40 bg-white rounded shadow-lg border border-surface-200 py-1 z-50">
             ${mobileNav}
+            ${authNavMobile}
           </div>
         </div>
       </div>
@@ -97,7 +126,6 @@ export function layout(title: string, content: string, options?: LayoutOptions):
 
   ${content}
 
-  <!-- Footer -->
   <footer class="border-t border-surface-200 bg-white mt-16">
     <div class="max-w-5xl mx-auto px-4 py-8 text-sm text-surface-400">
       <div class="flex flex-row items-center justify-between gap-4">

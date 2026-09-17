@@ -1,4 +1,4 @@
-import { Job } from '../types';
+import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge } from '../utils/helpers';
 
@@ -85,7 +85,7 @@ function renderJobRow(job: Job): string {
     </div>`;
 }
 
-export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: number, hasMore: boolean, gaId?: string, siteUrl?: string, staticUrl?: string): string {
+export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: number, hasMore: boolean, gaId?: string, siteUrl?: string, staticUrl?: string, user?: AuthUser | null): string {
   const logo = companyLogo(company.name, company.thumbnail, 'lg');
   const locationParts = [company.location_name_cn, company.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
   const location = locationParts.join(', ') || '';
@@ -134,5 +134,6 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
     ogImage: company.thumbnail || undefined,
     staticUrl,
     activePath: '/companies',
+    user,
   });
 }

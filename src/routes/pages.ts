@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { Env, Job } from '../types';
+import { Env, Job, AppVariables } from '../types';
 import { homePage } from '../templates/home';
 import { jobDetailPage } from '../templates/jobDetail';
 import { aboutPage } from '../templates/about';
@@ -10,11 +10,14 @@ import { categoriesPage } from '../templates/categories';
 import { searchTermPage } from '../templates/searchTerm';
 import { locationsPage } from '../templates/locations';
 import { locationDetailPage } from '../templates/locationDetail';
-import { resolveThumbnail, activeCutoff, expiredCutoff } from '../utils/helpers';
+import { loginPage } from '../templates/login';
+import { favoritesPage } from '../templates/favorites';
+import { accountPage } from '../templates/account';
+import { resolveThumbnail, activeCutoff } from '../utils/helpers';
 import { searchByVector } from '../services/vectorSearch';
 import { maxListPage, normalizedListPage } from '../constants/listPagination';
 
-const pages = new Hono<{ Bindings: Env }>();
+const pages = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
 const JOBS_HYDRATE = `
   SELECT j.*,
@@ -149,12 +152,23 @@ pages.get('/', async (c) => {
   const topSearchTerms = (topTermsResult.results || []) as unknown as Array<{ term_cn: string; slug: string; job_count: number }>;
   const topLocations = (topLocationsResult.results || []) as unknown as Array<{ name_cn: string; slug: string; job_count: number; country_flag_emoji: string | null }>;
 
+  const currentUser = c.get('user');
+  let favoritedJobIds = new Set<number>();
+  if (currentUser && jobIds.length > 0) {
+    const favoriteResult = await c.env.DB.prepare(
+      `SELECT job_id FROM favorites WHERE user_id = ? AND job_id IN (${jobIds.join(',')})`
+    ).bind(currentUser.id).all<{ job_id: number }>();
+    favoritedJobIds = new Set((favoriteResult.results || []).map((row) => row.job_id));
+  }
+
   const html = homePage(jobs, countries, locations, page, hasMore, {
     query, countrySlug, locationSlug, salaryRange,
     gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL,
     topSearchTerms, topLocations,
     feishuGroupLink: c.env.FEISHU_GROUP_LINK,
     telegramChannelUrl: 'https://t.me/yuanchengdao',
+    user: currentUser,
+    favoritedJobIds,
   });
   return c.html(html);
 });
@@ -217,6 +231,15 @@ pages.get('/job/:slug', async (c) => {
 
   const isExpired = ageDays > 30;
 
+  const currentUser = c.get('user');
+  let isFavorited = false;
+  if (currentUser) {
+    const favorite = await c.env.DB.prepare(
+      'SELECT id FROM favorites WHERE user_id = ? AND job_id = ?'
+    ).bind(currentUser.id, job.id).first<{ id: number }>();
+    isFavorited = !!favorite;
+  }
+
   let similarJobs: Job[] = [];
   if (job.search_term_id) {
     const activeDate = activeCutoff();
@@ -244,7 +267,7 @@ pages.get('/job/:slug', async (c) => {
     }
   }
 
-  return c.html(jobDetailPage(job, similarJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL, isExpired));
+  return c.html(jobDetailPage(job, similarJobs, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL, isExpired, currentUser, isFavorited));
 });
 
 pages.get('/companies', async (c) => {
@@ -287,7 +310,7 @@ pages.get('/companies', async (c) => {
 
   return c.html(companiesPage(
     companies as any[], page, hasMore, query,
-    c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL,
+    c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL, c.get('user'),
   ));
 });
 
@@ -340,7 +363,7 @@ pages.get('/company/:slug', async (c) => {
     }));
   }
 
-  return c.html(companyDetailPage(company as any, jobs, page, hasMore, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+  return c.html(companyDetailPage(company as any, jobs, page, hasMore, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL, c.get('user')));
 });
 
 pages.get('/categories', async (c) => {
@@ -359,7 +382,7 @@ pages.get('/categories', async (c) => {
 
   const result = await c.env.DB.prepare(sql).bind(...params).all();
   const terms = (result.results || []) as unknown as Array<{ id: number; term: string; term_cn: string; slug: string; job_count: number }>;
-  return c.html(categoriesPage(terms, query, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+  return c.html(categoriesPage(terms, query, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL, c.get('user')));
 });
 
 pages.get('/category/:slug', async (c) => {
@@ -402,7 +425,7 @@ pages.get('/category/:slug', async (c) => {
     }));
   }
 
-  return c.html(searchTermPage(term, jobs, page, hasMore, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+  return c.html(searchTermPage(term, jobs, page, hasMore, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL, c.get('user')));
 });
 
 pages.get('/locations', async (c) => {
@@ -437,7 +460,7 @@ pages.get('/locations', async (c) => {
   const hasMore = hasMoreRaw && page < listPageCap;
   const locations = hasMoreRaw ? allLocations.slice(0, limit) : allLocations;
 
-  return c.html(locationsPage(locations, page, hasMore, query, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+  return c.html(locationsPage(locations, page, hasMore, query, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL, c.get('user')));
 });
 
 pages.get('/location/:slug', async (c) => {
@@ -484,15 +507,119 @@ pages.get('/location/:slug', async (c) => {
     }));
   }
 
-  return c.html(locationDetailPage(location, jobs, page, hasMore, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL));
+  return c.html(locationDetailPage(location, jobs, page, hasMore, c.env.GA_ID, c.env.SITE_URL, c.env.STATIC_URL, c.get('user')));
 });
 
 pages.get('/about', (c) => {
-  return c.html(aboutPage(c.env.GA_ID, c.env.STATIC_URL));
+  return c.html(aboutPage(c.env.GA_ID, c.env.STATIC_URL, c.get('user')));
 });
 
 pages.get('/post-job', (c) => {
-  return c.html(postJobPage(c.env.GA_ID, c.env.STATIC_URL));
+  return c.html(postJobPage(c.env.GA_ID, c.env.STATIC_URL, c.get('user')));
+});
+
+pages.get('/login', (c) => {
+  const user = c.get('user');
+  const nextPath = c.req.query('next') || '/';
+  if (user) return c.redirect(nextPath.startsWith('/') ? nextPath : '/', 302);
+  const errorCode = c.req.query('error');
+  const errorMessage = errorCode === 'google' ? 'Google 登录失败，请重试'
+    : errorCode === 'config' ? '登录服务未配置'
+    : undefined;
+  return c.html(loginPage({
+    gaId: c.env.GA_ID,
+    staticUrl: c.env.STATIC_URL,
+    siteUrl: c.env.SITE_URL,
+    turnstileSiteKey: c.env.TURNSTILE_SITE_KEY,
+    nextPath,
+    error: errorMessage,
+    user: null,
+  }));
+});
+
+pages.get('/favorites', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.redirect(`/login?next=${encodeURIComponent('/favorites')}`, 302);
+
+  const idResult = await c.env.DB.prepare(
+    'SELECT job_id FROM favorites WHERE user_id = ? ORDER BY created_at DESC'
+  ).bind(user.id).all<{ job_id: number }>();
+  const jobIds = (idResult.results || []).map((row) => row.job_id);
+
+  let jobs: Job[] = [];
+  if (jobIds.length > 0) {
+    const jobsResult = await c.env.DB.prepare(
+      `${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')})`
+    ).all();
+    const jobMap = new Map((jobsResult.results as unknown as Job[]).map((job) => [job.id, job]));
+    jobs = jobIds
+      .map((id) => jobMap.get(id))
+      .filter((job): job is Job => job !== undefined)
+      .map((job) => ({
+        ...job,
+        company_thumbnail: resolveThumbnail(job.company_thumbnail, c.env.STATIC_URL),
+      }));
+  }
+
+  return c.html(favoritesPage(jobs, {
+    gaId: c.env.GA_ID,
+    staticUrl: c.env.STATIC_URL,
+    user,
+  }));
+});
+
+pages.get('/account', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.redirect(`/login?next=${encodeURIComponent('/account')}`, 302);
+
+  const [subscriptionIdsResult, searchTermsResult, locationsResult] = await Promise.all([
+    c.env.DB.prepare(
+      'SELECT id FROM subscriptions WHERE user_id = ? ORDER BY created_at DESC'
+    ).bind(user.id).all<{ id: number }>(),
+    c.env.DB.prepare(
+      `SELECT id, term_cn, slug FROM search_terms
+       WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL
+       ORDER BY job_count DESC`
+    ).all<{ id: number; term_cn: string; slug: string }>(),
+    c.env.DB.prepare(
+      `SELECT id, name_cn, slug FROM locations
+       WHERE is_active = 1 AND job_count > 0
+       ORDER BY job_count DESC LIMIT 200`
+    ).all<{ id: number; name_cn: string; slug: string }>(),
+  ]);
+
+  const subscriptionIds = (subscriptionIdsResult.results || []).map((row) => row.id);
+  let subscriptions: Array<{
+    id: number;
+    search_term_id: number;
+    location_id: number | null;
+    notify_email: number;
+    notify_telegram: number;
+    term_cn: string | null;
+    location_name_cn: string | null;
+  }> = [];
+
+  if (subscriptionIds.length > 0) {
+    const hydrated = await c.env.DB.prepare(`
+      SELECT s.id, s.search_term_id, s.location_id, s.notify_email, s.notify_telegram,
+        st.term_cn, lo.name_cn as location_name_cn
+      FROM subscriptions s
+      LEFT JOIN search_terms st ON s.search_term_id = st.id
+      LEFT JOIN locations lo ON s.location_id = lo.id
+      WHERE s.id IN (${subscriptionIds.join(',')})
+      ORDER BY s.created_at DESC
+    `).all();
+    subscriptions = (hydrated.results || []) as typeof subscriptions;
+  }
+
+  return c.html(accountPage({
+    user,
+    subscriptions,
+    searchTerms: (searchTermsResult.results || []) as Array<{ id: number; term_cn: string; slug: string }>,
+    locations: (locationsResult.results || []) as Array<{ id: number; name_cn: string; slug: string }>,
+    gaId: c.env.GA_ID,
+    staticUrl: c.env.STATIC_URL,
+  }));
 });
 
 export default pages;

@@ -1,5 +1,6 @@
 import { layout } from './layout';
 import { escapeHtml, breadcrumb } from '../utils/helpers';
+import { AuthUser } from '../types';
 
 interface LocationItem {
   id: number;
@@ -11,7 +12,7 @@ interface LocationItem {
   job_count: number;
 }
 
-export function locationsPage(locations: LocationItem[], page: number, hasMore: boolean, query?: string, gaId?: string, siteUrl?: string, staticUrl?: string): string {
+export function locationsPage(locations: LocationItem[], page: number, hasMore: boolean, query?: string, gaId?: string, siteUrl?: string, staticUrl?: string, user?: AuthUser | null): string {
   const cards = locations.map(l => {
     const displayName = l.name_cn || l.name;
     const subtitle = l.country_name_cn && l.country_name_cn !== l.name_cn ? l.country_name_cn : '';
@@ -73,5 +74,6 @@ export function locationsPage(locations: LocationItem[], page: number, hasMore: 
     canonical: siteUrl ? `${siteUrl}/locations${page > 1 ? `?page=${page}` : ''}` : undefined,
     staticUrl,
     activePath: '/locations',
+    user,
   });
 }

@@ -1,4 +1,4 @@
-import { Job } from '../types';
+import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge } from '../utils/helpers';
 
@@ -71,7 +71,16 @@ function buildJobJsonLd(job: Job, siteUrl?: string): string {
   return JSON.stringify(ld);
 }
 
-export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, siteUrl?: string, staticUrl?: string, isExpired = false): string {
+export function jobDetailPage(
+  job: Job,
+  similarJobs: Job[] = [],
+  gaId?: string,
+  siteUrl?: string,
+  staticUrl?: string,
+  isExpired = false,
+  user?: AuthUser | null,
+  isFavorited = false,
+): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(jobDisplayTimestamp(job));
   const scheduleBadge = scheduleTypeBadge(job.detected_extensions);
@@ -162,6 +171,12 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
                 立即申请
               </a>
             ` : ''}
+            <button type="button"
+              class="favorite-btn inline-flex items-center gap-1.5 px-4 py-3 rounded border border-surface-200 text-sm ${isFavorited ? 'text-brand-500 border-brand-200 bg-brand-50' : 'text-surface-600 hover:bg-surface-50 hover:border-surface-300'} transition cursor-pointer bg-white"
+              data-job-id="${job.id}" data-favorited="${isFavorited ? '1' : '0'}" data-login-required="${user ? '0' : '1'}">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="${isFavorited ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M12 17.3l-6.18 3.25 1.18-6.88L2 8.97l6.91-1L12 1.5l3.09 6.47 6.91 1-5 4.7 1.18 6.88z"/></svg>
+              <span>${isFavorited ? '已收藏' : '收藏'}</span>
+            </button>
             <button id="share-btn" type="button"
               class="inline-flex items-center gap-1.5 px-4 py-3 rounded border border-surface-200 text-sm text-surface-600 hover:bg-surface-50 hover:border-surface-300 transition cursor-pointer bg-white">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -242,5 +257,6 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
     keywords: [job.title, job.company_name, locationLabel, '远程工作', 'remote job'].filter(Boolean).join(','),
     staticUrl,
     activePath: '/',
+    user,
   });
 }

@@ -1,22 +1,41 @@
 import { Hono } from 'hono';
 import { cache } from 'hono/cache';
-import { Env } from './types';
+import { Env, AppVariables } from './types';
 import pages from './routes/pages';
 import api from './routes/api';
+import auth from './routes/auth';
+import favorites from './routes/favorites';
+import subscriptions from './routes/subscriptions';
+import telegram from './routes/telegram';
 import { syncJobs } from './services/jobSync';
 import { postHourlyTelegramDigest } from './services/telegram';
 import { postHourlyFeishuDigest } from './services/feishu';
+import { deliverSubscriptionAlerts } from './services/subscriptions';
 import { expiredCutoff } from './utils/helpers';
 import { appScript, appScriptAssetFilename } from './public/app';
 import { appStyles, appStylesAssetFilename } from './public/styles';
+import { sessionMiddleware } from './middleware/session';
+import { htmlCacheMiddleware } from './middleware/cache';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
+
+app.use('*', htmlCacheMiddleware);
+app.use('*', sessionMiddleware);
 
 app.use('/api/*', async (c, next) => {
-  c.header('Access-Control-Allow-Origin', '*');
-  c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (c.req.method === 'OPTIONS') return new Response(null, { status: 204 });
+  const path = c.req.path;
+  const isUserScoped =
+    path.startsWith('/api/auth') ||
+    path.startsWith('/api/favorites') ||
+    path.startsWith('/api/subscriptions') ||
+    path.startsWith('/api/telegram');
+
+  if (!isUserScoped) {
+    c.header('Access-Control-Allow-Origin', '*');
+    c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (c.req.method === 'OPTIONS') return new Response(null, { status: 204 });
+  }
   await next();
 });
 
@@ -48,6 +67,10 @@ app.get(`/css/${appStylesAssetFilename}`, (c) => {
 
 app.route('/', pages);
 app.route('/', api);
+app.route('/', auth);
+app.route('/', favorites);
+app.route('/', subscriptions);
+app.route('/', telegram);
 
 app.get('/robots.txt', (c) => {
   return c.text(`User-agent: *\nAllow: /\nSitemap: ${c.env.SITE_URL}/sitemap.xml`);
@@ -187,7 +210,11 @@ export default {
           const message = err instanceof Error ? (err.stack || err.message) : String(err);
           console.error(`Feishu hourly digest failed: ${message}`);
         });
-        const combined = Promise.all([telegramJob, feishuJob]);
+        const subscriptionJob = deliverSubscriptionAlerts(env).catch((err) => {
+          const message = err instanceof Error ? (err.stack || err.message) : String(err);
+          console.error(`Subscription alerts failed: ${message}`);
+        });
+        const combined = Promise.all([telegramJob, feishuJob, subscriptionJob]);
         if (waitUntil) waitUntil(combined);
         else await combined;
         return;

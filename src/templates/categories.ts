@@ -1,5 +1,6 @@
 import { layout } from './layout';
 import { escapeHtml, breadcrumb } from '../utils/helpers';
+import { AuthUser } from '../types';
 
 interface SearchTermItem {
   id: number;
@@ -9,7 +10,7 @@ interface SearchTermItem {
   job_count: number;
 }
 
-export function categoriesPage(terms: SearchTermItem[], query?: string, gaId?: string, siteUrl?: string, staticUrl?: string): string {
+export function categoriesPage(terms: SearchTermItem[], query?: string, gaId?: string, siteUrl?: string, staticUrl?: string, user?: AuthUser | null): string {
   const bc = breadcrumb([
     { label: '首页', href: '/' },
     { label: '职位', href: '/categories' },
@@ -52,5 +53,6 @@ export function categoriesPage(terms: SearchTermItem[], query?: string, gaId?: s
     canonical: siteUrl ? `${siteUrl}/categories` : undefined,
     staticUrl,
     activePath: '/categories',
+    user,
   });
 }

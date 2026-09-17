@@ -1,4 +1,4 @@
-import { Job } from '../types';
+import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge } from '../utils/helpers';
 
@@ -88,7 +88,7 @@ function renderJobRow(job: Job): string {
     </div>`;
 }
 
-export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, hasMore: boolean, gaId?: string, siteUrl?: string, staticUrl?: string): string {
+export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, hasMore: boolean, gaId?: string, siteUrl?: string, staticUrl?: string, user?: AuthUser | null): string {
   const pagination = (page > 1 || hasMore) ? `
     <div class="flex justify-center gap-2 mt-6">
       ${page > 1 ? `<a href="/category/${escapeHtml(term.slug)}?page=${page - 1}" class="px-4 py-2 rounded bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">← 上一页</a>` : ''}
@@ -126,5 +126,6 @@ export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, 
     canonical: siteUrl ? `${siteUrl}/category/${term.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
     staticUrl,
     activePath: '/categories',
+    user,
   });
 }

@@ -1,5 +1,6 @@
 import { layout } from './layout';
 import { escapeHtml, breadcrumb, companyLogo } from '../utils/helpers';
+import { AuthUser } from '../types';
 
 interface CompanyItem {
   id: number;
@@ -12,7 +13,7 @@ interface CompanyItem {
   job_count: number;
 }
 
-export function companiesPage(companies: CompanyItem[], page: number, hasMore: boolean, query?: string, gaId?: string, siteUrl?: string, staticUrl?: string): string {
+export function companiesPage(companies: CompanyItem[], page: number, hasMore: boolean, query?: string, gaId?: string, siteUrl?: string, staticUrl?: string, user?: AuthUser | null): string {
   const companyCards = companies.map(c => {
     const logo = companyLogo(c.name, c.thumbnail);
     const locationParts = [c.location_name_cn, c.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
@@ -75,5 +76,6 @@ export function companiesPage(companies: CompanyItem[], page: number, hasMore: b
     canonical: siteUrl ? `${siteUrl}/companies${page > 1 ? `?page=${page}` : ''}` : undefined,
     staticUrl,
     activePath: '/companies',
+    user,
   });
 }

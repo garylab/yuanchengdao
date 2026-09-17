@@ -11,6 +11,7 @@ GA_ID = "G-MZGV7SFZ9F"
 TELEGRAM_CHANNEL_CHAT_ID = "@yuanchengdao"
 FEISHU_GROUP_LINK = "https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=0b7pf9fc-2c26-41a2-8f91-eba312679c92"
 MAX_LIST_PAGE = "10"
+TURNSTILE_SITE_KEY = "0x4AAAAAAE5yNjTL48ir5JyA"
 
 [[d1_databases]]
 binding = "DB"

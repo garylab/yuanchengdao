@@ -1,9 +1,10 @@
 import { layout } from './layout';
 import { breadcrumb } from '../utils/helpers';
+import { AuthUser } from '../types';
 
 const CONTACT_EMAIL = 'yuanchengdao.com@gmail.com';
 
-export function postJobPage(gaId?: string, staticUrl?: string): string {
+export function postJobPage(gaId?: string, staticUrl?: string, user?: AuthUser | null): string {
   const bc = breadcrumb([
     { label: '首页', href: '/' },
     { label: '发布职位', href: '/post-job' },
@@ -182,5 +183,6 @@ export function postJobPage(gaId?: string, staticUrl?: string): string {
     keywords: '发布职位,远程招聘,招聘远程员工,岗位发布,远程岛招聘',
     staticUrl,
     activePath: '/post-job',
+    user,
   });
 }

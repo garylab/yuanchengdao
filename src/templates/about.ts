@@ -1,7 +1,8 @@
 import { layout } from './layout';
 import { breadcrumb } from '../utils/helpers';
+import { AuthUser } from '../types';
 
-export function aboutPage(gaId?: string, staticUrl?: string): string {
+export function aboutPage(gaId?: string, staticUrl?: string, user?: AuthUser | null): string {
   const bc = breadcrumb([
     { label: '首页', href: '/' },
     { label: '关于', href: '/about' },
@@ -50,5 +51,6 @@ export function aboutPage(gaId?: string, staticUrl?: string): string {
     keywords: '远程岛,关于我们,远程工作平台,华人远程工作,海外远程岗位',
     staticUrl,
     activePath: '/about',
+    user,
   });
 }

@@ -103,6 +103,8 @@ export async function postNewJobToTelegram(
   }
 }
 
+export { sendTelegramDirectMessage } from './telegramDm';
+
 type JobTelegramRow = {
   id: number;
   slug: string;

@@ -1,4 +1,4 @@
-import { Job } from '../types';
+import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge } from '../utils/helpers';
 
@@ -81,7 +81,7 @@ function renderJobRow(job: Job): string {
     </div>`;
 }
 
-export function locationDetailPage(location: LocationInfo, jobs: Job[], page: number, hasMore: boolean, gaId?: string, siteUrl?: string, staticUrl?: string): string {
+export function locationDetailPage(location: LocationInfo, jobs: Job[], page: number, hasMore: boolean, gaId?: string, siteUrl?: string, staticUrl?: string, user?: AuthUser | null): string {
   const displayName = location.name_cn || location.name;
   const subtitle = location.country_name_cn && location.country_name_cn !== location.name_cn
     ? location.country_name_cn
@@ -127,5 +127,6 @@ export function locationDetailPage(location: LocationInfo, jobs: Job[], page: nu
     canonical: siteUrl ? `${siteUrl}/location/${location.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
     staticUrl,
     activePath: '/locations',
+    user,
   });
 }

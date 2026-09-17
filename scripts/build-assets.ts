@@ -178,6 +178,46 @@ document.addEventListener('click', function(e) {
     wrap.addEventListener('mouseleave', function() { pop.classList.add('hidden'); });
   });
 })();
+
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.favorite-btn');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (btn.dataset.loginRequired === '1') {
+    window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname + window.location.search);
+    return;
+  }
+  var jobId = btn.dataset.jobId;
+  if (!jobId) return;
+  var favorited = btn.dataset.favorited === '1';
+  var method = favorited ? 'DELETE' : 'POST';
+  btn.disabled = true;
+  fetch('/api/favorites/' + jobId, { method: method, credentials: 'same-origin' })
+    .then(function(response) {
+      if (response.status === 401) {
+        window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname + window.location.search);
+        return null;
+      }
+      return response.json().then(function(data) {
+        return { ok: response.ok, data: data };
+      });
+    })
+    .then(function(result) {
+      if (!result) return;
+      if (!result.ok) return;
+      var nextFavorited = !favorited;
+      btn.dataset.favorited = nextFavorited ? '1' : '0';
+      var label = btn.querySelector('span');
+      if (label) label.textContent = nextFavorited ? '\\u5df2\\u6536\\u85cf' : '\\u6536\\u85cf';
+      var icon = btn.querySelector('svg');
+      if (icon) icon.setAttribute('fill', nextFavorited ? 'currentColor' : 'none');
+      btn.classList.toggle('text-brand-500', nextFavorited);
+      btn.classList.toggle('border-brand-200', nextFavorited);
+      btn.classList.toggle('bg-brand-50', nextFavorited);
+    })
+    .finally(function() { btn.disabled = false; });
+});
 `;
 
 async function build() {

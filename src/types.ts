@@ -15,10 +15,31 @@ export interface Env {
   GA_ID?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHANNEL_CHAT_ID?: string;
+  TELEGRAM_BOT_USERNAME?: string;
+  TELEGRAM_WEBHOOK_SECRET?: string;
   FEISHU_BOT_WEBHOOK_URL?: string;
   FEISHU_GROUP_LINK?: string;
   MAX_LIST_PAGE?: string;
+  RESEND_API_KEY?: string;
+  RESEND_FROM?: string;
+  TURNSTILE_SITE_KEY?: string;
+  TURNSTILE_SECRET_KEY?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  SESSION_SECRET?: string;
 }
+
+export interface AuthUser {
+  id: number;
+  email: string;
+  name: string | null;
+  avatar_url: string | null;
+  telegram_chat_id: string | null;
+}
+
+export type AppVariables = {
+  user: AuthUser | null;
+};
 
 // Raw SerpAPI response shape for a single job
 export interface SerpApiJob {
