@@ -34,33 +34,26 @@ export function layout(title: string, content: string, options?: LayoutOptions):
     { href: '/categories', label: '职位' },
   ];
   const isActive = (href: string) => href === '/' ? ap === '/' : ap.startsWith(href);
-  const desktopNav = navItems.map(n =>
+  const leftNavItems = [
+    ...navItems,
+    ...(user ? [{ href: '/favorites', label: '收藏' }] : []),
+  ];
+  const desktopNav = leftNavItems.map(n =>
     `<a href="${n.href}" class="px-2 py-1 transition no-underline ${isActive(n.href) ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">${n.label}</a>`
   ).join('\n        ');
-  const mobileNav = navItems.map(n =>
+  const postJobDesktop = `<a href="/post-job" class="px-2 py-1 transition no-underline whitespace-nowrap ${ap.startsWith('/post-job') ? 'text-brand-500 font-semibold' : 'text-brand-500 hover:text-brand-600'}">+ 发布</a>`;
+  const mobileNav = leftNavItems.map(n =>
     `<a href="${n.href}" class="block px-4 py-2 text-sm no-underline ${isActive(n.href) ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">${n.label}</a>`
   ).join('\n          ');
+  const postJobMobile = `<a href="/post-job" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/post-job') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-brand-500 hover:bg-brand-50 hover:text-brand-600'}">+ 发布</a>`;
 
-  const accountLabel = user?.name ? escapeHtml(user.name) : '账户';
+  const meLabel = user?.name ? escapeHtml(user.name) : '我的';
   const authNavDesktop = user
-    ? `<a href="/favorites" class="text-sm px-2 py-1 transition no-underline whitespace-nowrap ${ap.startsWith('/favorites') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">收藏</a>
-        <div class="relative group">
-          <button type="button" class="px-2 py-1 text-sm whitespace-nowrap ${ap.startsWith('/account') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'} transition">${accountLabel}</button>
-          <div class="hidden group-hover:block absolute right-0 top-full mt-1 w-36 bg-white rounded shadow-lg border border-surface-200 py-1 z-50">
-            <a href="/account" class="block px-4 py-2 text-sm no-underline text-surface-600 hover:bg-brand-50 hover:text-brand-500">账户设置</a>
-            <form method="post" action="/api/auth/logout">
-              <button type="submit" class="w-full text-left px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 bg-transparent border-0 cursor-pointer">退出</button>
-            </form>
-          </div>
-        </div>`
+    ? `<a href="/account" class="text-sm px-2 py-1 transition no-underline whitespace-nowrap ${ap.startsWith('/account') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">${meLabel}</a>`
     : `<a href="/login" class="text-sm px-2 py-1 transition no-underline whitespace-nowrap ${ap.startsWith('/login') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">登录</a>`;
 
   const authNavMobile = user
-    ? `<a href="/favorites" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/favorites') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">收藏</a>
-            <a href="/account" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/account') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">账户</a>
-            <form method="post" action="/api/auth/logout">
-              <button type="submit" class="w-full text-left px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 bg-transparent border-0 cursor-pointer">退出</button>
-            </form>`
+    ? `<a href="/account" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/account') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">${meLabel}</a>`
     : `<a href="/login" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/login') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">登录</a>`;
 
   const cdnStatic = (options?.staticUrl || '').trim().replace(/\/$/, '');
@@ -107,19 +100,20 @@ export function layout(title: string, content: string, options?: LayoutOptions):
         </a>
         <nav class="hidden sm:flex items-center gap-4 text-sm">
           ${desktopNav}
+          ${postJobDesktop}
         </nav>
       </div>
       <div class="flex items-center gap-2 sm:gap-4">
         <div class="hidden sm:flex items-center gap-4">
           ${authNavDesktop}
         </div>
-        <a href="/post-job" class="inline-flex items-center justify-center bg-brand-500 text-white text-sm font-medium px-3 py-1.5 rounded hover:bg-brand-600 transition no-underline whitespace-nowrap ${ap.startsWith('/post-job') ? 'ring-2 ring-brand-200' : ''}">发布</a>
         <div class="relative sm:hidden">
           <button id="mobile-menu-btn" class="p-2 text-surface-600 hover:text-brand-500 transition" aria-label="菜单">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
           </button>
           <div id="mobile-menu" class="hidden absolute right-0 top-full mt-1 w-40 bg-white rounded shadow-lg border border-surface-200 py-1 z-50">
             ${mobileNav}
+            ${postJobMobile}
             ${authNavMobile}
           </div>
         </div>

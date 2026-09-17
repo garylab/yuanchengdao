@@ -1,22 +1,8 @@
 import { createMiddleware } from 'hono/factory';
-import { getCookie } from 'hono/cookie';
 import { Env, AppVariables } from '../types';
-import { SESSION_COOKIE } from '../services/auth';
-
-const HTML_EDGE_TTL_SECONDS = 45;
-
-function isPrivateHtmlPath(path: string): boolean {
-  return (
-    path === '/favorites' ||
-    path.startsWith('/favorites/') ||
-    path === '/account' ||
-    path.startsWith('/account/')
-  );
-}
 
 function isSkippedPath(path: string): boolean {
   return (
-    path.startsWith('/api/') ||
     path.startsWith('/static/') ||
     path.startsWith('/r2/') ||
     path.startsWith('/js/') ||
@@ -26,66 +12,15 @@ function isSkippedPath(path: string): boolean {
   );
 }
 
-function isUserScopedApiPath(path: string): boolean {
-  return (
-    path.startsWith('/api/auth') ||
-    path.startsWith('/api/favorites') ||
-    path.startsWith('/api/subscriptions') ||
-    path.startsWith('/api/telegram')
-  );
-}
-
 export const htmlCacheMiddleware = createMiddleware<{ Bindings: Env; Variables: AppVariables }>(
   async (c, next) => {
-    const path = c.req.path;
-
-    if (isSkippedPath(path)) {
-      await next();
-      if (isUserScopedApiPath(path)) {
-        c.header('Cache-Control', 'private, no-store');
-      }
-      return;
-    }
-
-    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
-      await next();
-      c.header('Cache-Control', 'private, no-store');
-      return;
-    }
-
-    const hasSession = Boolean(getCookie(c, SESSION_COOKIE));
-    if (hasSession || isPrivateHtmlPath(path)) {
-      await next();
-      c.header('Cache-Control', 'private, no-store');
-      return;
-    }
-
-    const cacheKey = new Request(c.req.url, { method: 'GET' });
-    const cached = await caches.default.match(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
     await next();
 
-    if (c.res.status !== 200) return;
+    if (isSkippedPath(c.req.path)) return;
+
     const contentType = c.res.headers.get('Content-Type') || '';
-    if (!contentType.includes('text/html')) return;
-    if (c.res.headers.has('Set-Cookie')) {
+    if (contentType.includes('text/html') || contentType.includes('application/json')) {
       c.res.headers.set('Cache-Control', 'private, no-store');
-      return;
     }
-
-    const cacheClone = c.res.clone();
-    const cacheHeaders = new Headers(cacheClone.headers);
-    cacheHeaders.set('Cache-Control', `public, s-maxage=${HTML_EDGE_TTL_SECONDS}, max-age=0`);
-    const cacheResponse = new Response(cacheClone.body, {
-      status: cacheClone.status,
-      statusText: cacheClone.statusText,
-      headers: cacheHeaders,
-    });
-    c.executionCtx.waitUntil(caches.default.put(cacheKey, cacheResponse));
-
-    c.res.headers.set('Cache-Control', `public, s-maxage=${HTML_EDGE_TTL_SECONDS}, max-age=0`);
   },
 );
