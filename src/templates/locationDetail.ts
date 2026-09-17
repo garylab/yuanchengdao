@@ -89,7 +89,8 @@ export function locationDetailPage(location: LocationInfo, jobs: Job[], page: nu
 
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: displayName },
+    { label: '地区', href: '/locations' },
+    { label: displayName, href: `/location/${location.slug}` },
   ]);
 
   const pagination = (page > 1 || hasMore) ? `

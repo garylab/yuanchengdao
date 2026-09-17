@@ -93,7 +93,7 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
   const bc = breadcrumb([
     { label: '首页', href: '/' },
     { label: '企业', href: '/companies' },
-    { label: company.name },
+    { label: company.name, href: `/company/${company.slug}` },
   ]);
 
   const content = `

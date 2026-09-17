@@ -4,7 +4,7 @@ import { breadcrumb } from '../utils/helpers';
 export function aboutPage(gaId?: string, staticUrl?: string): string {
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '关于' },
+    { label: '关于', href: '/about' },
   ]);
 
   const content = `

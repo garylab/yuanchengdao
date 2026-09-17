@@ -44,7 +44,7 @@ export function locationsPage(locations: LocationItem[], page: number, hasMore: 
 
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '地区' },
+    { label: '地区', href: '/locations' },
   ]);
 
   const content = `

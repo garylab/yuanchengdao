@@ -6,7 +6,7 @@ const CONTACT_EMAIL = 'yuanchengdao.com@gmail.com';
 export function postJobPage(gaId?: string, staticUrl?: string): string {
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '发布职位' },
+    { label: '发布职位', href: '/post-job' },
   ]);
 
   const fieldClass =

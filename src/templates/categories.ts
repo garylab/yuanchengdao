@@ -12,7 +12,7 @@ interface SearchTermItem {
 export function categoriesPage(terms: SearchTermItem[], query?: string, gaId?: string, siteUrl?: string, staticUrl?: string): string {
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '分类' },
+    { label: '职位', href: '/categories' },
   ]);
 
   const content = `

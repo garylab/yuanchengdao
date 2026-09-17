@@ -46,7 +46,7 @@ export function companiesPage(companies: CompanyItem[], page: number, hasMore: b
 
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '企业' },
+    { label: '企业', href: '/companies' },
   ]);
 
   const content = `

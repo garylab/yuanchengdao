@@ -87,7 +87,7 @@ export function jobDetailPage(job: Job, similarJobs: Job[] = [], gaId?: string, 
   const bc = breadcrumb([
     { label: '首页', href: '/' },
     { label: job.company_name || '', href: job.company_slug ? `/company/${job.company_slug}` : undefined },
-    { label: job.title },
+    { label: job.title, href: `/job/${job.slug}` },
   ]);
 
   const similarSection = similarJobs.length > 0 ? `

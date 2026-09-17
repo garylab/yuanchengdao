@@ -97,8 +97,8 @@ export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, 
 
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '分类', href: '/categories' },
-    { label: `远程${term.term_cn}` },
+    { label: '职位', href: '/categories' },
+    { label: `远程${term.term_cn}`, href: `/category/${term.slug}` },
   ]);
 
   const content = `

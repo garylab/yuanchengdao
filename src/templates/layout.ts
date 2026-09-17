@@ -24,10 +24,10 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   const jsonLd = options?.jsonLd ? `\n  <script type="application/ld+json">${options.jsonLd}</script>` : '';
   const ap = options?.activePath || '/';
   const navItems = [
-    { href: '/', label: '工作' },
+    { href: '/', label: '首页' },
     { href: '/companies', label: '企业' },
     { href: '/locations', label: '地区' },
-    { href: '/categories', label: '分类' },
+    { href: '/categories', label: '职位' },
   ];
   const isActive = (href: string) => href === '/' ? ap === '/' : ap.startsWith(href);
   const desktopNav = navItems.map(n =>
