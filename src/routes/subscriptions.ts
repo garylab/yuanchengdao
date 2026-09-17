@@ -1,6 +1,9 @@
 import { Hono } from 'hono';
 import { Env, AppVariables } from '../types';
 import { createTelegramLinkToken } from '../services/auth';
+import { sendSubscriptionAlertEmail, SubscriptionJobAlert } from '../services/email';
+import { sendTelegramDirectMessage } from '../services/telegramDm';
+import { formatSalary } from '../utils/helpers';
 
 const subscriptions = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -161,6 +164,123 @@ subscriptions.patch('/api/subscriptions/:id', async (c) => {
     return c.json({ error: '该订阅已存在' }, 409);
   }
 });
+
+subscriptions.post('/api/subscriptions/:id/test', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.json({ error: '请先登录' }, 401);
+
+  const id = parseInt(c.req.param('id'), 10);
+  if (!Number.isFinite(id) || id <= 0) return c.json({ error: '无效订阅' }, 400);
+
+  const subscription = await c.env.DB.prepare(
+    `SELECT s.id, s.search_term_id, s.location_id, s.notify_email, s.notify_telegram,
+       u.email, u.telegram_chat_id
+     FROM subscriptions s
+     JOIN users u ON u.id = s.user_id
+     WHERE s.id = ? AND s.user_id = ?`
+  ).bind(id, user.id).first<{
+    id: number;
+    search_term_id: number;
+    location_id: number | null;
+    notify_email: number;
+    notify_telegram: number;
+    email: string;
+    telegram_chat_id: string | null;
+  }>();
+  if (!subscription) return c.json({ error: '订阅不存在' }, 404);
+
+  const jobQuery = subscription.location_id != null
+    ? `SELECT j.id, j.slug, j.title, j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle,
+         co.name as company_name,
+         lo.name_cn as location_name_cn,
+         ct.name_cn as country_name_cn
+       FROM jobs j
+       LEFT JOIN companies co ON j.company_id = co.id
+       LEFT JOIN locations lo ON j.location_id = lo.id
+       LEFT JOIN countries ct ON j.country_id = ct.id
+       WHERE j.search_term_id = ? AND j.location_id = ?
+       ORDER BY j.created_at DESC
+       LIMIT 1`
+    : `SELECT j.id, j.slug, j.title, j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle,
+         co.name as company_name,
+         lo.name_cn as location_name_cn,
+         ct.name_cn as country_name_cn
+       FROM jobs j
+       LEFT JOIN companies co ON j.company_id = co.id
+       LEFT JOIN locations lo ON j.location_id = lo.id
+       LEFT JOIN countries ct ON j.country_id = ct.id
+       WHERE j.search_term_id = ?
+       ORDER BY j.created_at DESC
+       LIMIT 1`;
+
+  const stmt = subscription.location_id != null
+    ? c.env.DB.prepare(jobQuery).bind(subscription.search_term_id, subscription.location_id)
+    : c.env.DB.prepare(jobQuery).bind(subscription.search_term_id);
+
+  const job = await stmt.first<{
+    id: number;
+    slug: string;
+    title: string;
+    salary_lower: number;
+    salary_upper: number;
+    salary_currency: string;
+    salary_pay_cycle: string;
+    company_name: string | null;
+    location_name_cn: string | null;
+    country_name_cn: string | null;
+  }>();
+  if (!job) return c.json({ error: '暂无匹配的职位可发送' }, 404);
+
+  const locationLabel = [job.location_name_cn, job.country_name_cn]
+    .filter(Boolean)
+    .filter((value, index, array) => array.indexOf(value) === index)
+    .join(', ') || '远程';
+  const alertJob: SubscriptionJobAlert = {
+    title: job.title,
+    companyName: job.company_name || '',
+    locationLabel,
+    slug: job.slug,
+    salaryLabel: formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle) || '',
+  };
+
+  const sent: string[] = [];
+  const errors: string[] = [];
+
+  if (subscription.notify_email && subscription.email) {
+    const result = await sendSubscriptionAlertEmail(c.env, subscription.email, [alertJob]);
+    if (result.ok) sent.push('邮件');
+    else errors.push(`邮件：${result.error || '发送失败'}`);
+  }
+
+  if (subscription.notify_telegram && subscription.telegram_chat_id) {
+    const baseUrl = c.env.SITE_URL.replace(/\/$/, '');
+    const url = `${baseUrl}/job/${encodeURIComponent(alertJob.slug)}?utm_source=telegram&utm_medium=subscription-test`;
+    const text = `远程岛订阅测试\n\n<a href="${escapeTelegramText(url)}"><b>${escapeTelegramText(alertJob.title)}</b></a>\n${escapeTelegramText(alertJob.companyName)} · ${escapeTelegramText(alertJob.locationLabel)}`;
+    try {
+      await sendTelegramDirectMessage(c.env, subscription.telegram_chat_id, text);
+      sent.push('Telegram');
+    } catch (err) {
+      errors.push(`Telegram：${err instanceof Error ? err.message : '发送失败'}`);
+    }
+  }
+
+  if (sent.length === 0 && errors.length === 0) {
+    return c.json({ error: '未启用任何通知渠道' }, 400);
+  }
+  if (sent.length === 0) {
+    return c.json({ error: errors.join('；') }, 500);
+  }
+  return c.json({
+    ok: true,
+    channels: sent,
+    jobTitle: alertJob.title,
+    warning: errors.length > 0 ? errors.join('；') : undefined,
+  });
+});
+
+function escapeTelegramText(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
 subscriptions.delete('/api/subscriptions/:id', async (c) => {
   const user = c.get('user');

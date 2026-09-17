@@ -62,6 +62,7 @@ export function accountPage(options: {
             </div>
           </div>
           <div class="flex items-center gap-3 self-start sm:self-auto">
+            <button type="button" class="subscription-test text-sm text-surface-500 hover:text-brand-600">发送测试</button>
             <button type="button" class="subscription-edit text-sm text-brand-500 hover:text-brand-600">编辑</button>
             <button type="button" class="subscription-delete text-sm text-red-500 hover:text-red-600">删除</button>
           </div>
@@ -368,6 +369,31 @@ export function accountPage(options: {
           if (editBtn) {
             var row = editBtn.closest('[data-subscription-id]');
             if (row) loadForEdit(row);
+            return;
+          }
+          var testBtn = event.target.closest('.subscription-test');
+          if (testBtn) {
+            var row = testBtn.closest('[data-subscription-id]');
+            var id = row && row.getAttribute('data-subscription-id');
+            if (!id) return;
+            var original = testBtn.textContent;
+            testBtn.disabled = true;
+            testBtn.textContent = '发送中…';
+            try {
+              var response = await fetch('/api/subscriptions/' + id + '/test', { method: 'POST' });
+              var data = await response.json().catch(function() { return {}; });
+              if (!response.ok) {
+                alert(data.error || '发送失败');
+              } else {
+                var channels = (data.channels || []).join('、');
+                var msg = '已通过 ' + channels + ' 发送：' + (data.jobTitle || '');
+                if (data.warning) msg += '\\n' + data.warning;
+                alert(msg);
+              }
+            } finally {
+              testBtn.disabled = false;
+              testBtn.textContent = original;
+            }
             return;
           }
           var deleteBtn = event.target.closest('.subscription-delete');
