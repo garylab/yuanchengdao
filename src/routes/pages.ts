@@ -14,6 +14,8 @@ import { loginPage } from '../templates/login';
 import { favoritesPage } from '../templates/favorites';
 import { accountPage } from '../templates/account';
 import { usersPage, AdminUserRow, AdminUserSubscription } from '../templates/users';
+import { feedbackPage } from '../templates/feedback';
+import { adminFeedbackPage, AdminFeedbackRow } from '../templates/adminFeedback';
 import { resolveThumbnail, activeCutoff } from '../utils/helpers';
 import { searchByVector } from '../services/vectorSearch';
 import { maxListPage, normalizedListPage } from '../constants/listPagination';
@@ -705,6 +707,44 @@ pages.get('/users', async (c) => {
   return c.html(usersPage({
     user,
     users: rows,
+    gaId: c.env.GA_ID,
+    staticUrl: c.env.STATIC_URL,
+  }));
+});
+
+pages.get('/feedback', async (c) => {
+  const user = c.get('user');
+  const url = new URL(c.req.url);
+  const prefillCategory = url.searchParams.get('category') || '';
+  const referer = c.req.header('Referer') || '';
+  return c.html(feedbackPage({
+    user,
+    turnstileSiteKey: c.env.TURNSTILE_SITE_KEY,
+    gaId: c.env.GA_ID,
+    staticUrl: c.env.STATIC_URL,
+    prefillCategory,
+    prefillPageUrl: referer,
+  }));
+});
+
+pages.get('/admin/feedback', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.redirect(`/login?next=${encodeURIComponent('/admin/feedback')}`, 302);
+  if (user.role !== 'admin') return c.notFound();
+
+  const result = await c.env.DB.prepare(`
+    SELECT f.id, f.user_id, f.email, f.category, f.message, f.reference_url, f.page_url,
+      f.resolved_at, f.admin_notes, f.created_at,
+      u.email as user_email, u.name as user_name
+    FROM feedback f
+    LEFT JOIN users u ON u.id = f.user_id
+    ORDER BY f.resolved_at IS NOT NULL, f.created_at DESC
+    LIMIT 200
+  `).all<AdminFeedbackRow>();
+
+  return c.html(adminFeedbackPage({
+    user,
+    feedback: (result.results || []) as AdminFeedbackRow[],
     gaId: c.env.GA_ID,
     staticUrl: c.env.STATIC_URL,
   }));

@@ -7,6 +7,7 @@ import auth from './routes/auth';
 import favorites from './routes/favorites';
 import subscriptions from './routes/subscriptions';
 import telegram from './routes/telegram';
+import feedback from './routes/feedback';
 import { syncJobs } from './services/jobSync';
 import { postHourlyTelegramDigest } from './services/telegram';
 import { postHourlyFeishuDigest } from './services/feishu';
@@ -28,7 +29,8 @@ app.use('/api/*', async (c, next) => {
     path.startsWith('/api/auth') ||
     path.startsWith('/api/favorites') ||
     path.startsWith('/api/subscriptions') ||
-    path.startsWith('/api/telegram');
+    path.startsWith('/api/telegram') ||
+    path.startsWith('/api/feedback');
 
   if (!isUserScoped) {
     c.header('Access-Control-Allow-Origin', '*');
@@ -71,6 +73,7 @@ app.route('/', auth);
 app.route('/', favorites);
 app.route('/', subscriptions);
 app.route('/', telegram);
+app.route('/', feedback);
 
 app.get('/robots.txt', (c) => {
   return c.text(`User-agent: *\nAllow: /\nSitemap: ${c.env.SITE_URL}/sitemap.xml`);

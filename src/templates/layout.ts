@@ -127,6 +127,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
             <span class="text-surface-500">© ${new Date().getFullYear()}</span>
             <a href="/" class="ml-2 no-underline text-surface-400 hover:text-brand-500 transition inline-flex items-center flex-shrink-0">远程岛</a>
             <a href="/about" class="ml-2 no-underline transition ${ap.startsWith('/about') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">关于</a>
+            <a href="/feedback" class="ml-2 no-underline transition ${ap.startsWith('/feedback') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">意见反馈</a>
           </div>
           
         </div>
