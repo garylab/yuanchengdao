@@ -43,17 +43,17 @@ export function layout(title: string, content: string, options?: LayoutOptions):
 
   const accountLabel = user?.name ? escapeHtml(user.name) : '账户';
   const authNavDesktop = user
-    ? `<a href="/favorites" class="px-2 py-1 transition no-underline ${ap.startsWith('/favorites') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">收藏</a>
-          <div class="relative group">
-            <button type="button" class="px-2 py-1 text-sm ${ap.startsWith('/account') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'} transition">${accountLabel}</button>
-            <div class="hidden group-hover:block absolute right-0 top-full mt-1 w-36 bg-white rounded shadow-lg border border-surface-200 py-1 z-50">
-              <a href="/account" class="block px-4 py-2 text-sm no-underline text-surface-600 hover:bg-brand-50 hover:text-brand-500">账户设置</a>
-              <form method="post" action="/api/auth/logout">
-                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 bg-transparent border-0 cursor-pointer">退出</button>
-              </form>
-            </div>
-          </div>`
-    : `<a href="/login" class="px-2 py-1 transition no-underline ${ap.startsWith('/login') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">登录</a>`;
+    ? `<a href="/favorites" class="text-sm px-2 py-1 transition no-underline whitespace-nowrap ${ap.startsWith('/favorites') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">收藏</a>
+        <div class="relative group">
+          <button type="button" class="px-2 py-1 text-sm whitespace-nowrap ${ap.startsWith('/account') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'} transition">${accountLabel}</button>
+          <div class="hidden group-hover:block absolute right-0 top-full mt-1 w-36 bg-white rounded shadow-lg border border-surface-200 py-1 z-50">
+            <a href="/account" class="block px-4 py-2 text-sm no-underline text-surface-600 hover:bg-brand-50 hover:text-brand-500">账户设置</a>
+            <form method="post" action="/api/auth/logout">
+              <button type="submit" class="w-full text-left px-4 py-2 text-sm text-surface-600 hover:bg-brand-50 hover:text-brand-500 bg-transparent border-0 cursor-pointer">退出</button>
+            </form>
+          </div>
+        </div>`
+    : `<a href="/login" class="text-sm px-2 py-1 transition no-underline whitespace-nowrap ${ap.startsWith('/login') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">登录</a>`;
 
   const authNavMobile = user
     ? `<a href="/favorites" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/favorites') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">收藏</a>
@@ -101,16 +101,19 @@ export function layout(title: string, content: string, options?: LayoutOptions):
 <body class="bg-surface-50 text-surface-900 min-h-screen">
   <header class="bg-white border-b border-surface-200 sticky top-0 z-50">
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-      <a href="/" class="flex items-center gap-2 no-underline flex-shrink-0">
-        <img src="/yuanchengdao-logo.png" alt="远程岛" class="h-8">
-        <span class="text-xs text-surface-400 hidden sm:inline ml-1">全球<em class="not-italic">远程工作</em>机会平台</span>
-      </a>
-      <div class="flex items-center gap-2 sm:gap-4">
+      <div class="flex items-center gap-4 sm:gap-6 min-w-0">
+        <a href="/" class="flex items-center gap-2 no-underline flex-shrink-0">
+          <img src="/yuanchengdao-logo.png" alt="远程岛" class="h-8">
+        </a>
         <nav class="hidden sm:flex items-center gap-4 text-sm">
           ${desktopNav}
-          ${authNavDesktop}
         </nav>
-        <a href="/post-job" class="inline-flex items-center justify-center bg-brand-500 text-white text-sm font-medium px-3 py-1.5 rounded hover:bg-brand-600 transition no-underline whitespace-nowrap ${ap.startsWith('/post-job') ? 'ring-2 ring-brand-200' : ''}">发布职位</a>
+      </div>
+      <div class="flex items-center gap-2 sm:gap-4">
+        <div class="hidden sm:flex items-center gap-4">
+          ${authNavDesktop}
+        </div>
+        <a href="/post-job" class="inline-flex items-center justify-center bg-brand-500 text-white text-sm font-medium px-3 py-1.5 rounded hover:bg-brand-600 transition no-underline whitespace-nowrap ${ap.startsWith('/post-job') ? 'ring-2 ring-brand-200' : ''}">发布</a>
         <div class="relative sm:hidden">
           <button id="mobile-menu-btn" class="p-2 text-surface-600 hover:text-brand-500 transition" aria-label="菜单">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
