@@ -5,9 +5,9 @@ import { breadcrumb } from '../utils/helpers';
 import { userCenterShell } from './userCenter';
 
 export function favoritesPage(jobs: Job[], options: {
+  user: AuthUser;
   gaId?: string;
   staticUrl?: string;
-  user?: AuthUser | null;
 }): string {
   const bc = breadcrumb([
     { label: '首页', href: '/' },
@@ -26,7 +26,7 @@ export function favoritesPage(jobs: Job[], options: {
       <h1 class="text-2xl font-bold mb-4">收藏</h1>
       ${list}`;
 
-  const content = `${bc}${userCenterShell('/favorites', inner)}`;
+  const content = `${bc}${userCenterShell('/favorites', inner, options.user)}`;
 
   return layout('收藏 - 远程岛', content, {
     gaId: options.gaId,

@@ -147,6 +147,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT,
   avatar_url TEXT,
   telegram_chat_id TEXT,
+  role TEXT NOT NULL DEFAULT 'user',
   created_at TEXT DEFAULT (datetime('now'))
 );
 

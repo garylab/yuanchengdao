@@ -13,6 +13,7 @@ import { locationDetailPage } from '../templates/locationDetail';
 import { loginPage } from '../templates/login';
 import { favoritesPage } from '../templates/favorites';
 import { accountPage } from '../templates/account';
+import { usersPage, AdminUserRow, AdminUserSubscription } from '../templates/users';
 import { resolveThumbnail, activeCutoff } from '../utils/helpers';
 import { searchByVector } from '../services/vectorSearch';
 import { maxListPage, normalizedListPage } from '../constants/listPagination';
@@ -617,6 +618,71 @@ pages.get('/account', async (c) => {
     subscriptions,
     searchTerms: (searchTermsResult.results || []) as Array<{ id: number; term_cn: string; slug: string }>,
     locations: (locationsResult.results || []) as Array<{ id: number; name_cn: string; slug: string }>,
+    gaId: c.env.GA_ID,
+    staticUrl: c.env.STATIC_URL,
+  }));
+});
+
+pages.get('/users', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.redirect(`/login?next=${encodeURIComponent('/users')}`, 302);
+  if (user.role !== 'admin') return c.notFound();
+
+  const usersResult = await c.env.DB.prepare(
+    `SELECT u.id, u.email, u.name, u.role, u.created_at, u.telegram_chat_id,
+       (SELECT COUNT(*) FROM favorites f WHERE f.user_id = u.id) as favorite_count
+     FROM users u
+     ORDER BY u.id ASC`
+  ).all<{
+    id: number;
+    email: string;
+    name: string | null;
+    role: 'admin' | 'user';
+    created_at: string;
+    telegram_chat_id: string | null;
+    favorite_count: number;
+  }>();
+
+  const users = usersResult.results || [];
+  const userIds = users.map((u) => u.id);
+
+  let subsByUser = new Map<number, AdminUserSubscription[]>();
+  if (userIds.length > 0) {
+    const subsResult = await c.env.DB.prepare(`
+      SELECT s.user_id, s.notify_email, s.notify_telegram,
+        st.term_cn, lo.name_cn as location_name_cn
+      FROM subscriptions s
+      LEFT JOIN search_terms st ON s.search_term_id = st.id
+      LEFT JOIN locations lo ON s.location_id = lo.id
+      WHERE s.user_id IN (${userIds.join(',')})
+      ORDER BY s.created_at DESC
+    `).all<{
+      user_id: number;
+      notify_email: number;
+      notify_telegram: number;
+      term_cn: string | null;
+      location_name_cn: string | null;
+    }>();
+    for (const row of subsResult.results || []) {
+      const list = subsByUser.get(row.user_id) || [];
+      list.push({
+        term_cn: row.term_cn,
+        location_name_cn: row.location_name_cn,
+        notify_email: row.notify_email,
+        notify_telegram: row.notify_telegram,
+      });
+      subsByUser.set(row.user_id, list);
+    }
+  }
+
+  const rows: AdminUserRow[] = users.map((u) => ({
+    ...u,
+    subscriptions: subsByUser.get(u.id) || [],
+  }));
+
+  return c.html(usersPage({
+    user,
+    users: rows,
     gaId: c.env.GA_ID,
     staticUrl: c.env.STATIC_URL,
   }));

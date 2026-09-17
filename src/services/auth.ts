@@ -111,23 +111,26 @@ export type UserRow = {
   name: string | null;
   avatar_url: string | null;
   telegram_chat_id: string | null;
+  role: 'admin' | 'user';
 };
+
+const USER_COLUMNS = 'id, email, password_hash, google_id, name, avatar_url, telegram_chat_id, role';
 
 export async function findUserByEmail(db: D1Database, email: string): Promise<UserRow | null> {
   return db.prepare(
-    'SELECT id, email, password_hash, google_id, name, avatar_url, telegram_chat_id FROM users WHERE email = ?'
+    `SELECT ${USER_COLUMNS} FROM users WHERE email = ?`
   ).bind(normalizeEmail(email)).first<UserRow>();
 }
 
 export async function findUserById(db: D1Database, userId: number): Promise<UserRow | null> {
   return db.prepare(
-    'SELECT id, email, password_hash, google_id, name, avatar_url, telegram_chat_id FROM users WHERE id = ?'
+    `SELECT ${USER_COLUMNS} FROM users WHERE id = ?`
   ).bind(userId).first<UserRow>();
 }
 
 export async function findUserByGoogleId(db: D1Database, googleId: string): Promise<UserRow | null> {
   return db.prepare(
-    'SELECT id, email, password_hash, google_id, name, avatar_url, telegram_chat_id FROM users WHERE google_id = ?'
+    `SELECT ${USER_COLUMNS} FROM users WHERE google_id = ?`
   ).bind(googleId).first<UserRow>();
 }
 
@@ -139,7 +142,10 @@ export async function createUserWithPassword(
 ): Promise<UserRow> {
   const passwordHash = await hashPassword(password);
   const result = await db.prepare(
-    'INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?) RETURNING id, email, password_hash, google_id, name, avatar_url, telegram_chat_id'
+    `INSERT INTO users (email, password_hash, name, role) VALUES (
+       ?, ?, ?,
+       CASE WHEN NOT EXISTS (SELECT 1 FROM users) THEN 'admin' ELSE 'user' END
+     ) RETURNING id, email, password_hash, google_id, name, avatar_url, telegram_chat_id, role`
   ).bind(normalizeEmail(email), passwordHash, name || null).first<UserRow>();
   if (!result) throw new Error('Failed to create user');
   return result;
@@ -170,7 +176,10 @@ export async function createOrLinkGoogleUser(
   }
 
   const created = await db.prepare(
-    'INSERT INTO users (email, google_id, name, avatar_url) VALUES (?, ?, ?, ?) RETURNING id, email, password_hash, google_id, name, avatar_url, telegram_chat_id'
+    `INSERT INTO users (email, google_id, name, avatar_url, role) VALUES (
+       ?, ?, ?, ?,
+       CASE WHEN NOT EXISTS (SELECT 1 FROM users) THEN 'admin' ELSE 'user' END
+     ) RETURNING id, email, password_hash, google_id, name, avatar_url, telegram_chat_id, role`
   ).bind(email, profile.googleId, profile.name, profile.avatarUrl).first<UserRow>();
   if (!created) throw new Error('Failed to create Google user');
   return created;
@@ -206,7 +215,7 @@ export async function resolveSessionUser(
 ): Promise<UserRow | null> {
   const tokenHash = await hashToken(token, sessionSecret);
   const row = await db.prepare(`
-    SELECT u.id, u.email, u.password_hash, u.google_id, u.name, u.avatar_url, u.telegram_chat_id
+    SELECT u.id, u.email, u.password_hash, u.google_id, u.name, u.avatar_url, u.telegram_chat_id, u.role
     FROM sessions s
     JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = ? AND s.expires_at > datetime('now')
@@ -297,7 +306,10 @@ export async function findOrCreateUserByEmailOtp(
   const existing = await findUserByEmail(db, email);
   if (existing) return existing;
   const created = await db.prepare(
-    'INSERT INTO users (email) VALUES (?) RETURNING id, email, password_hash, google_id, name, avatar_url, telegram_chat_id'
+    `INSERT INTO users (email, role) VALUES (
+       ?,
+       CASE WHEN NOT EXISTS (SELECT 1 FROM users) THEN 'admin' ELSE 'user' END
+     ) RETURNING id, email, password_hash, google_id, name, avatar_url, telegram_chat_id, role`
   ).bind(normalizeEmail(email)).first<UserRow>();
   if (!created) throw new Error('Failed to create user');
   return created;

@@ -410,7 +410,7 @@ export function accountPage(options: {
       })();
     </script>`;
 
-  const content = `${bc}${userCenterShell('/account', inner)}`;
+  const content = `${bc}${userCenterShell('/account', inner, user)}`;
 
   return layout('我的 - 远程岛', content, {
     gaId: options.gaId,

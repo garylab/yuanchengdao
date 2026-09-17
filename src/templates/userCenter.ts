@@ -1,8 +1,18 @@
-export function userCenterShell(activePath: string, innerContent: string): string {
-  const items = [
+import { AuthUser } from '../types';
+
+export function userCenterShell(
+  activePath: string,
+  innerContent: string,
+  user: AuthUser,
+): string {
+  const items: Array<{ href: string; label: string }> = [
     { href: '/account', label: '我的' },
     { href: '/favorites', label: '收藏' },
   ];
+  if (user.role === 'admin') {
+    items.push({ href: '/users', label: '所有用户' });
+  }
+
   const isActive = (href: string) => activePath === href || activePath.startsWith(href + '/');
   const sidebarLink = (href: string, label: string, extraClasses = '') =>
     `<a href="${href}" class="${extraClasses} no-underline transition ${

@@ -29,12 +29,15 @@ export interface Env {
   SESSION_SECRET?: string;
 }
 
+export type UserRole = 'admin' | 'user';
+
 export interface AuthUser {
   id: number;
   email: string;
   name: string | null;
   avatar_url: string | null;
   telegram_chat_id: string | null;
+  role: UserRole;
 }
 
 export type AppVariables = {
