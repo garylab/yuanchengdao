@@ -72,19 +72,20 @@ export const htmlCacheMiddleware = createMiddleware<{ Bindings: Env; Variables: 
     const contentType = c.res.headers.get('Content-Type') || '';
     if (!contentType.includes('text/html')) return;
     if (c.res.headers.has('Set-Cookie')) {
-      c.header('Cache-Control', 'private, no-store');
+      c.res.headers.set('Cache-Control', 'private, no-store');
       return;
     }
 
-    const headers = new Headers(c.res.headers);
-    headers.set('Cache-Control', `public, s-maxage=${HTML_EDGE_TTL_SECONDS}, max-age=0`);
-    const body = await c.res.arrayBuffer();
-    const response = new Response(body, {
-      status: c.res.status,
-      statusText: c.res.statusText,
-      headers,
+    const cacheClone = c.res.clone();
+    const cacheHeaders = new Headers(cacheClone.headers);
+    cacheHeaders.set('Cache-Control', `public, s-maxage=${HTML_EDGE_TTL_SECONDS}, max-age=0`);
+    const cacheResponse = new Response(cacheClone.body, {
+      status: cacheClone.status,
+      statusText: cacheClone.statusText,
+      headers: cacheHeaders,
     });
-    c.executionCtx.waitUntil(caches.default.put(cacheKey, response.clone()));
-    return response;
+    c.executionCtx.waitUntil(caches.default.put(cacheKey, cacheResponse));
+
+    c.res.headers.set('Cache-Control', `public, s-maxage=${HTML_EDGE_TTL_SECONDS}, max-age=0`);
   },
 );
