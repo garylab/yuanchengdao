@@ -64,7 +64,7 @@ export async function sendSubscriptionAlertEmail(
 
   return sendResendEmail(env, {
     to: email,
-    subject: `远程岛：${jobs.length} 个新职位匹配你的订阅`,
+    subject: `${jobs.length} 个新职位匹配你的订阅`,
     html: `<p>以下新职位匹配你的订阅：</p><ul>${items}</ul><p><a href="${baseUrl}/account" style="color:#dd4c0e">管理订阅</a></p>`,
     text: jobs.map((job) => `${job.title} - ${job.companyName} - ${baseUrl}/job/${job.slug}`).join('\n'),
   });
