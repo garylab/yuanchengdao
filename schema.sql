@@ -202,13 +202,14 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   search_term_id INTEGER NOT NULL REFERENCES search_terms(id),
   location_id INTEGER REFERENCES locations(id),
+  salary_range TEXT,
   notify_email INTEGER NOT NULL DEFAULT 1,
   notify_telegram INTEGER NOT NULL DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_user_term_location
-  ON subscriptions(user_id, search_term_id, IFNULL(location_id, 0));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_user_term_location_salary
+  ON subscriptions(user_id, search_term_id, IFNULL(location_id, 0), IFNULL(salary_range, ''));
 CREATE INDEX IF NOT EXISTS idx_subscriptions_search_term ON subscriptions(search_term_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
 

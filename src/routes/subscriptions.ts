@@ -4,6 +4,7 @@ import { createTelegramLinkToken } from '../services/auth';
 import { sendSubscriptionAlertEmail, SubscriptionJobAlert } from '../services/email';
 import { sendTelegramDirectMessage } from '../services/telegramDm';
 import { formatSalary } from '../utils/helpers';
+import { isKnownSalaryRange, jobMatchesSalaryRange } from '../constants/salary';
 
 const subscriptions = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -12,6 +13,7 @@ type SubscriptionRow = {
   user_id: number;
   search_term_id: number;
   location_id: number | null;
+  salary_range: string | null;
   notify_email: number;
   notify_telegram: number;
   created_at: string;
@@ -20,6 +22,74 @@ type SubscriptionRow = {
   location_name_cn?: string | null;
   location_slug?: string | null;
 };
+
+type SubscriptionBody = {
+  searchTermId?: number;
+  locationId?: number | null;
+  salaryRange?: string | null;
+  notifyEmail?: boolean;
+  notifyTelegram?: boolean;
+};
+
+type ValidatedFields = {
+  searchTermId: number;
+  locationId: number | null;
+  salaryRange: string | null;
+  notifyEmail: number;
+  notifyTelegram: number;
+};
+
+async function validateSubscriptionBody(
+  db: D1Database,
+  user: { telegram_chat_id: string | null },
+  body: SubscriptionBody | null,
+): Promise<{ ok: true; fields: ValidatedFields } | { ok: false; error: string; status: number }> {
+  if (!body) return { ok: false, error: '无效请求', status: 400 };
+
+  const searchTermId = Number(body.searchTermId);
+  if (!Number.isFinite(searchTermId) || searchTermId <= 0) {
+    return { ok: false, error: '请选择职位分类', status: 400 };
+  }
+
+  const locationId = body.locationId == null || body.locationId === 0
+    ? null
+    : Number(body.locationId);
+  if (locationId !== null && (!Number.isFinite(locationId) || locationId <= 0)) {
+    return { ok: false, error: '地点无效', status: 400 };
+  }
+
+  const salaryRangeRaw = (body.salaryRange || '').trim();
+  const salaryRange = salaryRangeRaw ? salaryRangeRaw : null;
+  if (salaryRange && !isKnownSalaryRange(salaryRange)) {
+    return { ok: false, error: '薪资范围无效', status: 400 };
+  }
+
+  const notifyEmail = body.notifyEmail !== false ? 1 : 0;
+  const notifyTelegram = body.notifyTelegram === true ? 1 : 0;
+  if (!notifyEmail && !notifyTelegram) {
+    return { ok: false, error: '请至少选择一种通知方式', status: 400 };
+  }
+  if (notifyTelegram && !user.telegram_chat_id) {
+    return { ok: false, error: '请先绑定 Telegram', status: 400 };
+  }
+
+  const term = await db.prepare(
+    'SELECT id FROM search_terms WHERE id = ? AND is_active = 1'
+  ).bind(searchTermId).first<{ id: number }>();
+  if (!term) return { ok: false, error: '职位分类不存在', status: 400 };
+
+  if (locationId !== null) {
+    const location = await db.prepare(
+      'SELECT id FROM locations WHERE id = ? AND is_active = 1'
+    ).bind(locationId).first<{ id: number }>();
+    if (!location) return { ok: false, error: '地点不存在', status: 400 };
+  }
+
+  return {
+    ok: true,
+    fields: { searchTermId, locationId, salaryRange, notifyEmail, notifyTelegram },
+  };
+}
 
 subscriptions.get('/api/subscriptions', async (c) => {
   const user = c.get('user');
@@ -47,53 +117,18 @@ subscriptions.post('/api/subscriptions', async (c) => {
   const user = c.get('user');
   if (!user) return c.json({ error: '请先登录' }, 401);
 
-  const body = await c.req.json<{
-    searchTermId?: number;
-    locationId?: number | null;
-    notifyEmail?: boolean;
-    notifyTelegram?: boolean;
-  }>().catch(() => null);
-  if (!body) return c.json({ error: '无效请求' }, 400);
+  const body = await c.req.json<SubscriptionBody>().catch(() => null);
+  const validation = await validateSubscriptionBody(c.env.DB, user, body);
+  if (!validation.ok) return c.json({ error: validation.error }, validation.status as 400 | 401 | 404);
 
-  const searchTermId = Number(body.searchTermId);
-  if (!Number.isFinite(searchTermId) || searchTermId <= 0) {
-    return c.json({ error: '请选择职位分类' }, 400);
-  }
-
-  const locationId = body.locationId == null || body.locationId === 0
-    ? null
-    : Number(body.locationId);
-  if (locationId !== null && (!Number.isFinite(locationId) || locationId <= 0)) {
-    return c.json({ error: '地点无效' }, 400);
-  }
-
-  const notifyEmail = body.notifyEmail !== false ? 1 : 0;
-  const notifyTelegram = body.notifyTelegram === true ? 1 : 0;
-  if (!notifyEmail && !notifyTelegram) {
-    return c.json({ error: '请至少选择一种通知方式' }, 400);
-  }
-  if (notifyTelegram && !user.telegram_chat_id) {
-    return c.json({ error: '请先绑定 Telegram' }, 400);
-  }
-
-  const term = await c.env.DB.prepare(
-    'SELECT id FROM search_terms WHERE id = ? AND is_active = 1'
-  ).bind(searchTermId).first<{ id: number }>();
-  if (!term) return c.json({ error: '职位分类不存在' }, 400);
-
-  if (locationId !== null) {
-    const location = await c.env.DB.prepare(
-      'SELECT id FROM locations WHERE id = ? AND is_active = 1'
-    ).bind(locationId).first<{ id: number }>();
-    if (!location) return c.json({ error: '地点不存在' }, 400);
-  }
+  const { searchTermId, locationId, salaryRange, notifyEmail, notifyTelegram } = validation.fields;
 
   try {
     const inserted = await c.env.DB.prepare(`
-      INSERT INTO subscriptions (user_id, search_term_id, location_id, notify_email, notify_telegram)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO subscriptions (user_id, search_term_id, location_id, salary_range, notify_email, notify_telegram)
+      VALUES (?, ?, ?, ?, ?, ?)
       RETURNING id
-    `).bind(user.id, searchTermId, locationId, notifyEmail, notifyTelegram).first<{ id: number }>();
+    `).bind(user.id, searchTermId, locationId, salaryRange, notifyEmail, notifyTelegram).first<{ id: number }>();
     return c.json({ ok: true, id: inserted?.id });
   } catch {
     return c.json({ error: '该订阅已存在' }, 409);
@@ -107,58 +142,24 @@ subscriptions.patch('/api/subscriptions/:id', async (c) => {
   const id = parseInt(c.req.param('id'), 10);
   if (!Number.isFinite(id) || id <= 0) return c.json({ error: '无效订阅' }, 400);
 
-  const body = await c.req.json<{
-    searchTermId?: number;
-    locationId?: number | null;
-    notifyEmail?: boolean;
-    notifyTelegram?: boolean;
-  }>().catch(() => null);
-  if (!body) return c.json({ error: '无效请求' }, 400);
+  const body = await c.req.json<SubscriptionBody>().catch(() => null);
 
   const existing = await c.env.DB.prepare(
     'SELECT id FROM subscriptions WHERE id = ? AND user_id = ?'
   ).bind(id, user.id).first<{ id: number }>();
   if (!existing) return c.json({ error: '订阅不存在' }, 404);
 
-  const searchTermId = Number(body.searchTermId);
-  if (!Number.isFinite(searchTermId) || searchTermId <= 0) {
-    return c.json({ error: '请选择职位分类' }, 400);
-  }
+  const validation = await validateSubscriptionBody(c.env.DB, user, body);
+  if (!validation.ok) return c.json({ error: validation.error }, validation.status as 400 | 401 | 404);
 
-  const locationId = body.locationId == null || body.locationId === 0
-    ? null
-    : Number(body.locationId);
-  if (locationId !== null && (!Number.isFinite(locationId) || locationId <= 0)) {
-    return c.json({ error: '地点无效' }, 400);
-  }
-
-  const notifyEmail = body.notifyEmail !== false ? 1 : 0;
-  const notifyTelegram = body.notifyTelegram === true ? 1 : 0;
-  if (!notifyEmail && !notifyTelegram) {
-    return c.json({ error: '请至少选择一种通知方式' }, 400);
-  }
-  if (notifyTelegram && !user.telegram_chat_id) {
-    return c.json({ error: '请先绑定 Telegram' }, 400);
-  }
-
-  const term = await c.env.DB.prepare(
-    'SELECT id FROM search_terms WHERE id = ? AND is_active = 1'
-  ).bind(searchTermId).first<{ id: number }>();
-  if (!term) return c.json({ error: '职位分类不存在' }, 400);
-
-  if (locationId !== null) {
-    const location = await c.env.DB.prepare(
-      'SELECT id FROM locations WHERE id = ? AND is_active = 1'
-    ).bind(locationId).first<{ id: number }>();
-    if (!location) return c.json({ error: '地点不存在' }, 400);
-  }
+  const { searchTermId, locationId, salaryRange, notifyEmail, notifyTelegram } = validation.fields;
 
   try {
     await c.env.DB.prepare(`
       UPDATE subscriptions
-      SET search_term_id = ?, location_id = ?, notify_email = ?, notify_telegram = ?
+      SET search_term_id = ?, location_id = ?, salary_range = ?, notify_email = ?, notify_telegram = ?
       WHERE id = ? AND user_id = ?
-    `).bind(searchTermId, locationId, notifyEmail, notifyTelegram, id, user.id).run();
+    `).bind(searchTermId, locationId, salaryRange, notifyEmail, notifyTelegram, id, user.id).run();
     return c.json({ ok: true });
   } catch {
     return c.json({ error: '该订阅已存在' }, 409);
@@ -173,7 +174,7 @@ subscriptions.post('/api/subscriptions/:id/test', async (c) => {
   if (!Number.isFinite(id) || id <= 0) return c.json({ error: '无效订阅' }, 400);
 
   const subscription = await c.env.DB.prepare(
-    `SELECT s.id, s.search_term_id, s.location_id, s.notify_email, s.notify_telegram,
+    `SELECT s.id, s.search_term_id, s.location_id, s.salary_range, s.notify_email, s.notify_telegram,
        u.email, u.telegram_chat_id
      FROM subscriptions s
      JOIN users u ON u.id = s.user_id
@@ -182,6 +183,7 @@ subscriptions.post('/api/subscriptions/:id/test', async (c) => {
     id: number;
     search_term_id: number;
     location_id: number | null;
+    salary_range: string | null;
     notify_email: number;
     notify_telegram: number;
     email: string;
@@ -189,35 +191,23 @@ subscriptions.post('/api/subscriptions/:id/test', async (c) => {
   }>();
   if (!subscription) return c.json({ error: '订阅不存在' }, 404);
 
+  const jobBaseSelect = `SELECT j.id, j.slug, j.title, j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle,
+         co.name as company_name,
+         lo.name_cn as location_name_cn,
+         ct.name_cn as country_name_cn
+       FROM jobs j
+       LEFT JOIN companies co ON j.company_id = co.id
+       LEFT JOIN locations lo ON j.location_id = lo.id
+       LEFT JOIN countries ct ON j.country_id = ct.id`;
+  const candidateLimit = subscription.salary_range ? 50 : 1;
   const jobQuery = subscription.location_id != null
-    ? `SELECT j.id, j.slug, j.title, j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle,
-         co.name as company_name,
-         lo.name_cn as location_name_cn,
-         ct.name_cn as country_name_cn
-       FROM jobs j
-       LEFT JOIN companies co ON j.company_id = co.id
-       LEFT JOIN locations lo ON j.location_id = lo.id
-       LEFT JOIN countries ct ON j.country_id = ct.id
-       WHERE j.search_term_id = ? AND j.location_id = ?
-       ORDER BY j.created_at DESC
-       LIMIT 1`
-    : `SELECT j.id, j.slug, j.title, j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle,
-         co.name as company_name,
-         lo.name_cn as location_name_cn,
-         ct.name_cn as country_name_cn
-       FROM jobs j
-       LEFT JOIN companies co ON j.company_id = co.id
-       LEFT JOIN locations lo ON j.location_id = lo.id
-       LEFT JOIN countries ct ON j.country_id = ct.id
-       WHERE j.search_term_id = ?
-       ORDER BY j.created_at DESC
-       LIMIT 1`;
-
+    ? `${jobBaseSelect} WHERE j.search_term_id = ? AND j.location_id = ? ORDER BY j.created_at DESC LIMIT ${candidateLimit}`
+    : `${jobBaseSelect} WHERE j.search_term_id = ? ORDER BY j.created_at DESC LIMIT ${candidateLimit}`;
   const stmt = subscription.location_id != null
     ? c.env.DB.prepare(jobQuery).bind(subscription.search_term_id, subscription.location_id)
     : c.env.DB.prepare(jobQuery).bind(subscription.search_term_id);
 
-  const job = await stmt.first<{
+  type JobCandidate = {
     id: number;
     slug: string;
     title: string;
@@ -228,7 +218,11 @@ subscriptions.post('/api/subscriptions/:id/test', async (c) => {
     company_name: string | null;
     location_name_cn: string | null;
     country_name_cn: string | null;
-  }>();
+  };
+  const candidates = (await stmt.all<JobCandidate>()).results || [];
+  const job = candidates.find((candidate) =>
+    jobMatchesSalaryRange(subscription.salary_range, candidate.salary_lower, candidate.salary_upper)
+  );
   if (!job) return c.json({ error: '暂无匹配的职位可发送' }, 404);
 
   const locationLabel = [job.location_name_cn, job.country_name_cn]

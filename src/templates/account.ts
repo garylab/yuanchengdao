@@ -2,15 +2,23 @@ import { AuthUser } from '../types';
 import { layout } from './layout';
 import { breadcrumb, escapeHtml } from '../utils/helpers';
 import { userCenterShell } from './userCenter';
+import { SALARY_OPTIONS, salaryLabel } from '../constants/salary';
 
 export type AccountSubscription = {
   id: number;
   search_term_id: number;
   location_id: number | null;
+  salary_range: string | null;
   notify_email: number;
   notify_telegram: number;
   term_cn: string | null;
   location_name_cn: string | null;
+};
+
+export type AccountPrefill = {
+  locationId?: number | null;
+  locationLabel?: string | null;
+  salaryRange?: string | null;
 };
 
 export type AccountSearchTerm = {
@@ -30,10 +38,11 @@ export function accountPage(options: {
   subscriptions: AccountSubscription[];
   searchTerms: AccountSearchTerm[];
   locations: AccountLocation[];
+  prefill?: AccountPrefill;
   gaId?: string;
   staticUrl?: string;
 }): string {
-  const { user, subscriptions, searchTerms, locations } = options;
+  const { user, subscriptions, searchTerms, locations, prefill } = options;
   const bc = breadcrumb([
     { label: '首页', href: '/' },
     { label: '我的', href: '/account' },
@@ -53,12 +62,14 @@ export function accountPage(options: {
              data-term-label="${escapeHtml(subscription.term_cn || '')}"
              data-location-id="${subscription.location_id ?? ''}"
              data-location-label="${escapeHtml(subscription.location_name_cn || '')}"
+             data-salary-range="${escapeHtml(subscription.salary_range || '')}"
              data-notify-email="${subscription.notify_email ? '1' : '0'}"
              data-notify-telegram="${subscription.notify_telegram ? '1' : '0'}">
           <div class="text-sm">
             <div class="font-medium text-surface-900">${escapeHtml(subscription.term_cn || '分类')}</div>
             <div class="text-surface-500 mt-0.5">
               ${subscription.location_name_cn ? escapeHtml(subscription.location_name_cn) : '不限地点'}
+              · 薪资${escapeHtml(salaryLabel(subscription.salary_range))}
               · ${subscription.notify_email ? '邮件' : ''}${subscription.notify_email && subscription.notify_telegram ? ' / ' : ''}${subscription.notify_telegram ? 'Telegram' : ''}
             </div>
           </div>
@@ -127,6 +138,12 @@ export function accountPage(options: {
                 class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-600 text-lg leading-none">×</button>
               <ul data-combobox-list class="hidden absolute z-20 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-surface-200 rounded shadow-lg py-1"></ul>
             </div>
+          </div>
+          <div>
+            <label class="block text-sm text-surface-600 mb-1">薪资（可选）</label>
+            <select name="salaryRange" class="w-full border border-surface-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-400">
+              ${SALARY_OPTIONS.map((o) => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join('')}
+            </select>
           </div>
           <div class="flex flex-wrap gap-4 text-sm">
             <label class="inline-flex items-center gap-2">
@@ -276,6 +293,7 @@ export function accountPage(options: {
           idInput.value = '';
           if (termCombo) termCombo.__setValue('', '');
           if (locationCombo) locationCombo.__setValue('', '');
+          form.salaryRange.value = '';
           form.notifyEmail.checked = true;
           if (!form.notifyTelegram.disabled) form.notifyTelegram.checked = false;
           titleEl.textContent = '添加订阅';
@@ -292,6 +310,7 @@ export function accountPage(options: {
             var locLabel = row.getAttribute('data-location-label');
             locationCombo.__setValue(locId, locLabel);
           }
+          form.salaryRange.value = row.getAttribute('data-salary-range') || '';
           form.notifyEmail.checked = row.getAttribute('data-notify-email') === '1';
           if (!form.notifyTelegram.disabled) {
             form.notifyTelegram.checked = row.getAttribute('data-notify-telegram') === '1';
@@ -304,6 +323,21 @@ export function accountPage(options: {
         }
 
         cancelBtn.addEventListener('click', resetForm);
+
+        var prefill = ${JSON.stringify(prefill || null)};
+        if (prefill) {
+          if (locationCombo && prefill.locationId) {
+            locationCombo.__setValue(prefill.locationId, prefill.locationLabel || '');
+          }
+          if (prefill.salaryRange) {
+            form.salaryRange.value = prefill.salaryRange;
+          }
+          if (termCombo) {
+            var termInput = termCombo.querySelector('[data-combobox-input]');
+            if (termInput) termInput.focus();
+          }
+          form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
 
         var linkBtn = document.getElementById('telegram-link');
         if (linkBtn) {
@@ -343,6 +377,7 @@ export function accountPage(options: {
           var payload = {
             searchTermId: searchTermId,
             locationId: locationId,
+            salaryRange: form.salaryRange.value || null,
             notifyEmail: form.notifyEmail.checked,
             notifyTelegram: form.notifyTelegram.checked
           };

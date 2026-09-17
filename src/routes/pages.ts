@@ -571,9 +571,14 @@ pages.get('/favorites', async (c) => {
 
 pages.get('/account', async (c) => {
   const user = c.get('user');
-  if (!user) return c.redirect(`/login?next=${encodeURIComponent('/account')}`, 302);
+  const url = new URL(c.req.url);
+  const nextPath = url.pathname + (url.search || '');
+  if (!user) return c.redirect(`/login?next=${encodeURIComponent(nextPath)}`, 302);
 
-  const [subscriptionIdsResult, searchTermsResult, locationsResult] = await Promise.all([
+  const prefillLocationSlug = url.searchParams.get('location') || '';
+  const prefillSalary = url.searchParams.get('salary') || '';
+
+  const [subscriptionIdsResult, searchTermsResult, locationsResult, prefillLocationRow] = await Promise.all([
     c.env.DB.prepare(
       'SELECT id FROM subscriptions WHERE user_id = ? ORDER BY created_at DESC'
     ).bind(user.id).all<{ id: number }>(),
@@ -587,6 +592,11 @@ pages.get('/account', async (c) => {
        WHERE is_active = 1 AND job_count > 0
        ORDER BY job_count DESC LIMIT 200`
     ).all<{ id: number; name_cn: string; slug: string }>(),
+    prefillLocationSlug
+      ? c.env.DB.prepare(
+          `SELECT id, name_cn FROM locations WHERE slug = ? AND is_active = 1`
+        ).bind(prefillLocationSlug).first<{ id: number; name_cn: string }>()
+      : Promise.resolve(null),
   ]);
 
   const subscriptionIds = (subscriptionIdsResult.results || []).map((row) => row.id);
@@ -594,6 +604,7 @@ pages.get('/account', async (c) => {
     id: number;
     search_term_id: number;
     location_id: number | null;
+    salary_range: string | null;
     notify_email: number;
     notify_telegram: number;
     term_cn: string | null;
@@ -602,7 +613,7 @@ pages.get('/account', async (c) => {
 
   if (subscriptionIds.length > 0) {
     const hydrated = await c.env.DB.prepare(`
-      SELECT s.id, s.search_term_id, s.location_id, s.notify_email, s.notify_telegram,
+      SELECT s.id, s.search_term_id, s.location_id, s.salary_range, s.notify_email, s.notify_telegram,
         st.term_cn, lo.name_cn as location_name_cn
       FROM subscriptions s
       LEFT JOIN search_terms st ON s.search_term_id = st.id
@@ -613,11 +624,20 @@ pages.get('/account', async (c) => {
     subscriptions = (hydrated.results || []) as typeof subscriptions;
   }
 
+  const prefill = prefillLocationRow || prefillSalary
+    ? {
+        locationId: prefillLocationRow?.id ?? null,
+        locationLabel: prefillLocationRow?.name_cn ?? null,
+        salaryRange: prefillSalary || null,
+      }
+    : undefined;
+
   return c.html(accountPage({
     user,
     subscriptions,
     searchTerms: (searchTermsResult.results || []) as Array<{ id: number; term_cn: string; slug: string }>,
     locations: (locationsResult.results || []) as Array<{ id: number; name_cn: string; slug: string }>,
+    prefill,
     gaId: c.env.GA_ID,
     staticUrl: c.env.STATIC_URL,
   }));
@@ -649,7 +669,7 @@ pages.get('/users', async (c) => {
   let subsByUser = new Map<number, AdminUserSubscription[]>();
   if (userIds.length > 0) {
     const subsResult = await c.env.DB.prepare(`
-      SELECT s.user_id, s.notify_email, s.notify_telegram,
+      SELECT s.user_id, s.salary_range, s.notify_email, s.notify_telegram,
         st.term_cn, lo.name_cn as location_name_cn
       FROM subscriptions s
       LEFT JOIN search_terms st ON s.search_term_id = st.id
@@ -658,6 +678,7 @@ pages.get('/users', async (c) => {
       ORDER BY s.created_at DESC
     `).all<{
       user_id: number;
+      salary_range: string | null;
       notify_email: number;
       notify_telegram: number;
       term_cn: string | null;
@@ -668,6 +689,7 @@ pages.get('/users', async (c) => {
       list.push({
         term_cn: row.term_cn,
         location_name_cn: row.location_name_cn,
+        salary_range: row.salary_range,
         notify_email: row.notify_email,
         notify_telegram: row.notify_telegram,
       });

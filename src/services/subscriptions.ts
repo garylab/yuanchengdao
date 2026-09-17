@@ -2,6 +2,7 @@ import { Env } from '../types';
 import { formatSalary } from '../utils/helpers';
 import { sendSubscriptionAlertEmail, SubscriptionJobAlert } from './email';
 import { sendTelegramDirectMessage } from './telegramDm';
+import { jobMatchesSalaryRange } from '../constants/salary';
 
 type NewJobRow = {
   id: number;
@@ -18,6 +19,8 @@ type NewJobRow = {
   country_name_cn: string | null;
 };
 
+
+
 type MatchingSubscription = {
   id: number;
   user_id: number;
@@ -27,6 +30,7 @@ type MatchingSubscription = {
   telegram_chat_id: string | null;
   search_term_id: number;
   location_id: number | null;
+  salary_range: string | null;
 };
 
 export type SubscriptionChannel = 'email' | 'telegram';
@@ -72,7 +76,7 @@ export async function deliverSubscriptionAlerts(
   if (subscriptionIds.length === 0) return;
 
   const subscriptionsResult = await env.DB.prepare(`
-    SELECT s.id, s.user_id, s.search_term_id, s.location_id, s.notify_email, s.notify_telegram,
+    SELECT s.id, s.user_id, s.search_term_id, s.location_id, s.salary_range, s.notify_email, s.notify_telegram,
       u.email, u.telegram_chat_id
     FROM subscriptions s
     JOIN users u ON u.id = s.user_id
@@ -101,6 +105,7 @@ export async function deliverSubscriptionAlerts(
     for (const subscription of subscriptions) {
       if (subscription.search_term_id !== job.search_term_id) continue;
       if (subscription.location_id != null && subscription.location_id !== job.location_id) continue;
+      if (!jobMatchesSalaryRange(subscription.salary_range, job.salary_lower, job.salary_upper)) continue;
       if (deliveredSet.has(`${subscription.id}:${job.id}`)) continue;
       if (channel === 'telegram' && !subscription.telegram_chat_id) continue;
       pending.push({ subscription, job });

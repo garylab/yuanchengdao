@@ -2,10 +2,12 @@ import { AuthUser } from '../types';
 import { layout } from './layout';
 import { breadcrumb, escapeHtml } from '../utils/helpers';
 import { userCenterShell } from './userCenter';
+import { salaryLabel } from '../constants/salary';
 
 export type AdminUserSubscription = {
   term_cn: string | null;
   location_name_cn: string | null;
+  salary_range: string | null;
   notify_email: number;
   notify_telegram: number;
 };
@@ -41,7 +43,8 @@ export function usersPage(options: {
             s.notify_telegram ? 'Telegram' : null,
           ].filter(Boolean).join(' / ') || '无';
           const loc = s.location_name_cn ? escapeHtml(s.location_name_cn) : '不限';
-          return `<li class="text-xs text-surface-600">${escapeHtml(s.term_cn || '分类')} · ${loc} · ${channels}</li>`;
+          const salary = escapeHtml(salaryLabel(s.salary_range));
+          return `<li class="text-xs text-surface-600">${escapeHtml(s.term_cn || '分类')} · ${loc} · 薪资${salary} · ${channels}</li>`;
         }).join('')}</ul>`
       : `<span class="text-xs text-surface-400">无</span>`;
 
