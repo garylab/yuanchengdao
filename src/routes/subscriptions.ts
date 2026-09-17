@@ -97,6 +97,71 @@ subscriptions.post('/api/subscriptions', async (c) => {
   }
 });
 
+subscriptions.patch('/api/subscriptions/:id', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.json({ error: '请先登录' }, 401);
+
+  const id = parseInt(c.req.param('id'), 10);
+  if (!Number.isFinite(id) || id <= 0) return c.json({ error: '无效订阅' }, 400);
+
+  const body = await c.req.json<{
+    searchTermId?: number;
+    locationId?: number | null;
+    notifyEmail?: boolean;
+    notifyTelegram?: boolean;
+  }>().catch(() => null);
+  if (!body) return c.json({ error: '无效请求' }, 400);
+
+  const existing = await c.env.DB.prepare(
+    'SELECT id FROM subscriptions WHERE id = ? AND user_id = ?'
+  ).bind(id, user.id).first<{ id: number }>();
+  if (!existing) return c.json({ error: '订阅不存在' }, 404);
+
+  const searchTermId = Number(body.searchTermId);
+  if (!Number.isFinite(searchTermId) || searchTermId <= 0) {
+    return c.json({ error: '请选择职位分类' }, 400);
+  }
+
+  const locationId = body.locationId == null || body.locationId === 0
+    ? null
+    : Number(body.locationId);
+  if (locationId !== null && (!Number.isFinite(locationId) || locationId <= 0)) {
+    return c.json({ error: '地点无效' }, 400);
+  }
+
+  const notifyEmail = body.notifyEmail !== false ? 1 : 0;
+  const notifyTelegram = body.notifyTelegram === true ? 1 : 0;
+  if (!notifyEmail && !notifyTelegram) {
+    return c.json({ error: '请至少选择一种通知方式' }, 400);
+  }
+  if (notifyTelegram && !user.telegram_chat_id) {
+    return c.json({ error: '请先绑定 Telegram' }, 400);
+  }
+
+  const term = await c.env.DB.prepare(
+    'SELECT id FROM search_terms WHERE id = ? AND is_active = 1'
+  ).bind(searchTermId).first<{ id: number }>();
+  if (!term) return c.json({ error: '职位分类不存在' }, 400);
+
+  if (locationId !== null) {
+    const location = await c.env.DB.prepare(
+      'SELECT id FROM locations WHERE id = ? AND is_active = 1'
+    ).bind(locationId).first<{ id: number }>();
+    if (!location) return c.json({ error: '地点不存在' }, 400);
+  }
+
+  try {
+    await c.env.DB.prepare(`
+      UPDATE subscriptions
+      SET search_term_id = ?, location_id = ?, notify_email = ?, notify_telegram = ?
+      WHERE id = ? AND user_id = ?
+    `).bind(searchTermId, locationId, notifyEmail, notifyTelegram, id, user.id).run();
+    return c.json({ ok: true });
+  } catch {
+    return c.json({ error: '该订阅已存在' }, 409);
+  }
+});
+
 subscriptions.delete('/api/subscriptions/:id', async (c) => {
   const user = c.get('user');
   if (!user) return c.json({ error: '请先登录' }, 401);
