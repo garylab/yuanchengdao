@@ -29,9 +29,18 @@ type MatchingSubscription = {
   location_id: number | null;
 };
 
-export async function deliverSubscriptionAlerts(env: Env): Promise<void> {
+export type SubscriptionChannel = 'email' | 'telegram';
+
+export async function deliverSubscriptionAlerts(
+  env: Env,
+  channel: SubscriptionChannel,
+): Promise<void> {
+  const windowHours = channel === 'email' ? 24 : 1;
+  const channelColumn = channel === 'email' ? 'email_delivered_at' : 'telegram_delivered_at';
+  const notifyFlag = channel === 'email' ? 'notify_email' : 'notify_telegram';
+
   const idResult = await env.DB.prepare(
-    `SELECT id FROM jobs WHERE created_at >= datetime('now', '-1 hour') ORDER BY created_at DESC`
+    `SELECT id FROM jobs WHERE created_at >= datetime('now', '-${windowHours} hours') ORDER BY created_at DESC`
   ).all<{ id: number }>();
   const jobIds = (idResult.results || []).map((row) => row.id);
   if (jobIds.length === 0) return;
@@ -55,7 +64,9 @@ export async function deliverSubscriptionAlerts(env: Env): Promise<void> {
 
   const searchTermIds = [...new Set(jobsWithTerm.map((job) => job.search_term_id as number))];
   const subscriptionIdResult = await env.DB.prepare(
-    `SELECT id FROM subscriptions WHERE search_term_id IN (${searchTermIds.join(',')})`
+    `SELECT id FROM subscriptions
+     WHERE search_term_id IN (${searchTermIds.join(',')})
+       AND ${notifyFlag} = 1`
   ).all<{ id: number }>();
   const subscriptionIds = (subscriptionIdResult.results || []).map((row) => row.id);
   if (subscriptionIds.length === 0) return;
@@ -73,7 +84,8 @@ export async function deliverSubscriptionAlerts(env: Env): Promise<void> {
   const deliveredResult = await env.DB.prepare(
     `SELECT subscription_id, job_id FROM subscription_deliveries
      WHERE subscription_id IN (${subscriptionIds.join(',')})
-       AND job_id IN (${jobIds.join(',')})`
+       AND job_id IN (${jobIds.join(',')})
+       AND ${channelColumn} IS NOT NULL`
   ).all<{ subscription_id: number; job_id: number }>();
   const deliveredSet = new Set(
     (deliveredResult.results || []).map((row) => `${row.subscription_id}:${row.job_id}`),
@@ -90,6 +102,7 @@ export async function deliverSubscriptionAlerts(env: Env): Promise<void> {
       if (subscription.search_term_id !== job.search_term_id) continue;
       if (subscription.location_id != null && subscription.location_id !== job.location_id) continue;
       if (deliveredSet.has(`${subscription.id}:${job.id}`)) continue;
+      if (channel === 'telegram' && !subscription.telegram_chat_id) continue;
       pending.push({ subscription, job });
     }
   }
@@ -99,8 +112,6 @@ export async function deliverSubscriptionAlerts(env: Env): Promise<void> {
   const byUser = new Map<number, {
     email: string;
     telegramChatId: string | null;
-    notifyEmail: boolean;
-    notifyTelegram: boolean;
     jobs: Map<number, NewJobRow>;
     subscriptionJobPairs: Array<{ subscriptionId: number; jobId: number }>;
   }>();
@@ -111,15 +122,11 @@ export async function deliverSubscriptionAlerts(env: Env): Promise<void> {
       bucket = {
         email: item.subscription.email,
         telegramChatId: item.subscription.telegram_chat_id,
-        notifyEmail: false,
-        notifyTelegram: false,
         jobs: new Map(),
         subscriptionJobPairs: [],
       };
       byUser.set(item.subscription.user_id, bucket);
     }
-    if (item.subscription.notify_email) bucket.notifyEmail = true;
-    if (item.subscription.notify_telegram) bucket.notifyTelegram = true;
     bucket.jobs.set(item.job.id, item.job);
     bucket.subscriptionJobPairs.push({
       subscriptionId: item.subscription.id,
@@ -144,11 +151,9 @@ export async function deliverSubscriptionAlerts(env: Env): Promise<void> {
       };
     });
 
-    if (bucket.notifyEmail && bucket.email) {
+    if (channel === 'email' && bucket.email) {
       await sendSubscriptionAlertEmail(env, bucket.email, alertJobs);
-    }
-
-    if (bucket.notifyTelegram && bucket.telegramChatId) {
+    } else if (channel === 'telegram' && bucket.telegramChatId) {
       const baseUrl = env.SITE_URL.replace(/\/$/, '');
       const lines = alertJobs.map((job) => {
         const url = `${baseUrl}/job/${encodeURIComponent(job.slug)}?utm_source=telegram&utm_medium=subscription`;
@@ -164,7 +169,9 @@ export async function deliverSubscriptionAlerts(env: Env): Promise<void> {
     for (const pair of bucket.subscriptionJobPairs) {
       deliveryStatements.push(
         env.DB.prepare(
-          'INSERT OR IGNORE INTO subscription_deliveries (subscription_id, job_id) VALUES (?, ?)'
+          `INSERT INTO subscription_deliveries (subscription_id, job_id, ${channelColumn})
+           VALUES (?, ?, datetime('now'))
+           ON CONFLICT(subscription_id, job_id) DO UPDATE SET ${channelColumn} = datetime('now')`
         ).bind(pair.subscriptionId, pair.jobId),
       );
     }

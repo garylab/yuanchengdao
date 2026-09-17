@@ -210,11 +210,18 @@ export default {
           const message = err instanceof Error ? (err.stack || err.message) : String(err);
           console.error(`Feishu hourly digest failed: ${message}`);
         });
-        const subscriptionJob = deliverSubscriptionAlerts(env).catch((err) => {
+        const telegramSubscriptionJob = deliverSubscriptionAlerts(env, 'telegram').catch((err) => {
           const message = err instanceof Error ? (err.stack || err.message) : String(err);
-          console.error(`Subscription alerts failed: ${message}`);
+          console.error(`Telegram subscription alerts failed: ${message}`);
         });
-        const combined = Promise.all([telegramJob, feishuJob, subscriptionJob]);
+        // Daily email digest at 22:00 UTC (06:00 CST)
+        const emailSubscriptionJob = new Date().getUTCHours() === 22
+          ? deliverSubscriptionAlerts(env, 'email').catch((err) => {
+              const message = err instanceof Error ? (err.stack || err.message) : String(err);
+              console.error(`Email subscription alerts failed: ${message}`);
+            })
+          : Promise.resolve();
+        const combined = Promise.all([telegramJob, feishuJob, telegramSubscriptionJob, emailSubscriptionJob]);
         if (waitUntil) waitUntil(combined);
         else await combined;
         return;

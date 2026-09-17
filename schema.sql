@@ -216,6 +216,8 @@ CREATE TABLE IF NOT EXISTS subscription_deliveries (
   subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
   job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
   delivered_at TEXT DEFAULT (datetime('now')),
+  email_delivered_at TEXT,
+  telegram_delivered_at TEXT,
   UNIQUE(subscription_id, job_id)
 );
 
