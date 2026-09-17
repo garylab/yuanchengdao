@@ -34,15 +34,11 @@ export function layout(title: string, content: string, options?: LayoutOptions):
     { href: '/categories', label: '职位' },
   ];
   const isActive = (href: string) => href === '/' ? ap === '/' : ap.startsWith(href);
-  const leftNavItems = [
-    ...navItems,
-    ...(user ? [{ href: '/favorites', label: '收藏' }] : []),
-  ];
-  const desktopNav = leftNavItems.map(n =>
+  const desktopNav = navItems.map(n =>
     `<a href="${n.href}" class="px-2 py-1 transition no-underline ${isActive(n.href) ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">${n.label}</a>`
   ).join('\n        ');
   const postJobDesktop = `<a href="/post-job" class="px-2 py-1 transition no-underline whitespace-nowrap ${ap.startsWith('/post-job') ? 'text-brand-500 font-semibold' : 'text-brand-500 hover:text-brand-600'}">+ 发布</a>`;
-  const mobileNav = leftNavItems.map(n =>
+  const mobileNav = navItems.map(n =>
     `<a href="${n.href}" class="block px-4 py-2 text-sm no-underline ${isActive(n.href) ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">${n.label}</a>`
   ).join('\n          ');
   const postJobMobile = `<a href="/post-job" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/post-job') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-brand-500 hover:bg-brand-50 hover:text-brand-600'}">+ 发布</a>`;

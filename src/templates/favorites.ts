@@ -2,6 +2,7 @@ import { Job, AuthUser } from '../types';
 import { layout } from './layout';
 import { renderJobRow } from './jobRow';
 import { breadcrumb } from '../utils/helpers';
+import { userCenterShell } from './userCenter';
 
 export function favoritesPage(jobs: Job[], options: {
   gaId?: string;
@@ -10,7 +11,7 @@ export function favoritesPage(jobs: Job[], options: {
 }): string {
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '我的收藏', href: '/favorites' },
+    { label: '收藏', href: '/favorites' },
   ]);
 
   const list = jobs.length > 0
@@ -21,14 +22,13 @@ export function favoritesPage(jobs: Job[], options: {
         还没有收藏职位。<a href="/" class="text-brand-500 no-underline hover:underline">去逛逛</a>
       </div>`;
 
-  const content = `
-    ${bc}
-    <div class="max-w-5xl mx-auto px-4 py-6">
-      <h1 class="text-2xl font-bold mb-4">我的收藏</h1>
-      ${list}
-    </div>`;
+  const inner = `
+      <h1 class="text-2xl font-bold mb-4">收藏</h1>
+      ${list}`;
 
-  return layout('我的收藏 - 远程岛', content, {
+  const content = `${bc}${userCenterShell('/favorites', inner)}`;
+
+  return layout('收藏 - 远程岛', content, {
     gaId: options.gaId,
     staticUrl: options.staticUrl,
     description: '查看你在远程岛收藏的远程职位。',

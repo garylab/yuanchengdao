@@ -1,6 +1,7 @@
 import { AuthUser } from '../types';
 import { layout } from './layout';
 import { breadcrumb, escapeHtml } from '../utils/helpers';
+import { userCenterShell } from './userCenter';
 
 export type AccountSubscription = {
   id: number;
@@ -35,7 +36,7 @@ export function accountPage(options: {
   const { user, subscriptions, searchTerms, locations } = options;
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '账户', href: '/account' },
+    { label: '我的', href: '/account' },
   ]);
 
   const telegramStatus = user.telegram_chat_id
@@ -78,11 +79,9 @@ export function accountPage(options: {
     ],
   };
 
-  const content = `
-    ${bc}
-    <div class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+  const inner = `
       <div class="bg-white rounded shadow-sm border border-surface-200 p-6">
-        <h1 class="text-2xl font-bold mb-4">账户</h1>
+        <h1 class="text-2xl font-bold mb-4">我的</h1>
         <div class="text-sm text-surface-600 space-y-2">
           <div><span class="text-surface-400">邮箱</span> · ${escapeHtml(user.email)}</div>
           ${user.name ? `<div><span class="text-surface-400">昵称</span> · ${escapeHtml(user.name)}</div>` : ''}
@@ -142,7 +141,6 @@ export function accountPage(options: {
           <button type="submit" id="subscription-submit" class="bg-brand-500 text-white rounded px-4 py-2 text-sm font-medium hover:bg-brand-600 transition">添加订阅</button>
         </form>
       </div>
-    </div>
     <script>
       window.__comboboxData = ${JSON.stringify(comboboxData)};
     </script>
@@ -412,7 +410,9 @@ export function accountPage(options: {
       })();
     </script>`;
 
-  return layout('账户 - 远程岛', content, {
+  const content = `${bc}${userCenterShell('/account', inner)}`;
+
+  return layout('我的 - 远程岛', content, {
     gaId: options.gaId,
     staticUrl: options.staticUrl,
     description: '管理远程岛账户、职位订阅与 Telegram 绑定。',
