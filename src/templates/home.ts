@@ -204,16 +204,6 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
       </div>
 
       ${hasFilters || query ? `<a href="/" class="text-xs text-surface-400 hover:text-brand-500 transition">清除</a>` : ''}
-      ${user ? (() => {
-        const params = new URLSearchParams();
-        if (locationSlug) params.set('location', locationSlug);
-        if (salaryRange) params.set('salary', salaryRange);
-        const href = params.toString() ? `/account?${params.toString()}` : '/account';
-        const title = hasFilters ? '把当前筛选条件加为订阅' : '添加订阅';
-        return `<a href="${href}" class="inline-flex items-center gap-1 text-xs text-brand-500 hover:text-brand-600 transition no-underline" title="${title}">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>${hasFilters ? '订阅此筛选' : '添加订阅'}
-        </a>`;
-      })() : ''}
 
       <div class="flex items-center gap-4 ml-auto text-xs">
         ${feishuGroupLink ? `
