@@ -9,8 +9,6 @@ import subscriptions from './routes/subscriptions';
 import telegram from './routes/telegram';
 import feedback from './routes/feedback';
 import { syncJobs } from './services/jobSync';
-import { postHourlyTelegramDigest } from './services/telegram';
-import { postHourlyFeishuDigest } from './services/feishu';
 import { deliverSubscriptionAlerts } from './services/subscriptions';
 import { expiredCutoff } from './utils/helpers';
 import { appScript, appScriptAssetFilename } from './public/app';
@@ -205,14 +203,6 @@ export default {
         : '';
 
       if (cron === '0 22,23,0-15 * * *') {
-        const telegramJob = postHourlyTelegramDigest(env).catch((err) => {
-          const message = err instanceof Error ? (err.stack || err.message) : String(err);
-          console.error(`Telegram hourly digest failed: ${message}`);
-        });
-        const feishuJob = postHourlyFeishuDigest(env).catch((err) => {
-          const message = err instanceof Error ? (err.stack || err.message) : String(err);
-          console.error(`Feishu hourly digest failed: ${message}`);
-        });
         const telegramSubscriptionJob = deliverSubscriptionAlerts(env, 'telegram').catch((err) => {
           const message = err instanceof Error ? (err.stack || err.message) : String(err);
           console.error(`Telegram subscription alerts failed: ${message}`);
@@ -224,7 +214,7 @@ export default {
               console.error(`Email subscription alerts failed: ${message}`);
             })
           : Promise.resolve();
-        const combined = Promise.all([telegramJob, feishuJob, telegramSubscriptionJob, emailSubscriptionJob]);
+        const combined = Promise.all([telegramSubscriptionJob, emailSubscriptionJob]);
         if (waitUntil) waitUntil(combined);
         else await combined;
         return;
