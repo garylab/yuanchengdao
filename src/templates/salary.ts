@@ -34,7 +34,7 @@ export function salaryPage(
 ): string {
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '薪资报告', href: '/salary-reports' },
+    { label: '薪资报告', href: '/salary-report' },
   ]);
 
   const maxBucket = Math.max(1, ...overall.buckets.map((b) => b.count));
@@ -110,9 +110,9 @@ export function salaryPage(
     gaId: opts.gaId,
     description: `远程工作薪资报告：按职位统计近 30 天远程岗位的月薪中位数、25%/75% 分位与分布，统一折算为人民币，帮助你判断报价是否合理。`,
     keywords: '远程工作薪资,远程岗位工资,remote salary,薪资报告,远程岛',
-    canonical: opts.siteUrl ? `${opts.siteUrl}/salary-reports` : undefined,
+    canonical: opts.siteUrl ? `${opts.siteUrl}/salary-report` : undefined,
     staticUrl: opts.staticUrl,
-    activePath: '/salary-reports',
+    activePath: '/salary-report',
     user: opts.user,
   });
 }

@@ -913,7 +913,7 @@ function legacyRedirect(c: { req: { url: string }; redirect: (to: string, status
 }
 pages.get('/english/:level', (c) => legacyRedirect(c, `/jobs/english-${encodeURIComponent(c.req.param('level'))}`));
 pages.get('/chinese', (c) => legacyRedirect(c, '/jobs/chinese'));
-pages.get('/salary', (c) => legacyRedirect(c, '/salary-reports'));
+pages.get('/salary', (c) => legacyRedirect(c, '/salary-report'));
 pages.get('/weekly', (c) => legacyRedirect(c, '/weekly-reports'));
 pages.get('/weekly/:week', (c) => legacyRedirect(c, `/weekly-reports/${encodeURIComponent(c.req.param('week'))}`));
 pages.get('/jobs', (c) => legacyRedirect(c, '/'));
@@ -1048,7 +1048,7 @@ function percentile(sorted: number[], p: number): number {
   return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
 }
 
-pages.get('/salary-reports', async (c) => {
+pages.get('/salary-report', async (c) => {
   // The full scan + percentile maths is identical for everyone; recompute at most once an hour.
   const stats = await cachedJson('salary:stats', FRAGMENT_TTL.long, () => computeSalaryStats(c.env), waitUntilOf(c));
   return c.html(salaryPage(stats.rows, stats.summary, { gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL, user: c.get('user') }));

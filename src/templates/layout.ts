@@ -129,7 +129,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
             <a href="/about" class="ml-2 no-underline transition ${ap.startsWith('/about') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">关于</a>
             <a href="/feedback" class="ml-2 no-underline transition ${ap.startsWith('/feedback') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">意见反馈</a>
             <a href="/weekly-reports" class="ml-2 no-underline transition ${ap.startsWith('/weekly-reports') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">周报</a>
-            <a href="/salary-reports" class="ml-2 no-underline transition ${ap.startsWith('/salary-reports') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">薪资</a>
+            <a href="/salary-report" class="ml-2 no-underline transition ${ap.startsWith('/salary-report') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">薪资</a>
             <a href="/jobs/english-none" class="ml-2 no-underline transition ${ap.startsWith('/jobs/english-') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">未标明英语要求</a>
             <a href="/jobs/chinese" class="ml-2 no-underline transition ${ap.startsWith('/jobs/chinese') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">中文岗位</a>
           </div>
