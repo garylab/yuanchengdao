@@ -113,6 +113,7 @@ app.get('/sitemap-pages.xml', (c) => {
   <url><loc>${site}/about</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
   <url><loc>${site}/post-job</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>${site}/salary</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>${site}/chinese</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
   <url><loc>${site}/weekly</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>${site}/feedback</loc><changefreq>monthly</changefreq><priority>0.2</priority></url>
 ${ENGLISH_LEVEL_GROUPS.map((g) => `  <url><loc>${site}/english/${g.slug}</loc><changefreq>daily</changefreq><priority>0.8</priority></url>`).join('\n')}

@@ -131,6 +131,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
             <a href="/weekly" class="ml-2 no-underline transition ${ap.startsWith('/weekly') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">周报</a>
             <a href="/salary" class="ml-2 no-underline transition ${ap.startsWith('/salary') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">薪资</a>
             <a href="/english/none" class="ml-2 no-underline transition ${ap.startsWith('/english') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">未标明英语要求</a>
+            <a href="/chinese" class="ml-2 no-underline transition ${ap.startsWith('/chinese') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">中文岗位</a>
           </div>
           
         </div>

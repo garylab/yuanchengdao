@@ -136,7 +136,6 @@ interface HomePageOptions {
   countrySlug?: string;
   locationSlug?: string;
   salaryRange?: string;
-  chineseOnly?: boolean;
   gaId?: string;
   siteUrl?: string;
   staticUrl?: string;
@@ -154,7 +153,7 @@ interface HomePageOptions {
 }
 
 export function homePage(jobs: Job[], countries: CountryFilter[], locations: LocationFilter[], page: number, hasMore: boolean, opts: HomePageOptions = {}): string {
-  const { query, countrySlug, locationSlug, salaryRange = '', chineseOnly = false, gaId, siteUrl, staticUrl, topSearchTerms = [], topLocations = [], feishuGroupLink, telegramChannelUrl, user, favoritedJobIds, newCompanies = [], topSalaryJobs = [], recommended = [], chineseFriendlyCount = 0, noEnglishCount = 0 } = opts;
+  const { query, countrySlug, locationSlug, salaryRange = '', gaId, siteUrl, staticUrl, topSearchTerms = [], topLocations = [], feishuGroupLink, telegramChannelUrl, user, favoritedJobIds, newCompanies = [], topSalaryJobs = [], recommended = [], chineseFriendlyCount = 0, noEnglishCount = 0 } = opts;
   const activeLocation = locationSlug ? locations.find(l => l.slug === locationSlug) : null;
 
   const locationOptions = locations.map(l =>
@@ -169,7 +168,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
     `<li data-value="${s.value}" data-label="${s.label}" class="filter-option px-3 py-2 cursor-pointer hover:bg-brand-50 text-sm ${salaryRange === s.value ? 'bg-brand-50 text-brand-600 font-medium' : 'text-surface-700'}">${s.label}</li>`
   ).join('');
 
-  const hasFilters = !!(locationSlug || salaryRange || chineseOnly);
+  const hasFilters = !!(locationSlug || salaryRange);
   const hasShortcuts = topLocations.length > 0 || topSearchTerms.length > 0;
   const filterBar = `
     <div class="px-4 py-3 flex flex-wrap items-center gap-2">
@@ -210,7 +209,6 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
         </div>
       </div>
 
-      ${chineseOnly ? `<span class="tag-pill bg-rose-50 text-rose-700 text-xs">🇨🇳 中文优先</span>` : ''}
       ${hasFilters || query ? `<a href="/" class="text-xs text-surface-400 hover:text-brand-500 transition">清除</a>` : ''}
       ${(() => {
         const params = new URLSearchParams();
@@ -261,7 +259,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
   const quickEntries = showDiscovery ? `
     <div class="max-w-5xl mx-auto mt-3 flex flex-wrap gap-2 text-xs">
       <a href="/english/none" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">🗣️ 未标明英语要求 <span class="text-surface-400">${noEnglishCount}</span></a>
-      <a href="/?chinese=1" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">🇨🇳 中文优先 <span class="text-surface-400">${chineseFriendlyCount}</span></a>
+      <a href="/chinese" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">🇨🇳 中文岗位 <span class="text-surface-400">${chineseFriendlyCount}</span></a>
       <a href="/salary" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">💰 薪资报告</a>
       <a href="/weekly" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">📰 本周周报</a>
     </div>` : '';
@@ -323,7 +321,6 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
     countrySlug ? `country=${countrySlug}` : '',
     locationSlug ? `location=${locationSlug}` : '',
     salaryRange ? `salary=${encodeURIComponent(salaryRange)}` : '',
-    chineseOnly ? 'chinese=1' : '',
   ].filter(Boolean);
   const filterSuffix = filterParts.join('&');
   const paginationSuffix = filterSuffix ? '&' + filterSuffix : '';
@@ -338,7 +335,6 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
   if (query) subParts.push(`${query} 相关远程工作`);
   if (activeLocation) subParts.push(`${activeLocation.name_cn}远程岗位`);
   if (activeSalary && salaryRange) subParts.push(`薪资${activeSalary.label}`);
-  if (chineseOnly) subParts.push('中文优先远程工作');
   if (page > 1) subParts.push(`第${page}页`);
   const pageTitle = subParts.length > 0
     ? `${subParts.join(' - ')} - 远程岛`
@@ -354,7 +350,6 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
   if (countrySlug) canonicalParams.push(`country=${countrySlug}`);
   if (locationSlug) canonicalParams.push(`location=${locationSlug}`);
   if (salaryRange) canonicalParams.push(`salary=${encodeURIComponent(salaryRange)}`);
-  if (chineseOnly) canonicalParams.push('chinese=1');
   if (query) canonicalParams.push(`q=${encodeURIComponent(query)}`);
   if (page > 1) canonicalParams.push(`page=${page}`);
   const canonicalPath = canonicalParams.length > 0 ? `/?${canonicalParams.join('&')}` : '/';

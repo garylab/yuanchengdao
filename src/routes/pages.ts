@@ -17,6 +17,7 @@ import { usersPage, AdminUserRow, AdminUserSubscription } from '../templates/use
 import { feedbackPage } from '../templates/feedback';
 import { adminFeedbackPage, AdminFeedbackRow } from '../templates/adminFeedback';
 import { englishLevelPage } from '../templates/englishLevel';
+import { chineseJobsPage } from '../templates/chinese';
 import { countryPage, CountryPageInfo } from '../templates/country';
 import { salaryPage, SalaryStatRow } from '../templates/salary';
 import { weeklyPage } from '../templates/weekly';
@@ -56,7 +57,9 @@ pages.get('/', async (c) => {
   const countrySlug = url.searchParams.get('country') || '';
   const locationSlug = url.searchParams.get('location') || '';
   const salaryRange = url.searchParams.get('salary') || '';
-  const chineseOnly = url.searchParams.get('chinese') === '1';
+  if (url.searchParams.get('chinese') === '1') {
+    return c.redirect(`/chinese${page > 1 ? `?page=${page}` : ''}`, 301);
+  }
   const limit = 30;
   const offset = (page - 1) * limit;
 
@@ -96,8 +99,6 @@ pages.get('/', async (c) => {
       filterParams.push(salaryMin);
     }
   }
-  if (valid && chineseOnly) filterClauses.push('chinese_friendly = 1');
-
   if (valid) {
     if (query) {
       const rankedIds = await hybridSearchJobIds(c.env, query, cutoff);
@@ -180,7 +181,7 @@ pages.get('/', async (c) => {
     favoritedJobIds = new Set((favoriteResult.results || []).map((row) => row.job_id));
   }
 
-  const showDiscovery = page === 1 && !query && !countrySlug && !locationSlug && !salaryRange && !chineseOnly;
+  const showDiscovery = page === 1 && !query && !countrySlug && !locationSlug && !salaryRange;
   let newCompanies: Array<{ name: string; slug: string; job_count: number }> = [];
   let topSalaryJobs: Array<{ slug: string; title: string; company_name: string | null; salary_label: string }> = [];
   let recommended: Array<{ slug: string; title: string; company_name: string | null; location_label: string }> = [];
@@ -230,7 +231,7 @@ pages.get('/', async (c) => {
   }
 
   const html = homePage(jobs, countries, locations, page, hasMore, {
-    query, countrySlug, locationSlug, salaryRange, chineseOnly,
+    query, countrySlug, locationSlug, salaryRange,
     gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL,
     topSearchTerms, topLocations,
     feishuGroupLink: c.env.FEISHU_GROUP_LINK,
@@ -910,6 +911,36 @@ pages.get('/english/:level', async (c) => {
   }
 
   return c.html(englishLevelPage(group, jobs, page, hasMore, counts, {
+    gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL, user: c.get('user'),
+  }));
+});
+
+pages.get('/chinese', async (c) => {
+  const url = new URL(c.req.url);
+  const { page, redirectPath } = normalizedListPage(url, c.env);
+  if (redirectPath) return c.redirect(redirectPath, 302);
+  const listPageCap = maxListPage(c.env);
+  const limit = 30;
+  const offset = (page - 1) * limit;
+  const cutoff = activeCutoff();
+
+  const [idResult, totalRow] = await Promise.all([
+    c.env.DB.prepare(
+      'SELECT id FROM jobs WHERE chinese_friendly = 1 AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    ).bind(cutoff, limit + 1, offset).all<{ id: number }>(),
+    c.env.DB.prepare('SELECT COUNT(*) as c FROM jobs WHERE chinese_friendly = 1 AND posted_at >= ?').bind(cutoff).first<{ c: number }>(),
+  ]);
+  const allIds = (idResult.results || []).map((r) => r.id);
+  const hasMoreRaw = allIds.length > limit;
+  const hasMore = hasMoreRaw && page < listPageCap;
+  const jobIds = hasMoreRaw ? allIds.slice(0, limit) : allIds;
+  let jobs: Job[] = [];
+  if (jobIds.length > 0) {
+    const jobsResult = await c.env.DB.prepare(`${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.created_at DESC`).all();
+    jobs = ((jobsResult.results || []) as unknown as Job[]).map((j) => ({ ...j, company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL) }));
+  }
+
+  return c.html(chineseJobsPage(jobs, page, hasMore, totalRow?.c ?? 0, {
     gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL, user: c.get('user'),
   }));
 });
