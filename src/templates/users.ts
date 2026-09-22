@@ -44,7 +44,7 @@ export function usersPage(options: {
           ].filter(Boolean).join(' / ') || '无';
           const loc = s.location_name_cn ? escapeHtml(s.location_name_cn) : '不限';
           const salary = escapeHtml(salaryLabel(s.salary_range));
-          return `<li class="text-xs text-surface-600">${escapeHtml(s.term_cn || '分类')} · ${loc} · 薪资${salary} · ${channels}</li>`;
+          return `<li class="text-xs text-surface-600">${escapeHtml(s.term_cn || '职位')} · ${loc} · 薪资${salary} · ${channels}</li>`;
         }).join('')}</ul>`
       : `<span class="text-xs text-surface-400">无</span>`;
 

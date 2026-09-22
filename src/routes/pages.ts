@@ -58,7 +58,7 @@ pages.get('/', async (c) => {
   const locationSlug = url.searchParams.get('location') || '';
   const salaryRange = url.searchParams.get('salary') || '';
   if (url.searchParams.get('chinese') === '1') {
-    return c.redirect(`/chinese${page > 1 ? `?page=${page}` : ''}`, 301);
+    return c.redirect(`/jobs/chinese${page > 1 ? `?page=${page}` : ''}`, 301);
   }
   const limit = 30;
   const offset = (page - 1) * limit;
@@ -876,8 +876,52 @@ pages.get('/admin/feedback', async (c) => {
   }));
 });
 
-pages.get('/english/:level', async (c) => {
-  const group = findEnglishLevelGroup(c.req.param('level'));
+// Legacy URLs: keep old links/search results working with permanent redirects.
+function legacyRedirect(c: { req: { url: string }; redirect: (to: string, status: 301) => Response }, to: string): Response {
+  const search = new URL(c.req.url).search;
+  return c.redirect(`${to}${search}`, 301);
+}
+pages.get('/english/:level', (c) => legacyRedirect(c, `/jobs/english-${encodeURIComponent(c.req.param('level'))}`));
+pages.get('/chinese', (c) => legacyRedirect(c, '/jobs/chinese'));
+pages.get('/salary', (c) => legacyRedirect(c, '/salary-reports'));
+pages.get('/weekly', (c) => legacyRedirect(c, '/weekly-reports'));
+pages.get('/weekly/:week', (c) => legacyRedirect(c, `/weekly-reports/${encodeURIComponent(c.req.param('week'))}`));
+pages.get('/jobs', (c) => legacyRedirect(c, '/'));
+
+pages.get('/jobs/chinese', async (c) => {
+  const url = new URL(c.req.url);
+  const { page, redirectPath } = normalizedListPage(url, c.env);
+  if (redirectPath) return c.redirect(redirectPath, 302);
+  const listPageCap = maxListPage(c.env);
+  const limit = 30;
+  const offset = (page - 1) * limit;
+  const cutoff = activeCutoff();
+
+  const [idResult, totalRow] = await Promise.all([
+    c.env.DB.prepare(
+      'SELECT id FROM jobs WHERE chinese_friendly = 1 AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    ).bind(cutoff, limit + 1, offset).all<{ id: number }>(),
+    c.env.DB.prepare('SELECT COUNT(*) as c FROM jobs WHERE chinese_friendly = 1 AND posted_at >= ?').bind(cutoff).first<{ c: number }>(),
+  ]);
+  const allIds = (idResult.results || []).map((r) => r.id);
+  const hasMoreRaw = allIds.length > limit;
+  const hasMore = hasMoreRaw && page < listPageCap;
+  const jobIds = hasMoreRaw ? allIds.slice(0, limit) : allIds;
+  let jobs: Job[] = [];
+  if (jobIds.length > 0) {
+    const jobsResult = await c.env.DB.prepare(`${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.created_at DESC`).all();
+    jobs = ((jobsResult.results || []) as unknown as Job[]).map((j) => ({ ...j, company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL) }));
+  }
+
+  return c.html(chineseJobsPage(jobs, page, hasMore, totalRow?.c ?? 0, {
+    gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL, user: c.get('user'),
+  }));
+});
+
+// Hono params must span a whole segment, so `/jobs/english-<level>` is matched here and parsed by hand.
+pages.get('/jobs/:collection', async (c) => {
+  const match = /^english-(.+)$/.exec(c.req.param('collection'));
+  const group = match ? findEnglishLevelGroup(match[1]) : null;
   if (!group) return c.notFound();
   const url = new URL(c.req.url);
   const { page, redirectPath } = normalizedListPage(url, c.env);
@@ -914,36 +958,6 @@ pages.get('/english/:level', async (c) => {
   }
 
   return c.html(englishLevelPage(group, jobs, page, hasMore, counts, {
-    gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL, user: c.get('user'),
-  }));
-});
-
-pages.get('/chinese', async (c) => {
-  const url = new URL(c.req.url);
-  const { page, redirectPath } = normalizedListPage(url, c.env);
-  if (redirectPath) return c.redirect(redirectPath, 302);
-  const listPageCap = maxListPage(c.env);
-  const limit = 30;
-  const offset = (page - 1) * limit;
-  const cutoff = activeCutoff();
-
-  const [idResult, totalRow] = await Promise.all([
-    c.env.DB.prepare(
-      'SELECT id FROM jobs WHERE chinese_friendly = 1 AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
-    ).bind(cutoff, limit + 1, offset).all<{ id: number }>(),
-    c.env.DB.prepare('SELECT COUNT(*) as c FROM jobs WHERE chinese_friendly = 1 AND posted_at >= ?').bind(cutoff).first<{ c: number }>(),
-  ]);
-  const allIds = (idResult.results || []).map((r) => r.id);
-  const hasMoreRaw = allIds.length > limit;
-  const hasMore = hasMoreRaw && page < listPageCap;
-  const jobIds = hasMoreRaw ? allIds.slice(0, limit) : allIds;
-  let jobs: Job[] = [];
-  if (jobIds.length > 0) {
-    const jobsResult = await c.env.DB.prepare(`${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')}) ORDER BY j.created_at DESC`).all();
-    jobs = ((jobsResult.results || []) as unknown as Job[]).map((j) => ({ ...j, company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL) }));
-  }
-
-  return c.html(chineseJobsPage(jobs, page, hasMore, totalRow?.c ?? 0, {
     gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL, user: c.get('user'),
   }));
 });
@@ -998,7 +1012,7 @@ function percentile(sorted: number[], p: number): number {
   return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
 }
 
-pages.get('/salary', async (c) => {
+pages.get('/salary-reports', async (c) => {
   const cutoff = activeCutoff();
   const midpoint = 'CASE WHEN j.salary_lower > 0 AND j.salary_upper > 0 THEN (j.salary_lower + j.salary_upper) / 2.0 ELSE MAX(j.salary_lower, j.salary_upper) END';
   const [rowsRes, totalRes] = await Promise.all([
@@ -1052,14 +1066,14 @@ pages.get('/salary', async (c) => {
   }, { gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL, user: c.get('user') }));
 });
 
-pages.get('/weekly', async (c) => {
+pages.get('/weekly-reports', async (c) => {
   const [report, weeks] = await Promise.all([loadLatestWeeklyReport(c.env), listWeeklyReportWeeks(c.env)]);
   return c.html(weeklyPage(report, weeks, {
     gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL, user: c.get('user'), isLatest: true,
   }));
 });
 
-pages.get('/weekly/:week', async (c) => {
+pages.get('/weekly-reports/:week', async (c) => {
   const week = c.req.param('week');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(week)) return c.notFound();
   const [report, weeks] = await Promise.all([loadWeeklyReport(c.env, week), listWeeklyReportWeeks(c.env)]);

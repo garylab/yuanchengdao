@@ -59,7 +59,7 @@ export function accountPage(options: {
   const describeTarget = (s: AccountSubscription): string => {
     if (s.kind === 'keyword') return `关键词「${escapeHtml(s.query_text || '')}」`;
     if (s.kind === 'company') return `公司 ${escapeHtml(s.company_name || '')}`;
-    return escapeHtml(s.term_cn || '分类');
+    return escapeHtml(s.term_cn || '职位');
   };
 
   const subscriptionRows = subscriptions.length > 0
@@ -157,14 +157,14 @@ export function accountPage(options: {
           <div class="flex flex-wrap gap-2" id="kind-tabs">${kindTabs}</div>
 
           <div data-kind-panel="category">
-            <label class="block text-sm text-surface-600 mb-1">职位分类（必选）</label>
-            ${combobox('searchTermId', '搜索职位分类')}
+            <label class="block text-sm text-surface-600 mb-1">职位（必选）</label>
+            ${combobox('searchTermId', '搜索职位')}
           </div>
           <div data-kind-panel="keyword" class="hidden">
             <label class="block text-sm text-surface-600 mb-1">关键词（必填）</label>
             <input type="text" name="queryText" maxlength="${KEYWORD_QUERY_MAX_LENGTH}" placeholder="例如：AI infra、日语、Rust、Web3 产品经理"
               class="w-full border border-surface-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-400">
-            <p class="text-xs text-surface-400 mt-1">按语义匹配新职位的标题与描述，不局限于固定分类。</p>
+            <p class="text-xs text-surface-400 mt-1">按语义匹配新职位的标题与描述，不局限于固定职位。</p>
           </div>
           <div data-kind-panel="company" class="hidden">
             <label class="block text-sm text-surface-600 mb-1">公司（必选）</label>
@@ -427,7 +427,7 @@ export function accountPage(options: {
             notifyEmail: form.notifyEmail.checked,
             notifyTelegram: form.notifyTelegram.checked
           };
-          if (kind === 'category' && !payload.searchTermId) { showMessage('请选择职位分类', true); return; }
+          if (kind === 'category' && !payload.searchTermId) { showMessage('请选择职位', true); return; }
           if (kind === 'keyword' && (!payload.queryText || payload.queryText.length < 2)) { showMessage('请输入至少 2 个字符的关键词', true); return; }
           if (kind === 'company' && !payload.companyId) { showMessage('请选择公司', true); return; }
           var id = idInput.value;

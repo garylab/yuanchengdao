@@ -16,19 +16,19 @@ export function englishLevelPage(
 ): string {
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '英语要求', href: '/english/none' },
-    { label: group.label, href: `/english/${group.slug}` },
+    { label: '英语要求', href: '/jobs/english-none' },
+    { label: group.label, href: `/jobs/english-${group.slug}` },
   ]);
 
   const tabs = ENGLISH_LEVEL_GROUPS.map((g) => {
     const active = g.slug === group.slug;
-    return `<a href="/english/${g.slug}" class="px-3 py-1.5 rounded-full text-sm no-underline transition ${active ? 'bg-brand-500 text-white' : 'bg-white border border-surface-200 text-surface-600 hover:border-brand-300 hover:text-brand-600'}">${escapeHtml(g.label)} <span class="${active ? 'text-white/80' : 'text-surface-400'}">${counts[g.slug] ?? 0}</span></a>`;
+    return `<a href="/jobs/english-${g.slug}" class="px-3 py-1.5 rounded-full text-sm no-underline transition ${active ? 'bg-brand-500 text-white' : 'bg-white border border-surface-200 text-surface-600 hover:border-brand-300 hover:text-brand-600'}">${escapeHtml(g.label)} <span class="${active ? 'text-white/80' : 'text-surface-400'}">${counts[g.slug] ?? 0}</span></a>`;
   }).join('');
 
   const pagination = (page > 1 || hasMore) ? `
     <div class="flex justify-center gap-2 mt-6">
-      ${page > 1 ? `<a href="/english/${group.slug}?page=${page - 1}" class="px-4 py-2 rounded bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">← 上一页</a>` : ''}
-      ${hasMore ? `<a href="/english/${group.slug}?page=${page + 1}" class="px-4 py-2 rounded bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
+      ${page > 1 ? `<a href="/jobs/english-${group.slug}?page=${page - 1}" class="px-4 py-2 rounded bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">← 上一页</a>` : ''}
+      ${hasMore ? `<a href="/jobs/english-${group.slug}?page=${page + 1}" class="px-4 py-2 rounded bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
     </div>` : '';
 
   const content = `
@@ -49,9 +49,9 @@ export function englishLevelPage(
     gaId: opts.gaId,
     description: `${group.title}：${group.description} 每天更新，可直接申请。`,
     keywords: `${group.title},未标明英语要求的远程工作,英语要求,远程工作,远程岛`,
-    canonical: opts.siteUrl ? `${opts.siteUrl}/english/${group.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
+    canonical: opts.siteUrl ? `${opts.siteUrl}/jobs/english-${group.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
     staticUrl: opts.staticUrl,
-    activePath: '/english',
+    activePath: '/jobs/english-',
     user: opts.user,
   });
 }

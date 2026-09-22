@@ -1,5 +1,5 @@
 export const SUBSCRIPTION_KINDS = [
-  { value: 'category', label: '按职位分类' },
+  { value: 'category', label: '按职位' },
   { value: 'keyword', label: '按关键词' },
   { value: 'company', label: '按公司' },
 ] as const;

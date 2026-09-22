@@ -10,14 +10,14 @@ export function weeklyPage(
 ): string {
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '周报', href: '/weekly' },
+    { label: '周报', href: '/weekly-reports' },
   ]);
 
   const weekNav = weeks.length > 0 ? `
     <div class="flex flex-wrap gap-2 text-xs mb-4">
       ${weeks.map((w) => {
         const active = report && report.weekStart === w;
-        return `<a href="/weekly/${escapeHtml(w)}" class="px-2.5 py-1 rounded-full no-underline transition ${active ? 'bg-brand-500 text-white' : 'bg-white border border-surface-200 text-surface-600 hover:border-brand-300 hover:text-brand-600'}">${escapeHtml(w)} 起</a>`;
+        return `<a href="/weekly-reports/${escapeHtml(w)}" class="px-2.5 py-1 rounded-full no-underline transition ${active ? 'bg-brand-500 text-white' : 'bg-white border border-surface-200 text-surface-600 hover:border-brand-300 hover:text-brand-600'}">${escapeHtml(w)} 起</a>`;
       }).join('')}
     </div>` : '';
 
@@ -53,7 +53,7 @@ export function weeklyPage(
         </div>
         <div class="space-y-6">
           <div class="bg-white rounded shadow-sm border border-surface-200 p-5">
-            <h2 class="text-sm font-semibold text-surface-700 mb-3">活跃分类</h2>
+            <h2 class="text-sm font-semibold text-surface-700 mb-3">活跃职位</h2>
             <div class="flex flex-wrap gap-2">${catChips || '<span class="text-sm text-surface-400">—</span>'}</div>
           </div>
           <div class="bg-white rounded shadow-sm border border-surface-200 p-5">
@@ -81,7 +81,7 @@ export function weeklyPage(
         <h1 class="text-xl font-bold text-surface-900">${escapeHtml(title)}</h1>
         ${report ? `<span class="text-xs text-surface-400">在招职位 ${report.activeJobs} 个</span>` : ''}
       </div>
-      <p class="text-sm text-surface-500 mb-4">每周一汇总过去 7 天的远程职位变化：新增岗位、高薪机会、活跃分类与新入驻雇主。</p>
+      <p class="text-sm text-surface-500 mb-4">每周一汇总过去 7 天的远程职位变化：新增岗位、高薪机会、活跃职位与新入驻雇主。</p>
       ${weekNav}
       ${body}
     </div>`;
@@ -89,12 +89,12 @@ export function weeklyPage(
   return layout(`${title} - 远程岛`, content, {
     gaId: opts.gaId,
     description: report
-      ? `${report.weekStart} 至 ${report.weekEnd} 远程岛周报：新增 ${report.newJobs} 个远程职位、${report.newCompanies} 家新雇主，本周高薪 Top 10 与活跃分类一览。`
-      : '远程岛每周汇总远程职位市场变化：新增岗位、高薪机会、活跃分类与新入驻雇主。',
+      ? `${report.weekStart} 至 ${report.weekEnd} 远程岛周报：新增 ${report.newJobs} 个远程职位、${report.newCompanies} 家新雇主，本周高薪 Top 10 与活跃职位一览。`
+      : '远程岛每周汇总远程职位市场变化：新增岗位、高薪机会、活跃职位与新入驻雇主。',
     keywords: '远程工作周报,远程职位汇总,remote jobs weekly,远程岛',
-    canonical: opts.siteUrl ? `${opts.siteUrl}${opts.isLatest || !report ? '/weekly' : `/weekly/${report.weekStart}`}` : undefined,
+    canonical: opts.siteUrl ? `${opts.siteUrl}${opts.isLatest || !report ? '/weekly-reports' : `/weekly-reports/${report.weekStart}`}` : undefined,
     staticUrl: opts.staticUrl,
-    activePath: '/weekly',
+    activePath: '/weekly-reports',
     user: opts.user,
   });
 }

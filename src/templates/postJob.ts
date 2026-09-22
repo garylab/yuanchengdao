@@ -25,7 +25,7 @@ export function postJobPage(options: {
       <div class="bg-white rounded shadow-sm border border-surface-200 p-6 sm:p-8">
         <h1 class="text-2xl sm:text-3xl font-bold mb-2">发布远程职位</h1>
         <p class="text-surface-600 text-sm sm:text-base mb-2 leading-relaxed">
-          面向华人求职者免费发布远程岗位。提交后我们会在 <strong>1–2 个工作日</strong>内审核，通过后上线 30 天，并推送给订阅了相关分类的求职者。
+          面向华人求职者免费发布远程岗位。提交后我们会在 <strong>1–2 个工作日</strong>内审核，通过后上线 30 天，并推送给订阅了相关职位的求职者。
         </p>
         <ul class="text-xs text-surface-500 mb-6 space-y-1 list-disc list-inside">
           <li>仅接受可远程完成的岗位（全远程或以远程为主）</li>
@@ -225,7 +225,7 @@ export function postJobPage(options: {
 
   return layout('发布远程职位 - 远程岛', content, {
     gaId: options.gaId,
-    description: '在远程岛免费发布远程职位，1–2 个工作日审核，通过后展示 30 天并推送给订阅了相关分类的华人求职者。',
+    description: '在远程岛免费发布远程职位，1–2 个工作日审核，通过后展示 30 天并推送给订阅了相关职位的华人求职者。',
     keywords: '发布职位,远程招聘,招聘远程员工,岗位发布,远程岛招聘',
     staticUrl: options.staticUrl,
     activePath: '/post-job',

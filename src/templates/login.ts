@@ -21,7 +21,7 @@ export function loginPage(options: {
     <div class="max-w-md mx-auto px-4 py-10">
       <div class="bg-white rounded shadow-sm border border-surface-200 p-6 sm:p-8">
         <h1 class="text-2xl font-bold text-surface-900 mb-1">登录远程岛</h1>
-        <p class="text-sm text-surface-500 mb-6">收藏职位、订阅分类，第一时间收到新机会</p>
+        <p class="text-sm text-surface-500 mb-6">收藏与订阅职位，第一时间收到新机会</p>
         ${errorBanner}
 
         <a href="/api/auth/google?next=${encodeURIComponent(nextPath)}"

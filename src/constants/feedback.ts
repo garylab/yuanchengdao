@@ -1,5 +1,5 @@
 export const FEEDBACK_CATEGORIES = [
-  { value: 'category', label: '缺少职位分类', placeholder: '例如：希望增加"数据分析师"分类' },
+  { value: 'category', label: '缺少职位', placeholder: '例如：希望增加"数据分析师"职位' },
   { value: 'location', label: '缺少地区', placeholder: '例如：希望增加"阿姆斯特丹"或"荷兰"地区' },
   { value: 'source', label: '推荐职位来源', placeholder: '例如：建议抓取 xxx.com 的远程职位' },
   { value: 'bug', label: '功能异常', placeholder: '例如：搜索结果不准确 / 页面样式错乱' },

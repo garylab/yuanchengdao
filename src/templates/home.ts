@@ -258,10 +258,10 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
   const showDiscovery = page === 1 && !query && !hasFilters;
   const quickEntries = showDiscovery ? `
     <div class="max-w-5xl mx-auto mt-3 flex flex-wrap gap-2 text-xs">
-      <a href="/english/none" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">🗣️ 未标明英语要求 <span class="text-surface-400">${noEnglishCount}</span></a>
-      <a href="/chinese" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">🇨🇳 中文岗位 <span class="text-surface-400">${chineseFriendlyCount}</span></a>
-      <a href="/salary" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">💰 薪资报告</a>
-      <a href="/weekly" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">📰 本周周报</a>
+      <a href="/jobs/english-none" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">🗣️ 未标明英语要求 <span class="text-surface-400">${noEnglishCount}</span></a>
+      <a href="/jobs/chinese" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">🇨🇳 中文岗位 <span class="text-surface-400">${chineseFriendlyCount}</span></a>
+      <a href="/salary-reports" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">💰 薪资报告</a>
+      <a href="/weekly-reports" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">📰 本周周报</a>
     </div>` : '';
   const discoveryCols: string[] = [];
   if (showDiscovery && recommended.length > 0) {
@@ -274,7 +274,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
   if (showDiscovery && topSalaryJobs.length > 0) {
     discoveryCols.push(`
       <div class="bg-white rounded border border-surface-200 p-4">
-        <div class="flex items-center justify-between mb-2"><h3 class="text-sm font-bold text-surface-900">本周高薪</h3><a href="/salary" class="text-xs text-surface-400 hover:text-brand-500 no-underline">薪资报告 →</a></div>
+        <div class="flex items-center justify-between mb-2"><h3 class="text-sm font-bold text-surface-900">本周高薪</h3><a href="/salary-reports" class="text-xs text-surface-400 hover:text-brand-500 no-underline">薪资报告 →</a></div>
         <ul class="space-y-2">${topSalaryJobs.slice(0, 5).map((j) => `<li class="min-w-0"><a href="/job/${escapeHtml(j.slug)}" class="text-sm text-surface-800 hover:text-brand-600 no-underline line-clamp-1">${escapeHtml(j.title)}</a><div class="text-xs text-surface-400 truncate">${escapeHtml(j.company_name || '')} · <span class="text-green-700">${escapeHtml(j.salary_label)}</span></div></li>`).join('')}</ul>
       </div>`);
   }
@@ -286,7 +286,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
       </div>`);
   }
   const discoveryStrip = discoveryCols.length > 0
-    ? `<div class="max-w-5xl mx-auto mt-3 grid grid-cols-1 md:grid-cols-${Math.min(discoveryCols.length, 3)} gap-3">${discoveryCols.join('')}</div>`
+    ? `<div class="grid grid-cols-1 md:grid-cols-${Math.min(discoveryCols.length, 3)} gap-3 mb-3">${discoveryCols.join('')}</div>`
     : '';
 
   const jobStats = query ? `
@@ -296,9 +296,9 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
 
   const jobList = jobs.length > 0
     ? `<div class="max-w-5xl mx-auto mt-6">
+        ${discoveryStrip}
         <div class="bg-white rounded border border-surface-200 relative">${filterBar}</div>
         ${quickEntries}
-        ${discoveryStrip}
         <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden mt-3">
           ${jobStats}
           ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3, favoritedJobIds?.has(job.id) ?? false, !!user)).join('')}

@@ -21,7 +21,7 @@ export function adminSubmissionsPage(options: {
   const pending = submissions.filter((s) => s.status === 'pending');
   const others = submissions.filter((s) => s.status !== 'pending');
 
-  const termOptions = `<option value="">选择分类…</option>${searchTerms.map((t) => `<option value="${t.id}">${escapeHtml(t.term_cn)}</option>`).join('')}`;
+  const termOptions = `<option value="">选择职位…</option>${searchTerms.map((t) => `<option value="${t.id}">${escapeHtml(t.term_cn)}</option>`).join('')}`;
   const countryOptions = `<option value="">不指定国家</option>${countries.map((c) => `<option value="${escapeHtml(c.code)}">${escapeHtml(c.name_cn)}</option>`).join('')}`;
 
   const statusBadge = (s: string) => s === 'approved'
@@ -63,7 +63,7 @@ export function adminSubmissionsPage(options: {
       ${s.status === 'pending' ? `
         <div class="grid grid-cols-1 md:grid-cols-4 gap-2 items-end pt-2 border-t border-surface-100">
           <div>
-            <label class="block text-xs text-surface-500 mb-1">分类（必选）</label>
+            <label class="block text-xs text-surface-500 mb-1">职位（必选）</label>
             <select class="sub-term w-full border border-surface-200 rounded px-2 py-1.5 text-sm">${termOptions}</select>
           </div>
           <div>
@@ -115,7 +115,7 @@ export function adminSubmissionsPage(options: {
             var res;
             if (approve) {
               var termId = Number((card.querySelector('.sub-term') || {}).value || 0);
-              if (!termId) { status.textContent = '请选择分类'; btn.disabled = false; return; }
+              if (!termId) { status.textContent = '请选择职位'; btn.disabled = false; return; }
               res = await fetch('/api/job-submissions/' + id + '/approve', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

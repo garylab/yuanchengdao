@@ -144,9 +144,9 @@ jobSubmissions.post('/api/job-submissions/:id/approve', async (c) => {
   if (!body) return c.json({ error: '无效请求' }, 400);
 
   const searchTermId = Number(body.searchTermId);
-  if (!Number.isFinite(searchTermId) || searchTermId <= 0) return c.json({ error: '请选择职位分类' }, 400);
+  if (!Number.isFinite(searchTermId) || searchTermId <= 0) return c.json({ error: '请选择职位' }, 400);
   const term = await c.env.DB.prepare('SELECT id FROM search_terms WHERE id = ? AND is_active = 1').bind(searchTermId).first<{ id: number }>();
-  if (!term) return c.json({ error: '职位分类不存在' }, 400);
+  if (!term) return c.json({ error: '职位不存在' }, 400);
 
   const submission = await loadSubmission(c.env, id);
   if (!submission) return c.json({ error: '记录不存在' }, 404);

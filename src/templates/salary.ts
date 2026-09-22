@@ -34,7 +34,7 @@ export function salaryPage(
 ): string {
   const bc = breadcrumb([
     { label: '首页', href: '/' },
-    { label: '薪资报告', href: '/salary' },
+    { label: '薪资报告', href: '/salary-reports' },
   ]);
 
   const maxBucket = Math.max(1, ...overall.buckets.map((b) => b.count));
@@ -86,12 +86,12 @@ export function salaryPage(
       </div>
 
       <div class="bg-white rounded shadow-sm border border-surface-200 p-5 overflow-x-auto">
-        <h2 class="text-sm font-semibold text-surface-700 mb-3">按职位分类（样本 ≥ 5）</h2>
+        <h2 class="text-sm font-semibold text-surface-700 mb-3">按职位（样本 ≥ 5）</h2>
         <table class="w-full text-sm">
           <thead>
             <tr class="text-xs text-surface-500 border-b border-surface-200">
               <th class="py-2 pr-3 text-left font-medium">#</th>
-              <th class="py-2 pr-3 text-left font-medium">分类</th>
+              <th class="py-2 pr-3 text-left font-medium">职位</th>
               <th class="py-2 pr-3 text-right font-medium">样本</th>
               <th class="py-2 pr-3 text-right font-medium">P25</th>
               <th class="py-2 pr-3 text-right font-medium">中位数</th>
@@ -108,11 +108,11 @@ export function salaryPage(
 
   return layout('远程工作薪资报告 - 远程岛', content, {
     gaId: opts.gaId,
-    description: `远程工作薪资报告：按职位分类统计近 30 天远程岗位的月薪中位数、25%/75% 分位与分布，统一折算为人民币，帮助你判断报价是否合理。`,
+    description: `远程工作薪资报告：按职位统计近 30 天远程岗位的月薪中位数、25%/75% 分位与分布，统一折算为人民币，帮助你判断报价是否合理。`,
     keywords: '远程工作薪资,远程岗位工资,remote salary,薪资报告,远程岛',
-    canonical: opts.siteUrl ? `${opts.siteUrl}/salary` : undefined,
+    canonical: opts.siteUrl ? `${opts.siteUrl}/salary-reports` : undefined,
     staticUrl: opts.staticUrl,
-    activePath: '/salary',
+    activePath: '/salary-reports',
     user: opts.user,
   });
 }

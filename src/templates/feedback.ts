@@ -27,7 +27,7 @@ export function feedbackPage(options: {
       <div class="bg-white rounded shadow-sm border border-surface-200 p-6 sm:p-8">
         <h1 class="text-2xl font-bold text-surface-900 mb-2">意见反馈</h1>
         <p class="text-sm text-surface-500 mb-6">
-          发现漏掉的职位分类、地区，或者有其它使用建议？告诉我们，帮助远程岛越来越好。
+          发现漏掉的职位、地区，或者有其它使用建议？告诉我们，帮助远程岛越来越好。
         </p>
 
         <form id="feedback-form" class="space-y-4">
@@ -43,7 +43,7 @@ export function feedbackPage(options: {
           <div>
             <label class="block text-sm text-surface-700 mb-1">详细描述</label>
             <textarea id="feedback-message" name="message" required rows="5" maxlength="2000"
-              placeholder="请具体描述场景，比如缺失的分类名称、地区名称，或想要的功能"
+              placeholder="请具体描述场景，比如缺失的职位名称、地区名称，或想要的功能"
               class="w-full border border-surface-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-400 resize-y"></textarea>
           </div>
 
@@ -159,7 +159,7 @@ export function feedbackPage(options: {
   return layout('意见反馈 - 远程岛', content, {
     gaId: options.gaId,
     staticUrl: options.staticUrl,
-    description: '给远程岛提意见：缺失的职位分类、地区，或其它使用建议。',
+    description: '给远程岛提意见：缺失的职位、地区，或其它使用建议。',
     activePath: '/feedback',
     user,
   });

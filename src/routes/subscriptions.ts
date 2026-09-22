@@ -55,10 +55,10 @@ async function validateSubscriptionBody(
 
   if (kind === 'category') {
     const parsed = toNullableId(body.searchTermId);
-    if (parsed === null || parsed === 'invalid') return { ok: false, error: '请选择职位分类', status: 400 };
+    if (parsed === null || parsed === 'invalid') return { ok: false, error: '请选择职位', status: 400 };
     searchTermId = parsed;
     const term = await db.prepare('SELECT id FROM search_terms WHERE id = ? AND is_active = 1').bind(searchTermId).first<{ id: number }>();
-    if (!term) return { ok: false, error: '职位分类不存在', status: 400 };
+    if (!term) return { ok: false, error: '职位不存在', status: 400 };
   } else if (kind === 'keyword') {
     queryText = (body.queryText || '').trim().replace(/\s+/g, ' ');
     if (queryText.length < 2) return { ok: false, error: '关键词至少 2 个字符', status: 400 };

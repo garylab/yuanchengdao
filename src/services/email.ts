@@ -148,9 +148,9 @@ export async function sendWeeklyDigestEmail(
       </div>
       ${personalLines.length > 0 ? `<div style="border-left:3px solid #ec6517;padding:4px 12px;margin-bottom:20px">${personalLines.map((l) => `<p style="margin:4px 0">${l}</p>`).join('')}<p style="margin:6px 0 0"><a href="${base}/favorites" style="${EMAIL_LINK_STYLE}">查看我的收藏 →</a></p></div>` : ''}
       ${salaryRows ? `<h3 style="margin:20px 0 8px;font-size:16px">本周高薪 Top 10</h3><ol style="padding-left:20px;margin:0">${salaryRows}</ol>` : ''}
-      ${categoryRows ? `<h3 style="margin:20px 0 8px;font-size:16px">本周活跃分类</h3><p style="margin:0;line-height:1.9">${categoryRows}</p>` : ''}
+      ${categoryRows ? `<h3 style="margin:20px 0 8px;font-size:16px">本周活跃职位</h3><p style="margin:0;line-height:1.9">${categoryRows}</p>` : ''}
       ${companyRows ? `<h3 style="margin:20px 0 8px;font-size:16px">新入驻雇主</h3><p style="margin:0;line-height:1.9">${companyRows}</p>` : ''}
-      <p style="margin:24px 0 0"><a href="${base}/weekly?utm_source=email&utm_medium=weekly" style="${EMAIL_LINK_STYLE}">查看完整周报</a>　·　<a href="${base}/account" style="${EMAIL_MUTED_STYLE}">管理订阅 / 退订周报</a></p>
+      <p style="margin:24px 0 0"><a href="${base}/weekly-reports?utm_source=email&utm_medium=weekly" style="${EMAIL_LINK_STYLE}">查看完整周报</a>　·　<a href="${base}/account" style="${EMAIL_MUTED_STYLE}">管理订阅 / 退订周报</a></p>
     </div>`;
 
   const text = [
@@ -160,7 +160,7 @@ export async function sendWeeklyDigestEmail(
     '本周高薪 Top 10：',
     ...report.topSalaryJobs.slice(0, 10).map((j, i) => `${i + 1}. ${j.title} - ${j.company_name} ${j.salary_label} ${base}/job/${j.slug}`),
     '',
-    `完整周报：${base}/weekly`,
+    `完整周报：${base}/weekly-reports`,
   ].join('\n');
 
   return sendResendEmail(env, {
@@ -211,7 +211,7 @@ export async function sendSubmissionReceivedEmail(
     html: `
       <div style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;max-width:600px;color:#1c1917">
         <p>我们已收到 <strong>${escapeHtml(submission.company_name)}</strong> 的职位「${escapeHtml(submission.title)}」（编号 #${submission.id}）。</p>
-        <p>审核通常在 1–2 个工作日内完成，通过后会上线到远程岛并推送给订阅了相关分类的求职者，我们会再发邮件通知你。</p>
+        <p>审核通常在 1–2 个工作日内完成，通过后会上线到远程岛并推送给订阅了相关职位的求职者，我们会再发邮件通知你。</p>
         <p style="${EMAIL_MUTED_STYLE}">如需补充信息，直接回复此邮件即可。</p>
         <p style="margin-top:20px"><a href="${base}" style="${EMAIL_LINK_STYLE}">远程岛</a></p>
       </div>`,
@@ -236,7 +236,7 @@ export async function sendSubmissionDecisionEmail(
         <div style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;max-width:600px;color:#1c1917">
           <p><strong>${escapeHtml(submission.company_name)}</strong> 的职位「${escapeHtml(submission.title)}」已审核通过并上线。</p>
           <p><a href="${jobUrl}" style="${EMAIL_LINK_STYLE};font-weight:600">查看职位页面 →</a></p>
-          <p style="${EMAIL_MUTED_STYLE}">职位会展示 30 天，并推送给订阅了相关分类的求职者。若需修改或下架，回复此邮件即可。</p>
+          <p style="${EMAIL_MUTED_STYLE}">职位会展示 30 天，并推送给订阅了相关职位的求职者。若需修改或下架，回复此邮件即可。</p>
         </div>`,
       text: `「${submission.title}」已上线：${jobUrl}`,
     });
