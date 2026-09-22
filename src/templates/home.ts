@@ -145,7 +145,7 @@ interface HomePageOptions {
   telegramChannelUrl?: string;
   user?: AuthUser | null;
   favoritedJobIds?: Set<number>;
-  newCompanies?: Array<{ name: string; slug: string; job_count: number }>;
+  newCompanies?: Array<{ name: string; slug: string; job_count: number; thumbnail?: string }>;
   topSalaryJobs?: Array<{ slug: string; title: string; company_name: string | null; salary_label: string }>;
   recommended?: Array<{ slug: string; title: string; company_name: string | null; location_label: string }>;
   chineseFriendlyCount?: number;
@@ -282,7 +282,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
     discoveryCols.push(`
       <div class="bg-white rounded border border-surface-200 p-4">
         <div class="flex items-center justify-between mb-2"><h3 class="text-sm font-bold text-surface-900">本周新雇主</h3><a href="/companies" class="text-xs text-surface-400 hover:text-brand-500 no-underline">全部企业 →</a></div>
-        <div class="flex flex-wrap gap-1.5">${newCompanies.slice(0, 12).map((c) => `<a href="/company/${escapeHtml(c.slug)}" class="px-2 py-1 rounded bg-surface-50 border border-surface-200 text-xs text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">${escapeHtml(c.name)} <span class="text-surface-400">${c.job_count}</span></a>`).join('')}</div>
+        <ul class="space-y-1.5">${newCompanies.slice(0, 6).map((c) => `<li><a href="/company/${escapeHtml(c.slug)}" class="flex items-center gap-2 no-underline group">${companyLogo(c.name, c.thumbnail, 'sm')}<span class="text-sm text-surface-800 group-hover:text-brand-600 truncate">${escapeHtml(c.name)}</span><span class="text-xs text-surface-400 flex-shrink-0">${c.job_count} 个职位</span></a></li>`).join('')}</ul>
       </div>`);
   }
   const discoveryStrip = discoveryCols.length > 0

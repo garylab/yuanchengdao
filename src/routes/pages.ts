@@ -182,7 +182,7 @@ pages.get('/', async (c) => {
   }
 
   const showDiscovery = page === 1 && !query && !countrySlug && !locationSlug && !salaryRange;
-  let newCompanies: Array<{ name: string; slug: string; job_count: number }> = [];
+  let newCompanies: Array<{ name: string; slug: string; job_count: number; thumbnail?: string }> = [];
   let topSalaryJobs: Array<{ slug: string; title: string; company_name: string | null; salary_label: string }> = [];
   let recommended: Array<{ slug: string; title: string; company_name: string | null; location_label: string }> = [];
   let chineseFriendlyCount = 0;
@@ -192,8 +192,8 @@ pages.get('/', async (c) => {
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
       const [companiesRes, salaryRes, countsRes, recIds] = await Promise.all([
         c.env.DB.prepare(
-          `SELECT name, slug, job_count FROM companies WHERE created_at >= ? AND job_count > 0 ORDER BY job_count DESC, id DESC LIMIT 12`
-        ).bind(weekAgo).all<{ name: string; slug: string; job_count: number }>(),
+          `SELECT name, slug, job_count, thumbnail FROM companies WHERE created_at >= ? AND job_count > 0 ORDER BY job_count DESC, id DESC LIMIT 12`
+        ).bind(weekAgo).all<{ name: string; slug: string; job_count: number; thumbnail: string | null }>(),
         c.env.DB.prepare(`
           SELECT j.slug, j.title, j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle, co.name as company_name
           FROM jobs j LEFT JOIN companies co ON co.id = j.company_id
@@ -205,7 +205,10 @@ pages.get('/', async (c) => {
         ).bind(cutoff).first<{ cf: number | null; ne: number | null }>(),
         currentUser ? recommendJobIdsForUser(c.env, currentUser.id, 5).catch(() => [] as number[]) : Promise.resolve([] as number[]),
       ]);
-      newCompanies = companiesRes.results || [];
+      newCompanies = (companiesRes.results || []).map((co) => ({
+        name: co.name, slug: co.slug, job_count: co.job_count,
+        thumbnail: resolveThumbnail(co.thumbnail, c.env.STATIC_URL),
+      }));
       topSalaryJobs = (salaryRes.results || []).map((j) => ({
         slug: j.slug, title: j.title, company_name: j.company_name,
         salary_label: formatSalary(j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle),
