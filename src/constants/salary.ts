@@ -38,3 +38,7 @@ export function jobMatchesSalaryRange(
   }
   return salaryUpper >= salaryMin;
 }
+
+export function monthlySalarySql(expr: string): string {
+  return `(CASE salary_pay_cycle WHEN 'year' THEN (${expr}) / 12.0 WHEN 'hour' THEN (${expr}) * 160.0 WHEN 'day' THEN (${expr}) * 21.0 WHEN 'week' THEN (${expr}) * 4.33 ELSE (${expr}) END)`;
+}

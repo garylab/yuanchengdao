@@ -1,10 +1,14 @@
 import { layout } from './layout';
-import { breadcrumb } from '../utils/helpers';
+import { breadcrumb, escapeHtml } from '../utils/helpers';
 import { AuthUser } from '../types';
 
-const CONTACT_EMAIL = 'yuanchengdao.com@gmail.com';
-
-export function postJobPage(gaId?: string, staticUrl?: string, user?: AuthUser | null): string {
+export function postJobPage(options: {
+  gaId?: string;
+  staticUrl?: string;
+  user?: AuthUser | null;
+  turnstileSiteKey?: string;
+}): string {
+  const { user, turnstileSiteKey = '' } = options;
   const bc = breadcrumb([
     { label: '首页', href: '/' },
     { label: '发布职位', href: '/post-job' },
@@ -13,45 +17,59 @@ export function postJobPage(gaId?: string, staticUrl?: string, user?: AuthUser |
   const fieldClass =
     'w-full rounded border border-surface-200 px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 focus:outline-none focus:ring-1 focus:ring-brand-300 focus:border-brand-300';
   const labelClass = 'block text-sm font-medium text-surface-700 mb-1.5';
+  const needTurnstile = !!turnstileSiteKey && !user;
 
   const content = `
     ${bc}
     <div class="max-w-3xl mx-auto px-4 py-8">
       <div class="bg-white rounded shadow-sm border border-surface-200 p-6 sm:p-8">
-        <h1 class="text-2xl sm:text-3xl font-bold mb-2">发布职位</h1>
-        <p class="text-surface-600 text-sm sm:text-base mb-6 leading-relaxed">
-          填写职位信息并预览邮件格式，按提示发送至
-          <a href="mailto:${CONTACT_EMAIL}" class="text-brand-500 hover:text-brand-600 transition underline">${CONTACT_EMAIL}</a>。
-          我们审核通过后会尽快上线。
+        <h1 class="text-2xl sm:text-3xl font-bold mb-2">发布远程职位</h1>
+        <p class="text-surface-600 text-sm sm:text-base mb-2 leading-relaxed">
+          面向华人求职者免费发布远程岗位。提交后我们会在 <strong>1–2 个工作日</strong>内审核，通过后上线 30 天，并推送给订阅了相关分类的求职者。
         </p>
+        <ul class="text-xs text-surface-500 mb-6 space-y-1 list-disc list-inside">
+          <li>仅接受可远程完成的岗位（全远程或以远程为主）</li>
+          <li>需提供可访问的申请链接或申请邮箱</li>
+          <li>审核结果会发送到你填写的联系邮箱</li>
+        </ul>
 
         <form id="post-job-form" class="space-y-5">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label for="job-title" class="${labelClass}">职位名称 <span class="text-brand-500">*</span></label>
-              <input id="job-title" name="title" type="text" required maxlength="120" placeholder="例如：Senior Frontend Engineer" class="${fieldClass}">
+              <input id="job-title" name="title" type="text" required minlength="2" maxlength="120" placeholder="例如：Senior Frontend Engineer" class="${fieldClass}">
             </div>
             <div>
               <label for="company-name" class="${labelClass}">公司名称 <span class="text-brand-500">*</span></label>
-              <input id="company-name" name="company" type="text" required maxlength="120" placeholder="例如：Acme Inc." class="${fieldClass}">
+              <input id="company-name" name="companyName" type="text" required minlength="2" maxlength="120" placeholder="例如：Acme Inc." class="${fieldClass}">
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label for="job-location" class="${labelClass}">工作地点</label>
-              <input id="job-location" name="location" type="text" maxlength="120" placeholder="例如：全球远程 / 美国 / 亚太" class="${fieldClass}">
+              <label for="company-website" class="${labelClass}">公司官网</label>
+              <input id="company-website" name="companyWebsite" type="text" maxlength="200" placeholder="https://example.com" class="${fieldClass}">
             </div>
             <div>
-              <label for="job-salary" class="${labelClass}">薪资范围</label>
-              <input id="job-salary" name="salary" type="text" maxlength="80" placeholder="例如：$80k–$120k / 年" class="${fieldClass}">
+              <label for="job-location" class="${labelClass}">工作地点 / 时区</label>
+              <input id="job-location" name="locationText" type="text" maxlength="120" placeholder="例如：全球远程 / 亚太时区 / 美国" class="${fieldClass}">
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div>
+              <label for="location-requirement" class="${labelClass}">地点限制</label>
+              <select id="location-requirement" name="locationRequirement" class="${fieldClass}">
+                <option value="0">不限，全球可申请</option>
+                <option value="3">需在特定时区工作</option>
+                <option value="2">限特定地区</option>
+                <option value="1">限本国居民</option>
+                <option value="4">需当地工作许可</option>
+              </select>
+            </div>
             <div>
               <label for="job-type" class="${labelClass}">工作类型</label>
-              <select id="job-type" name="jobType" class="${fieldClass}">
+              <select id="job-type" name="scheduleType" class="${fieldClass}">
                 <option value="">请选择</option>
                 <option value="全职">全职</option>
                 <option value="兼职">兼职</option>
@@ -62,126 +80,154 @@ export function postJobPage(gaId?: string, staticUrl?: string, user?: AuthUser |
             <div>
               <label for="english-level" class="${labelClass}">英语要求</label>
               <select id="english-level" name="englishLevel" class="${fieldClass}">
-                <option value="">请选择</option>
-                <option value="不限">不限</option>
-                <option value="基础沟通">基础沟通</option>
-                <option value="流利">流利</option>
-                <option value="母语水平">母语水平</option>
+                <option value="none">不要求</option>
+                <option value="basic">基础沟通</option>
+                <option value="intermediate">中级</option>
+                <option value="fluent">流利</option>
+                <option value="native">母语水平</option>
               </select>
             </div>
           </div>
 
-          <div>
-            <label for="apply-url" class="${labelClass}">申请链接</label>
-            <input id="apply-url" name="applyUrl" type="url" maxlength="500" placeholder="可选，也可写在职位描述里" class="${fieldClass}">
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-5">
+            <div class="sm:col-span-2">
+              <label for="job-salary" class="${labelClass}">薪资说明</label>
+              <input id="job-salary" name="salaryText" type="text" maxlength="80" placeholder="例如：$80k–$120k / 年，或 面议" class="${fieldClass}">
+            </div>
+            <div>
+              <label for="salary-lower" class="${labelClass}">月薪下限（¥）</label>
+              <input id="salary-lower" name="salaryLower" type="number" min="0" step="100" placeholder="可选" class="${fieldClass}">
+            </div>
+            <div>
+              <label for="salary-upper" class="${labelClass}">月薪上限（¥）</label>
+              <input id="salary-upper" name="salaryUpper" type="number" min="0" step="100" placeholder="可选" class="${fieldClass}">
+            </div>
           </div>
+          <p class="text-xs text-surface-400 -mt-3">填写人民币月薪区间可进入薪资筛选与薪资报告；只填"薪资说明"也可以。</p>
 
-          <div>
-            <label for="contact-email" class="${labelClass}">联系邮箱</label>
-            <input id="contact-email" name="contactEmail" type="email" maxlength="120" placeholder="方便我们联系你确认信息" class="${fieldClass}">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label for="apply-url" class="${labelClass}">申请链接</label>
+              <input id="apply-url" name="applyUrl" type="text" maxlength="500" placeholder="https://…（与申请邮箱至少填一项）" class="${fieldClass}">
+            </div>
+            <div>
+              <label for="apply-email" class="${labelClass}">申请邮箱</label>
+              <input id="apply-email" name="applyEmail" type="email" maxlength="120" placeholder="hr@example.com" class="${fieldClass}">
+            </div>
           </div>
 
           <div>
             <label for="job-description" class="${labelClass}">职位描述 <span class="text-brand-500">*</span></label>
-            <textarea id="job-description" name="description" required rows="8" maxlength="8000" placeholder="职责、要求、福利等" class="${fieldClass} resize-y min-h-[160px]"></textarea>
+            <textarea id="job-description" name="description" required minlength="50" rows="10" maxlength="8000" placeholder="职责、要求、福利、面试流程等。支持中文或英文，至少 50 字。" class="${fieldClass} resize-y min-h-[200px]"></textarea>
           </div>
 
-          <div class="pt-2">
-            <button type="submit" class="inline-flex justify-center items-center bg-brand-500 text-white px-8 py-3 rounded font-semibold text-base hover:bg-brand-600 transition shadow-sm">
-              预览
+          <div>
+            <label for="contact-email" class="${labelClass}">联系邮箱 <span class="text-brand-500">*</span></label>
+            <input id="contact-email" name="contactEmail" type="email" required maxlength="120" value="${user?.email ? escapeHtml(user.email) : ''}" placeholder="用于接收审核结果，不会公开" class="${fieldClass}">
+          </div>
+
+          ${needTurnstile ? `<div class="cf-turnstile" data-sitekey="${escapeHtml(turnstileSiteKey)}" data-theme="light"></div>` : ''}
+
+          <p id="post-job-status" class="hidden text-sm"></p>
+
+          <div class="pt-2 flex items-center gap-4">
+            <button type="submit" id="post-job-submit" class="inline-flex justify-center items-center bg-brand-500 text-white px-8 py-3 rounded font-semibold text-base hover:bg-brand-600 transition shadow-sm">
+              提交审核
             </button>
+            <span class="text-xs text-surface-400">免费 · 审核通常 1–2 个工作日</span>
           </div>
         </form>
 
-        <div id="email-preview" class="hidden mt-8 border-t border-surface-200 pt-6">
-          <h2 class="text-lg font-bold mb-3">请按照如下格式发送邮件</h2>
-          <div class="rounded-lg border border-surface-200 bg-white shadow-sm overflow-hidden">
-            <div class="divide-y divide-surface-200">
-              <div class="flex items-start gap-3 px-4 py-3">
-                <span class="shrink-0 w-14 text-xs font-medium text-surface-400 pt-0.5">收件人</span>
-                <div id="preview-to" class="flex-1 min-w-0 text-sm text-surface-800 break-all"></div>
-              </div>
-              <div class="flex items-start gap-3 px-4 py-3">
-                <span class="shrink-0 w-14 text-xs font-medium text-surface-400 pt-0.5">主题</span>
-                <div id="preview-subject" class="flex-1 min-w-0 text-sm text-surface-800 break-words"></div>
-              </div>
-              <div class="px-4 py-3">
-                <div class="text-xs font-medium text-surface-400 mb-2">正文</div>
-                <pre id="preview-body" class="whitespace-pre-wrap break-words text-sm text-surface-800 leading-relaxed m-0 min-h-[160px] font-sans"></pre>
-              </div>
-            </div>
-          </div>
+        <div id="post-job-success" class="hidden mt-6 rounded border border-green-200 bg-green-50 p-5 text-sm text-green-800">
+          <p class="font-semibold mb-1">已收到，感谢投递！</p>
+          <p>编号 <span id="post-job-id"></span>。我们会尽快审核，结果会发送到你的联系邮箱。想再发一条？<button type="button" id="post-job-again" class="text-brand-600 underline">继续发布</button></p>
         </div>
       </div>
     </div>
+    ${needTurnstile ? `<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
     <script>
       (function () {
         var form = document.getElementById('post-job-form');
         if (!form) return;
-        var contactEmail = ${JSON.stringify(CONTACT_EMAIL)};
+        var statusEl = document.getElementById('post-job-status');
+        var submitBtn = document.getElementById('post-job-submit');
+        var successEl = document.getElementById('post-job-success');
+        var needTurnstile = ${needTurnstile ? 'true' : 'false'};
 
+        function showStatus(text, isError) {
+          statusEl.textContent = text;
+          statusEl.className = 'text-sm ' + (isError ? 'text-red-600' : 'text-green-600');
+          statusEl.classList.remove('hidden');
+        }
         function value(name) {
           var el = form.elements.namedItem(name);
           return el && 'value' in el ? String(el.value).trim() : '';
         }
-
-        function buildEmail() {
-          var title = value('title');
-          var company = value('company');
-          var location = value('location') || '未填写';
-          var salary = value('salary') || '未填写';
-          var jobType = value('jobType') || '未填写';
-          var englishLevel = value('englishLevel') || '未填写';
-          var applyUrl = value('applyUrl') || '未填写';
-          var contact = value('contactEmail') || '未填写';
-          var description = value('description');
-
-          var subject = '[远程岛职位发布] ' + company + ' - ' + title;
-          var body = [
-            '【职位名称】' + title,
-            '【公司名称】' + company,
-            '【工作地点】' + location,
-            '【薪资范围】' + salary,
-            '【工作类型】' + jobType,
-            '【英语要求】' + englishLevel,
-            '【申请链接】' + applyUrl,
-            '【联系邮箱】' + contact,
-            '',
-            '【职位描述】',
-            description,
-            '',
-            '——',
-            '来自远程岛发布职位页'
-          ].join('\\n');
-
-          return { subject: subject, body: body };
+        function getTurnstileToken() {
+          var input = form.querySelector('input[name="cf-turnstile-response"]');
+          return input ? input.value : '';
         }
 
-        form.addEventListener('submit', function (event) {
+        form.addEventListener('submit', async function (event) {
           event.preventDefault();
           if (!form.reportValidity()) return;
-
-          var email = buildEmail();
-          var preview = document.getElementById('email-preview');
-          var toEl = document.getElementById('preview-to');
-          var subjectEl = document.getElementById('preview-subject');
-          var bodyEl = document.getElementById('preview-body');
-          if (preview && toEl && subjectEl && bodyEl) {
-            toEl.textContent = contactEmail;
-            subjectEl.textContent = email.subject;
-            bodyEl.textContent = email.body;
-            preview.classList.remove('hidden');
-            preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (!value('applyUrl') && !value('applyEmail')) { showStatus('请填写申请链接或申请邮箱', true); return; }
+          var payload = {
+            title: value('title'),
+            companyName: value('companyName'),
+            companyWebsite: value('companyWebsite'),
+            locationText: value('locationText'),
+            locationRequirement: Number(value('locationRequirement') || 0),
+            scheduleType: value('scheduleType'),
+            englishLevel: value('englishLevel'),
+            salaryText: value('salaryText'),
+            salaryLower: Number(value('salaryLower') || 0),
+            salaryUpper: Number(value('salaryUpper') || 0),
+            salaryPayCycle: 'month',
+            applyUrl: value('applyUrl'),
+            applyEmail: value('applyEmail'),
+            description: value('description'),
+            contactEmail: value('contactEmail'),
+            turnstileToken: getTurnstileToken()
+          };
+          submitBtn.disabled = true;
+          var original = submitBtn.textContent;
+          submitBtn.textContent = '提交中…';
+          try {
+            var res = await fetch('/api/job-submissions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            var data = await res.json().catch(function () { return {}; });
+            if (!res.ok) {
+              showStatus(data.error || '提交失败', true);
+              if (needTurnstile && window.turnstile) { var w = form.querySelector('.cf-turnstile'); if (w) window.turnstile.reset(w); }
+              return;
+            }
+            statusEl.classList.add('hidden');
+            document.getElementById('post-job-id').textContent = '#' + data.id;
+            form.classList.add('hidden');
+            successEl.classList.remove('hidden');
+            successEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = original;
           }
+        });
+
+        var again = document.getElementById('post-job-again');
+        if (again) again.addEventListener('click', function () {
+          form.reset();
+          form.classList.remove('hidden');
+          successEl.classList.add('hidden');
+          if (needTurnstile && window.turnstile) { var w = form.querySelector('.cf-turnstile'); if (w) window.turnstile.reset(w); }
+          form.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
       })();
     </script>`;
 
-  return layout('发布职位 - 远程岛', content, {
-    gaId,
-    description: '在远程岛免费发布远程职位。填写职位信息后按固定格式发送邮件，审核通过后即可展示给求职者。',
+  return layout('发布远程职位 - 远程岛', content, {
+    gaId: options.gaId,
+    description: '在远程岛免费发布远程职位，1–2 个工作日审核，通过后展示 30 天并推送给订阅了相关分类的华人求职者。',
     keywords: '发布职位,远程招聘,招聘远程员工,岗位发布,远程岛招聘',
-    staticUrl,
+    staticUrl: options.staticUrl,
     activePath: '/post-job',
     user,
   });

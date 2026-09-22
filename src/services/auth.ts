@@ -112,9 +112,10 @@ export type UserRow = {
   avatar_url: string | null;
   telegram_chat_id: string | null;
   role: 'admin' | 'user';
+  weekly_digest: number;
 };
 
-const USER_COLUMNS = 'id, email, password_hash, google_id, name, avatar_url, telegram_chat_id, role';
+const USER_COLUMNS = 'id, email, password_hash, google_id, name, avatar_url, telegram_chat_id, role, weekly_digest';
 
 export async function findUserByEmail(db: D1Database, email: string): Promise<UserRow | null> {
   return db.prepare(
@@ -145,7 +146,7 @@ export async function createUserWithPassword(
     `INSERT INTO users (email, password_hash, name, role) VALUES (
        ?, ?, ?,
        CASE WHEN NOT EXISTS (SELECT 1 FROM users) THEN 'admin' ELSE 'user' END
-     ) RETURNING id, email, password_hash, google_id, name, avatar_url, telegram_chat_id, role`
+     ) RETURNING id, email, password_hash, google_id, name, avatar_url, telegram_chat_id, role, weekly_digest`
   ).bind(normalizeEmail(email), passwordHash, name || null).first<UserRow>();
   if (!result) throw new Error('Failed to create user');
   return result;
@@ -179,7 +180,7 @@ export async function createOrLinkGoogleUser(
     `INSERT INTO users (email, google_id, name, avatar_url, role) VALUES (
        ?, ?, ?, ?,
        CASE WHEN NOT EXISTS (SELECT 1 FROM users) THEN 'admin' ELSE 'user' END
-     ) RETURNING id, email, password_hash, google_id, name, avatar_url, telegram_chat_id, role`
+     ) RETURNING id, email, password_hash, google_id, name, avatar_url, telegram_chat_id, role, weekly_digest`
   ).bind(email, profile.googleId, profile.name, profile.avatarUrl).first<UserRow>();
   if (!created) throw new Error('Failed to create Google user');
   return created;
@@ -215,7 +216,7 @@ export async function resolveSessionUser(
 ): Promise<UserRow | null> {
   const tokenHash = await hashToken(token, sessionSecret);
   const row = await db.prepare(`
-    SELECT u.id, u.email, u.password_hash, u.google_id, u.name, u.avatar_url, u.telegram_chat_id, u.role
+    SELECT u.id, u.email, u.password_hash, u.google_id, u.name, u.avatar_url, u.telegram_chat_id, u.role, u.weekly_digest
     FROM sessions s
     JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = ? AND s.expires_at > datetime('now')
@@ -309,7 +310,7 @@ export async function findOrCreateUserByEmailOtp(
     `INSERT INTO users (email, role) VALUES (
        ?,
        CASE WHEN NOT EXISTS (SELECT 1 FROM users) THEN 'admin' ELSE 'user' END
-     ) RETURNING id, email, password_hash, google_id, name, avatar_url, telegram_chat_id, role`
+     ) RETURNING id, email, password_hash, google_id, name, avatar_url, telegram_chat_id, role, weekly_digest`
   ).bind(normalizeEmail(email)).first<UserRow>();
   if (!created) throw new Error('Failed to create user');
   return created;

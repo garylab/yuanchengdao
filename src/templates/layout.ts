@@ -128,6 +128,9 @@ export function layout(title: string, content: string, options?: LayoutOptions):
             <a href="/" class="ml-2 no-underline text-surface-400 hover:text-brand-500 transition inline-flex items-center flex-shrink-0">远程岛</a>
             <a href="/about" class="ml-2 no-underline transition ${ap.startsWith('/about') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">关于</a>
             <a href="/feedback" class="ml-2 no-underline transition ${ap.startsWith('/feedback') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">意见反馈</a>
+            <a href="/weekly" class="ml-2 no-underline transition ${ap.startsWith('/weekly') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">周报</a>
+            <a href="/salary" class="ml-2 no-underline transition ${ap.startsWith('/salary') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">薪资</a>
+            <a href="/english/none" class="ml-2 no-underline transition ${ap.startsWith('/english') ? 'text-brand-500 font-medium' : 'text-surface-400 hover:text-brand-500'}">不需要英语</a>
           </div>
           
         </div>

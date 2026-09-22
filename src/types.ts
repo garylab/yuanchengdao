@@ -38,6 +38,7 @@ export interface AuthUser {
   avatar_url: string | null;
   telegram_chat_id: string | null;
   role: UserRole;
+  weekly_digest: boolean;
 }
 
 export type AppVariables = {
@@ -137,6 +138,8 @@ export interface Company {
   thumbnail: string | null;
   location_id: number | null;
   job_count: number;
+  description?: string | null;
+  website?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -162,6 +165,8 @@ export interface Job {
   apply_options: string | null;
   location_requirement: number;
   english_level_required: EnglishLevel;
+  chinese_friendly?: number;
+  source?: string;
   created_at: string;
   updated_at: string;
   // joined fields

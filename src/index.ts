@@ -8,8 +8,12 @@ import favorites from './routes/favorites';
 import subscriptions from './routes/subscriptions';
 import telegram from './routes/telegram';
 import feedback from './routes/feedback';
+import account from './routes/account';
+import jobSubmissions from './routes/jobSubmissions';
 import { syncJobs } from './services/jobSync';
 import { deliverSubscriptionAlerts } from './services/subscriptions';
+import { runWeeklyDigest } from './services/weekly';
+import { ENGLISH_LEVEL_GROUPS } from './constants/englishLevel';
 import { expiredCutoff } from './utils/helpers';
 import { appScript, appScriptAssetFilename } from './public/app';
 import { appStyles, appStylesAssetFilename } from './public/styles';
@@ -28,7 +32,11 @@ app.use('/api/*', async (c, next) => {
     path.startsWith('/api/favorites') ||
     path.startsWith('/api/subscriptions') ||
     path.startsWith('/api/telegram') ||
-    path.startsWith('/api/feedback');
+    path.startsWith('/api/feedback') ||
+    path.startsWith('/api/account') ||
+    path.startsWith('/api/admin') ||
+    path.startsWith('/api/job-submissions') ||
+    path.startsWith('/api/companies');
 
   if (!isUserScoped) {
     c.header('Access-Control-Allow-Origin', '*');
@@ -72,6 +80,8 @@ app.route('/', favorites);
 app.route('/', subscriptions);
 app.route('/', telegram);
 app.route('/', feedback);
+app.route('/', account);
+app.route('/', jobSubmissions);
 
 app.get('/robots.txt', (c) => {
   return c.text(`User-agent: *\nAllow: /\nSitemap: ${c.env.SITE_URL}/sitemap.xml`);
@@ -86,6 +96,7 @@ app.get('/sitemap.xml', (c) => {
   <sitemap><loc>${site}/sitemap-locations.xml</loc></sitemap>
   <sitemap><loc>${site}/sitemap-companies.xml</loc></sitemap>
   <sitemap><loc>${site}/sitemap-jobs.xml</loc></sitemap>
+  <sitemap><loc>${site}/sitemap-countries.xml</loc></sitemap>
 </sitemapindex>`;
   c.header('Content-Type', 'application/xml');
   return c.body(xml);
@@ -101,6 +112,10 @@ app.get('/sitemap-pages.xml', (c) => {
   <url><loc>${site}/categories</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>${site}/about</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
   <url><loc>${site}/post-job</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>${site}/salary</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>${site}/weekly</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>${site}/feedback</loc><changefreq>monthly</changefreq><priority>0.2</priority></url>
+${ENGLISH_LEVEL_GROUPS.map((g) => `  <url><loc>${site}/english/${g.slug}</loc><changefreq>daily</changefreq><priority>0.8</priority></url>`).join('\n')}
 </urlset>`;
   c.header('Content-Type', 'application/xml');
   return c.body(xml);
@@ -129,6 +144,22 @@ app.get('/sitemap-locations.xml', async (c) => {
   ).all();
   const urls = (locations.results || []).map((lo: Record<string, unknown>) =>
     `<url><loc>${site}/location/${lo.slug}</loc><changefreq>daily</changefreq><priority>0.7</priority></url>`
+  ).join('\n');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls}
+</urlset>`;
+  c.header('Content-Type', 'application/xml');
+  return c.body(xml);
+});
+
+app.get('/sitemap-countries.xml', async (c) => {
+  const site = c.env.SITE_URL;
+  const countries = await c.env.DB.prepare(
+    'SELECT slug FROM countries WHERE is_active = 1 AND job_count > 0 ORDER BY job_count DESC'
+  ).all();
+  const urls = (countries.results || []).map((ct: Record<string, unknown>) =>
+    `<url><loc>${site}/country/${ct.slug}</loc><changefreq>daily</changefreq><priority>0.8</priority></url>`
   ).join('\n');
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -208,13 +239,21 @@ export default {
           console.error(`Telegram subscription alerts failed: ${message}`);
         });
         // Daily email digest at 22:00 UTC (06:00 CST)
-        const emailSubscriptionJob = new Date().getUTCHours() === 22
+        const now = new Date();
+        const emailSubscriptionJob = now.getUTCHours() === 22
           ? deliverSubscriptionAlerts(env, 'email').catch((err) => {
               const message = err instanceof Error ? (err.stack || err.message) : String(err);
               console.error(`Email subscription alerts failed: ${message}`);
             })
           : Promise.resolve();
-        const combined = Promise.all([telegramSubscriptionJob, emailSubscriptionJob]);
+        // Weekly digest: Sunday 22:00 UTC == Monday 06:00 CST
+        const weeklyJob = now.getUTCDay() === 0 && now.getUTCHours() === 22
+          ? runWeeklyDigest(env).then((r) => console.log(`Weekly digest sent to ${r.sent} users`)).catch((err) => {
+              const message = err instanceof Error ? (err.stack || err.message) : String(err);
+              console.error(`Weekly digest failed: ${message}`);
+            })
+          : Promise.resolve();
+        const combined = Promise.all([telegramSubscriptionJob, emailSubscriptionJob, weeklyJob]);
         if (waitUntil) waitUntil(combined);
         else await combined;
         return;

@@ -12,6 +12,7 @@ export function userCenterShell(
   if (user.role === 'admin') {
     items.push({ href: '/users', label: '所有用户' });
     items.push({ href: '/admin/feedback', label: '反馈管理' });
+    items.push({ href: '/admin/submissions', label: '投递审核' });
   }
 
   const isActive = (href: string) => activePath === href || activePath.startsWith(href + '/');

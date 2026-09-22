@@ -65,7 +65,8 @@ const CYCLE_LABELS: Record<string, string> = {
 function formatSalaryAmountPart(amount: number): string {
   const rounded = Math.round(amount);
   if (rounded >= 10000) {
-    return `${Math.round(rounded / 10000)}万`;
+    const inWan = Math.round((rounded / 10000) * 10) / 10;
+    return `${Number.isInteger(inWan) ? inWan : inWan.toFixed(1)}万`;
   }
   if (rounded >= 1000) {
     const inThousands = Math.round((rounded / 1000) * 10) / 10;
@@ -246,4 +247,23 @@ export function rewriteUtm(url: string): string {
   } catch {
     return url;
   }
+}
+
+export function chineseFriendlyBadge(flag: number | null | undefined): string {
+  if (!flag) return '';
+  return `<span class="tag-pill bg-rose-50 text-rose-700 text-xs">🇨🇳 华人友好</span>`;
+}
+
+export function formatDateCn(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + 'Z');
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+export function isJobStale(postedAt: string | null | undefined, days = 30): boolean {
+  if (!postedAt) return false;
+  const t = new Date(postedAt.includes('T') ? postedAt : postedAt.replace(' ', 'T') + 'Z').getTime();
+  if (Number.isNaN(t)) return false;
+  return Date.now() - t > days * 86400000;
 }

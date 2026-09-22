@@ -3,8 +3,10 @@ import { fetchOneQuery, decodeJobId } from './serpapi';
 import { translateBatch, TranslateInput } from './translate';
 import { uploadThumbnail } from './thumbnail';
 import { upsertJobVector, deleteJobVectors } from './vectorSearch';
+import { detectChineseFriendly } from '../constants/chineseFriendly';
+import { guessCompanyWebsite, enrichCompanies } from './companyEnrich';
 
-function toSlug(text: string): string {
+export function toSlug(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
@@ -119,7 +121,7 @@ async function saveCrawledJob(
   }
 }
 
-async function findCountry(
+export async function findCountry(
   db: D1Database, code: string
 ): Promise<{ id: number; timezone: string } | null> {
   if (!code || code.length !== 2) return null;
@@ -128,7 +130,7 @@ async function findCountry(
     .bind(lower).first<{ id: number; timezone: string }>();
 }
 
-async function getOrCreateLocation(
+export async function getOrCreateLocation(
   db: D1Database, name: string, nameCn: string, countryId: number | null
 ): Promise<number> {
   const slug = toSlug(name);
@@ -141,17 +143,25 @@ async function getOrCreateLocation(
   return result.meta.last_row_id as number;
 }
 
-async function getOrCreateCompany(
+export async function getOrCreateCompany(
   env: Env,
   name: string,
   thumbnailUrl: string | null,
-  locationId: number,
+  locationId: number | null,
+  applyOptionsJson?: string | null,
+  websiteOverride?: string | null,
 ): Promise<number> {
-  const slug = toSlug(name);
+  const slug = toSlug(name) || `company-${Date.now()}`;
+  const website = websiteOverride || guessCompanyWebsite(applyOptionsJson, name);
   const existing = await env.DB.prepare(
-    'SELECT id FROM companies WHERE slug = ?'
-  ).bind(slug).first<{ id: number }>();
-  if (existing) return existing.id;
+    'SELECT id, website FROM companies WHERE slug = ?'
+  ).bind(slug).first<{ id: number; website: string | null }>();
+  if (existing) {
+    if (!existing.website && website) {
+      await env.DB.prepare('UPDATE companies SET website = ? WHERE id = ?').bind(website, existing.id).run();
+    }
+    return existing.id;
+  }
 
   let thumbnail = thumbnailUrl;
   if (thumbnailUrl) {
@@ -160,12 +170,12 @@ async function getOrCreateCompany(
   }
 
   const result = await env.DB.prepare(
-    'INSERT INTO companies (name, slug, thumbnail, location_id) VALUES (?, ?, ?, ?)'
-  ).bind(name, slug, thumbnail, locationId).run();
+    'INSERT INTO companies (name, slug, thumbnail, location_id, website) VALUES (?, ?, ?, ?, ?)'
+  ).bind(name, slug, thumbnail, locationId, website).run();
   return result.meta.last_row_id as number;
 }
 
-async function generateJobSlug(db: D1Database, title: string, companyName: string, crawledId: number): Promise<string> {
+export async function generateJobSlug(db: D1Database, title: string, companyName: string, crawledId: number): Promise<string> {
   const slugPart = toSlug(`${title}-${companyName}`).substring(0, 80);
   const base = !slugPart ? 'remote-job' : slugPart.includes('remote') ? slugPart : `remote-${slugPart}`;
   let candidate = `${base}-${crawledId}`;
@@ -259,19 +269,24 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         crawled.company_name,
         crawled.thumbnail,
         locationId,
+        crawled.apply_options,
       );
 
       const postedAt = parsePostedAt(crawled.detected_extensions, country?.timezone || 'UTC');
       const slug = await generateJobSlug(env.DB, crawled.title, crawled.company_name, crawled.id);
 
       const searchTermId = crawled.search_term_id;
+      const chineseFriendly = detectChineseFriendly(
+        crawled.title, crawled.description, crawled.job_highlights,
+        tr.title_zh, tr.description_zh,
+      ) ? 1 : 0;
 
       const jobInsert = await env.DB.prepare(`
         INSERT INTO jobs
           (crawled_id, slug, title, description, company_id, location_id, country_id, search_term_id, posted_at,
            salary_lower, salary_upper, salary_currency, salary_pay_cycle,
-           detected_extensions, job_highlights, apply_options, location_requirement, english_level_required)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           detected_extensions, job_highlights, apply_options, location_requirement, english_level_required, chinese_friendly)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         crawled.id,
         slug,
@@ -291,6 +306,7 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         crawled.apply_options,
         tr.location_requirement,
         tr.english_level_required,
+        chineseFriendly,
       ).run();
 
       const newJobId = jobInsert.meta.last_row_id;
@@ -563,6 +579,12 @@ export async function syncJobs(env: Env): Promise<{ fetched: number; saved: numb
 
   const processed = await processUnprocessedJobs(env);
   totalSaved = processed;
+
+  try {
+    await enrichCompanies(env, 1);
+  } catch (err) {
+    console.error('Company enrichment failed:', err instanceof Error ? err.message : err);
+  }
 
   console.log(`Sync complete: fetched ${totalFetched}, saved ${totalSaved}`);
   return { fetched: totalFetched, saved: totalSaved };

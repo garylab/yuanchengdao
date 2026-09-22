@@ -19,6 +19,7 @@ export const sessionMiddleware = createMiddleware<{ Bindings: Env; Variables: Ap
             avatar_url: row.avatar_url,
             telegram_chat_id: row.telegram_chat_id,
             role: row.role === 'admin' ? 'admin' : 'user',
+            weekly_digest: row.weekly_digest !== 0,
           };
           c.set('user', user);
         }

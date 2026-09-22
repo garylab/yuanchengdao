@@ -55,6 +55,9 @@ CREATE TABLE IF NOT EXISTS companies (
   thumbnail TEXT,
   location_id INTEGER REFERENCES locations(id),
   job_count INTEGER DEFAULT 0,
+  description TEXT,
+  website TEXT,
+  enriched_at TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -82,6 +85,8 @@ CREATE TABLE IF NOT EXISTS jobs (
   english_level_required TEXT NOT NULL DEFAULT 'none' CHECK (english_level_required IN (
     'none', 'basic', 'intermediate', 'upper_intermediate', 'B2', 'C1', 'C2', 'advanced', 'fluent', 'native'
   )),
+  chinese_friendly INTEGER NOT NULL DEFAULT 0,
+  source TEXT NOT NULL DEFAULT 'crawl',
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -105,6 +110,8 @@ CREATE INDEX IF NOT EXISTS idx_jobs_country_posted ON jobs(country_id, posted_at
 CREATE INDEX IF NOT EXISTS idx_jobs_search_term_posted ON jobs(search_term_id, posted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_jobs_search_term_created_at ON jobs(search_term_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_jobs_salary_posted ON jobs(salary_upper, posted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_chinese_friendly_posted ON jobs(chinese_friendly, posted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_english_level_posted ON jobs(english_level_required, posted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_companies_slug ON companies(slug);
 CREATE INDEX IF NOT EXISTS idx_companies_job_count ON companies(job_count DESC);
 CREATE INDEX IF NOT EXISTS idx_locations_job_count ON locations(job_count DESC);
@@ -148,6 +155,7 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_url TEXT,
   telegram_chat_id TEXT,
   role TEXT NOT NULL DEFAULT 'user',
+  weekly_digest INTEGER NOT NULL DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -189,18 +197,31 @@ CREATE INDEX IF NOT EXISTS idx_auth_rate_limits_key_created ON auth_rate_limits(
 CREATE TABLE IF NOT EXISTS favorites (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  job_id INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'saved',
+  notes TEXT,
+  job_title TEXT,
+  company_name TEXT,
+  company_slug TEXT,
+  job_slug TEXT,
+  apply_url TEXT,
+  job_posted_at TEXT,
   created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
   UNIQUE(user_id, job_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_job_id ON favorites(job_id);
+CREATE INDEX IF NOT EXISTS idx_favorites_user_status ON favorites(user_id, status);
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  search_term_id INTEGER NOT NULL REFERENCES search_terms(id),
+  kind TEXT NOT NULL DEFAULT 'category',
+  search_term_id INTEGER REFERENCES search_terms(id),
+  query_text TEXT,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
   location_id INTEGER REFERENCES locations(id),
   salary_range TEXT,
   notify_email INTEGER NOT NULL DEFAULT 1,
@@ -208,9 +229,11 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_user_term_location_salary
-  ON subscriptions(user_id, search_term_id, IFNULL(location_id, 0), IFNULL(salary_range, ''));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_unique
+  ON subscriptions(user_id, kind, IFNULL(search_term_id, 0), IFNULL(company_id, 0), IFNULL(query_text, ''), IFNULL(location_id, 0), IFNULL(salary_range, ''));
 CREATE INDEX IF NOT EXISTS idx_subscriptions_search_term ON subscriptions(search_term_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_company ON subscriptions(company_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_kind ON subscriptions(kind);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
 
 CREATE TABLE IF NOT EXISTS subscription_deliveries (
@@ -236,12 +259,49 @@ CREATE TABLE IF NOT EXISTS feedback (
   ip TEXT,
   user_agent TEXT,
   resolved_at TEXT,
+  resolved_notified_at TEXT,
   admin_notes TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_feedback_created_at ON feedback(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_feedback_user_id ON feedback(user_id);
+
+CREATE TABLE IF NOT EXISTS job_submissions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  company_name TEXT NOT NULL,
+  company_website TEXT,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  apply_url TEXT,
+  apply_email TEXT,
+  location_text TEXT,
+  location_requirement INTEGER NOT NULL DEFAULT 0,
+  english_level TEXT NOT NULL DEFAULT 'none',
+  schedule_type TEXT,
+  salary_text TEXT,
+  salary_lower INTEGER NOT NULL DEFAULT 0,
+  salary_upper INTEGER NOT NULL DEFAULT 0,
+  salary_pay_cycle TEXT NOT NULL DEFAULT 'month',
+  contact_email TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  admin_notes TEXT,
+  job_id INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
+  ip TEXT,
+  user_agent TEXT,
+  reviewed_at TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_job_submissions_status_created ON job_submissions(status, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS weekly_reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  week_start TEXT NOT NULL UNIQUE,
+  payload TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
 
 CREATE TABLE IF NOT EXISTS telegram_link_tokens (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -1,5 +1,5 @@
 import { Job } from '../types';
-import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge } from '../utils/helpers';
+import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge, chineseFriendlyBadge } from '../utils/helpers';
 
 export interface JobRowOptions {
   dataFrom: string;
@@ -88,6 +88,7 @@ export function renderJobRow(job: Job, options: JobRowOptions): string {
             ${salary ? `<span class="${CSS_SALARY_BADGE}">💰 ${salary}</span>` : ''}
             ${locationRequirementBadge(job.location_requirement)}
             ${englishLevelBadge(job.english_level_required)}
+            ${chineseFriendlyBadge(job.chinese_friendly)}
             <span class="${CSS_POSTED} flex-shrink-0 sm:hidden">${posted}</span>
           </div>
         </div>

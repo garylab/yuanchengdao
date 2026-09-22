@@ -104,7 +104,13 @@ export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, 
   const content = `
     ${bc}
     <div class="max-w-5xl mx-auto px-4 mt-4">
-      <h1 class="text-xl font-bold text-surface-900 mb-4">远程${escapeHtml(term.term_cn)}</h1>
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h1 class="text-xl font-bold text-surface-900">远程${escapeHtml(term.term_cn)}</h1>
+        <a href="/account?kind=category&term=${encodeURIComponent(term.slug)}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-brand-200 bg-brand-50 text-brand-600 text-sm font-medium hover:bg-brand-100 transition no-underline">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          订阅此分类
+        </a>
+      </div>
       <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden">
         ${jobs.length > 0
           ? jobs.map(j => renderJobRow(j)).join('')

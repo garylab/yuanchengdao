@@ -2,7 +2,8 @@ import { Hono } from 'hono';
 import { Env, AppVariables } from '../types';
 import { verifyTurnstile } from '../services/turnstile';
 import { checkRateLimit, isValidEmail, normalizeEmail } from '../services/auth';
-import { isKnownFeedbackCategory } from '../constants/feedback';
+import { feedbackCategoryLabel, isKnownFeedbackCategory } from '../constants/feedback';
+import { sendFeedbackResolvedEmail } from '../services/email';
 
 const feedback = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -81,20 +82,46 @@ feedback.post('/api/feedback/:id/toggle', async (c) => {
   const id = parseInt(c.req.param('id'), 10);
   if (!Number.isFinite(id) || id <= 0) return c.json({ error: '无效反馈' }, 400);
 
+  const body = await c.req.json<{ adminNotes?: string | null }>().catch(() => ({} as { adminNotes?: string | null }));
+
   const existing = await c.env.DB.prepare(
-    'SELECT resolved_at FROM feedback WHERE id = ?'
-  ).bind(id).first<{ resolved_at: string | null }>();
+    `SELECT f.id, f.resolved_at, f.resolved_notified_at, f.email, f.category, f.message, f.admin_notes,
+       u.email as user_email
+     FROM feedback f LEFT JOIN users u ON u.id = f.user_id
+     WHERE f.id = ?`
+  ).bind(id).first<{
+    id: number; resolved_at: string | null; resolved_notified_at: string | null; email: string | null;
+    category: string; message: string; admin_notes: string | null; user_email: string | null;
+  }>();
   if (!existing) return c.json({ error: '反馈不存在' }, 404);
 
+  const adminNotes = body?.adminNotes !== undefined ? ((body.adminNotes || '').trim() || null) : existing.admin_notes;
+
   if (existing.resolved_at) {
-    await c.env.DB.prepare('UPDATE feedback SET resolved_at = NULL WHERE id = ?').bind(id).run();
-  } else {
-    await c.env.DB.prepare(
-      "UPDATE feedback SET resolved_at = datetime('now') WHERE id = ?"
-    ).bind(id).run();
+    await c.env.DB.prepare('UPDATE feedback SET resolved_at = NULL, admin_notes = ? WHERE id = ?').bind(adminNotes, id).run();
+    return c.json({ ok: true, resolved: false });
   }
 
-  return c.json({ ok: true });
+  await c.env.DB.prepare(
+    "UPDATE feedback SET resolved_at = datetime('now'), admin_notes = ? WHERE id = ?"
+  ).bind(adminNotes, id).run();
+
+  const recipient = existing.user_email || existing.email;
+  let notified = false;
+  if (recipient && !existing.resolved_notified_at) {
+    const result = await sendFeedbackResolvedEmail(c.env, recipient, {
+      id: existing.id,
+      category_label: feedbackCategoryLabel(existing.category),
+      message: existing.message,
+      admin_notes: adminNotes,
+    });
+    if (result.ok) {
+      notified = true;
+      await c.env.DB.prepare("UPDATE feedback SET resolved_notified_at = datetime('now') WHERE id = ?").bind(id).run();
+    }
+  }
+
+  return c.json({ ok: true, resolved: true, notified });
 });
 
 export default feedback;

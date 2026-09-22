@@ -1,30 +1,21 @@
 import { Hono } from 'hono';
 import { Env, AppVariables } from '../types';
 import { createTelegramLinkToken } from '../services/auth';
-import { sendSubscriptionAlertEmail, SubscriptionJobAlert } from '../services/email';
+import { sendSubscriptionAlertEmail } from '../services/email';
 import { sendTelegramDirectMessage } from '../services/telegramDm';
-import { formatSalary } from '../utils/helpers';
-import { isKnownSalaryRange, jobMatchesSalaryRange } from '../constants/salary';
+import { isKnownSalaryRange } from '../constants/salary';
+import { isSubscriptionKind, KEYWORD_QUERY_MAX_LENGTH, SubscriptionKind } from '../constants/subscriptions';
+import { buildTelegramAlert, jobMatchesSubscriptionFilters, toAlertJob } from '../services/subscriptions';
+import { searchByVector } from '../services/vectorSearch';
+import { activeCutoff } from '../utils/helpers';
 
 const subscriptions = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
-type SubscriptionRow = {
-  id: number;
-  user_id: number;
-  search_term_id: number;
-  location_id: number | null;
-  salary_range: string | null;
-  notify_email: number;
-  notify_telegram: number;
-  created_at: string;
-  term_cn?: string | null;
-  term_slug?: string | null;
-  location_name_cn?: string | null;
-  location_slug?: string | null;
-};
-
 type SubscriptionBody = {
-  searchTermId?: number;
+  kind?: string;
+  searchTermId?: number | null;
+  queryText?: string | null;
+  companyId?: number | null;
   locationId?: number | null;
   salaryRange?: string | null;
   notifyEmail?: boolean;
@@ -32,62 +23,74 @@ type SubscriptionBody = {
 };
 
 type ValidatedFields = {
-  searchTermId: number;
+  kind: SubscriptionKind;
+  searchTermId: number | null;
+  queryText: string | null;
+  companyId: number | null;
   locationId: number | null;
   salaryRange: string | null;
   notifyEmail: number;
   notifyTelegram: number;
 };
 
+function toNullableId(value: unknown): number | null | 'invalid' {
+  if (value == null || value === '' || value === 0) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 'invalid';
+  return n;
+}
+
 async function validateSubscriptionBody(
   db: D1Database,
   user: { telegram_chat_id: string | null },
   body: SubscriptionBody | null,
-): Promise<{ ok: true; fields: ValidatedFields } | { ok: false; error: string; status: number }> {
+): Promise<{ ok: true; fields: ValidatedFields } | { ok: false; error: string; status: 400 }> {
   if (!body) return { ok: false, error: '无效请求', status: 400 };
 
-  const searchTermId = Number(body.searchTermId);
-  if (!Number.isFinite(searchTermId) || searchTermId <= 0) {
-    return { ok: false, error: '请选择职位分类', status: 400 };
+  const kind: SubscriptionKind = isSubscriptionKind(body.kind) ? body.kind : 'category';
+
+  let searchTermId: number | null = null;
+  let queryText: string | null = null;
+  let companyId: number | null = null;
+
+  if (kind === 'category') {
+    const parsed = toNullableId(body.searchTermId);
+    if (parsed === null || parsed === 'invalid') return { ok: false, error: '请选择职位分类', status: 400 };
+    searchTermId = parsed;
+    const term = await db.prepare('SELECT id FROM search_terms WHERE id = ? AND is_active = 1').bind(searchTermId).first<{ id: number }>();
+    if (!term) return { ok: false, error: '职位分类不存在', status: 400 };
+  } else if (kind === 'keyword') {
+    queryText = (body.queryText || '').trim().replace(/\s+/g, ' ');
+    if (queryText.length < 2) return { ok: false, error: '关键词至少 2 个字符', status: 400 };
+    if (queryText.length > KEYWORD_QUERY_MAX_LENGTH) return { ok: false, error: `关键词不超过 ${KEYWORD_QUERY_MAX_LENGTH} 个字符`, status: 400 };
+  } else {
+    const parsed = toNullableId(body.companyId);
+    if (parsed === null || parsed === 'invalid') return { ok: false, error: '请选择公司', status: 400 };
+    companyId = parsed;
+    const company = await db.prepare('SELECT id FROM companies WHERE id = ?').bind(companyId).first<{ id: number }>();
+    if (!company) return { ok: false, error: '公司不存在', status: 400 };
   }
 
-  const locationId = body.locationId == null || body.locationId === 0
-    ? null
-    : Number(body.locationId);
-  if (locationId !== null && (!Number.isFinite(locationId) || locationId <= 0)) {
-    return { ok: false, error: '地点无效', status: 400 };
+  const locationParsed = toNullableId(body.locationId);
+  if (locationParsed === 'invalid') return { ok: false, error: '地点无效', status: 400 };
+  const locationId = locationParsed;
+  if (locationId !== null) {
+    const location = await db.prepare('SELECT id FROM locations WHERE id = ? AND is_active = 1').bind(locationId).first<{ id: number }>();
+    if (!location) return { ok: false, error: '地点不存在', status: 400 };
   }
 
   const salaryRangeRaw = (body.salaryRange || '').trim();
   const salaryRange = salaryRangeRaw ? salaryRangeRaw : null;
-  if (salaryRange && !isKnownSalaryRange(salaryRange)) {
-    return { ok: false, error: '薪资范围无效', status: 400 };
-  }
+  if (salaryRange && !isKnownSalaryRange(salaryRange)) return { ok: false, error: '薪资范围无效', status: 400 };
 
   const notifyEmail = body.notifyEmail !== false ? 1 : 0;
   const notifyTelegram = body.notifyTelegram === true ? 1 : 0;
-  if (!notifyEmail && !notifyTelegram) {
-    return { ok: false, error: '请至少选择一种通知方式', status: 400 };
-  }
-  if (notifyTelegram && !user.telegram_chat_id) {
-    return { ok: false, error: '请先绑定 Telegram', status: 400 };
-  }
-
-  const term = await db.prepare(
-    'SELECT id FROM search_terms WHERE id = ? AND is_active = 1'
-  ).bind(searchTermId).first<{ id: number }>();
-  if (!term) return { ok: false, error: '职位分类不存在', status: 400 };
-
-  if (locationId !== null) {
-    const location = await db.prepare(
-      'SELECT id FROM locations WHERE id = ? AND is_active = 1'
-    ).bind(locationId).first<{ id: number }>();
-    if (!location) return { ok: false, error: '地点不存在', status: 400 };
-  }
+  if (!notifyEmail && !notifyTelegram) return { ok: false, error: '请至少选择一种通知方式', status: 400 };
+  if (notifyTelegram && !user.telegram_chat_id) return { ok: false, error: '请先绑定 Telegram', status: 400 };
 
   return {
     ok: true,
-    fields: { searchTermId, locationId, salaryRange, notifyEmail, notifyTelegram },
+    fields: { kind, searchTermId, queryText, companyId, locationId, salaryRange, notifyEmail, notifyTelegram },
   };
 }
 
@@ -95,22 +98,30 @@ subscriptions.get('/api/subscriptions', async (c) => {
   const user = c.get('user');
   if (!user) return c.json({ error: '请先登录' }, 401);
 
-  const idResult = await c.env.DB.prepare(
-    'SELECT id FROM subscriptions WHERE user_id = ? ORDER BY created_at DESC'
-  ).bind(user.id).all<{ id: number }>();
-  const ids = (idResult.results || []).map((row) => row.id);
-  if (ids.length === 0) return c.json({ subscriptions: [] });
-
   const result = await c.env.DB.prepare(`
-    SELECT s.*, st.term_cn, st.slug as term_slug, lo.name_cn as location_name_cn, lo.slug as location_slug
+    SELECT s.*, st.term_cn, st.slug as term_slug, co.name as company_name, co.slug as company_slug,
+      lo.name_cn as location_name_cn, lo.slug as location_slug
     FROM subscriptions s
     LEFT JOIN search_terms st ON s.search_term_id = st.id
+    LEFT JOIN companies co ON s.company_id = co.id
     LEFT JOIN locations lo ON s.location_id = lo.id
-    WHERE s.id IN (${ids.join(',')})
+    WHERE s.user_id = ?
     ORDER BY s.created_at DESC
-  `).all<SubscriptionRow>();
+  `).bind(user.id).all();
 
   return c.json({ subscriptions: result.results || [] });
+});
+
+subscriptions.get('/api/companies/search', async (c) => {
+  const q = (c.req.query('q') || '').trim();
+  if (q.length < 1) return c.json({ companies: [] });
+  const pattern = `%${q.replace(/[%_]/g, (m) => `\\${m}`)}%`;
+  const result = await c.env.DB.prepare(
+    `SELECT id, name, slug, job_count FROM companies
+     WHERE name LIKE ? ESCAPE '\\'
+     ORDER BY job_count DESC, name ASC LIMIT 20`
+  ).bind(pattern).all<{ id: number; name: string; slug: string; job_count: number }>();
+  return c.json({ companies: result.results || [] });
 });
 
 subscriptions.post('/api/subscriptions', async (c) => {
@@ -119,16 +130,15 @@ subscriptions.post('/api/subscriptions', async (c) => {
 
   const body = await c.req.json<SubscriptionBody>().catch(() => null);
   const validation = await validateSubscriptionBody(c.env.DB, user, body);
-  if (!validation.ok) return c.json({ error: validation.error }, validation.status as 400 | 401 | 404);
+  if (!validation.ok) return c.json({ error: validation.error }, validation.status);
 
-  const { searchTermId, locationId, salaryRange, notifyEmail, notifyTelegram } = validation.fields;
-
+  const f = validation.fields;
   try {
     const inserted = await c.env.DB.prepare(`
-      INSERT INTO subscriptions (user_id, search_term_id, location_id, salary_range, notify_email, notify_telegram)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO subscriptions (user_id, kind, search_term_id, query_text, company_id, location_id, salary_range, notify_email, notify_telegram)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       RETURNING id
-    `).bind(user.id, searchTermId, locationId, salaryRange, notifyEmail, notifyTelegram).first<{ id: number }>();
+    `).bind(user.id, f.kind, f.searchTermId, f.queryText, f.companyId, f.locationId, f.salaryRange, f.notifyEmail, f.notifyTelegram).first<{ id: number }>();
     return c.json({ ok: true, id: inserted?.id });
   } catch {
     return c.json({ error: '该订阅已存在' }, 409);
@@ -150,16 +160,15 @@ subscriptions.patch('/api/subscriptions/:id', async (c) => {
   if (!existing) return c.json({ error: '订阅不存在' }, 404);
 
   const validation = await validateSubscriptionBody(c.env.DB, user, body);
-  if (!validation.ok) return c.json({ error: validation.error }, validation.status as 400 | 401 | 404);
+  if (!validation.ok) return c.json({ error: validation.error }, validation.status);
 
-  const { searchTermId, locationId, salaryRange, notifyEmail, notifyTelegram } = validation.fields;
-
+  const f = validation.fields;
   try {
     await c.env.DB.prepare(`
       UPDATE subscriptions
-      SET search_term_id = ?, location_id = ?, salary_range = ?, notify_email = ?, notify_telegram = ?
+      SET kind = ?, search_term_id = ?, query_text = ?, company_id = ?, location_id = ?, salary_range = ?, notify_email = ?, notify_telegram = ?
       WHERE id = ? AND user_id = ?
-    `).bind(searchTermId, locationId, salaryRange, notifyEmail, notifyTelegram, id, user.id).run();
+    `).bind(f.kind, f.searchTermId, f.queryText, f.companyId, f.locationId, f.salaryRange, f.notifyEmail, f.notifyTelegram, id, user.id).run();
     return c.json({ ok: true });
   } catch {
     return c.json({ error: '该订阅已存在' }, 409);
@@ -174,24 +183,19 @@ subscriptions.post('/api/subscriptions/:id/test', async (c) => {
   if (!Number.isFinite(id) || id <= 0) return c.json({ error: '无效订阅' }, 400);
 
   const subscription = await c.env.DB.prepare(
-    `SELECT s.id, s.search_term_id, s.location_id, s.salary_range, s.notify_email, s.notify_telegram,
+    `SELECT s.id, s.kind, s.search_term_id, s.query_text, s.company_id, s.location_id, s.salary_range, s.notify_email, s.notify_telegram,
        u.email, u.telegram_chat_id
      FROM subscriptions s
      JOIN users u ON u.id = s.user_id
      WHERE s.id = ? AND s.user_id = ?`
   ).bind(id, user.id).first<{
-    id: number;
-    search_term_id: number;
-    location_id: number | null;
-    salary_range: string | null;
-    notify_email: number;
-    notify_telegram: number;
-    email: string;
-    telegram_chat_id: string | null;
+    id: number; kind: SubscriptionKind; search_term_id: number | null; query_text: string | null; company_id: number | null;
+    location_id: number | null; salary_range: string | null; notify_email: number; notify_telegram: number;
+    email: string; telegram_chat_id: string | null;
   }>();
   if (!subscription) return c.json({ error: '订阅不存在' }, 404);
 
-  const jobBaseSelect = `SELECT j.id, j.slug, j.title, j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle,
+  const jobBaseSelect = `SELECT j.id, j.slug, j.title, j.location_id, j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle,
          co.name as company_name,
          lo.name_cn as location_name_cn,
          ct.name_cn as country_name_cn
@@ -199,44 +203,39 @@ subscriptions.post('/api/subscriptions/:id/test', async (c) => {
        LEFT JOIN companies co ON j.company_id = co.id
        LEFT JOIN locations lo ON j.location_id = lo.id
        LEFT JOIN countries ct ON j.country_id = ct.id`;
-  const candidateLimit = subscription.salary_range ? 50 : 1;
-  const jobQuery = subscription.location_id != null
-    ? `${jobBaseSelect} WHERE j.search_term_id = ? AND j.location_id = ? ORDER BY j.created_at DESC LIMIT ${candidateLimit}`
-    : `${jobBaseSelect} WHERE j.search_term_id = ? ORDER BY j.created_at DESC LIMIT ${candidateLimit}`;
-  const stmt = subscription.location_id != null
-    ? c.env.DB.prepare(jobQuery).bind(subscription.search_term_id, subscription.location_id)
-    : c.env.DB.prepare(jobQuery).bind(subscription.search_term_id);
 
   type JobCandidate = {
-    id: number;
-    slug: string;
-    title: string;
-    salary_lower: number;
-    salary_upper: number;
-    salary_currency: string;
-    salary_pay_cycle: string;
-    company_name: string | null;
-    location_name_cn: string | null;
-    country_name_cn: string | null;
+    id: number; slug: string; title: string; location_id: number | null;
+    salary_lower: number; salary_upper: number; salary_currency: string; salary_pay_cycle: string;
+    company_name: string | null; location_name_cn: string | null; country_name_cn: string | null;
   };
-  const candidates = (await stmt.all<JobCandidate>()).results || [];
-  const job = candidates.find((candidate) =>
-    jobMatchesSalaryRange(subscription.salary_range, candidate.salary_lower, candidate.salary_upper)
-  );
+
+  let candidates: JobCandidate[] = [];
+  if (subscription.kind === 'category' && subscription.search_term_id) {
+    const result = await c.env.DB.prepare(
+      `${jobBaseSelect} WHERE j.search_term_id = ? ORDER BY j.created_at DESC LIMIT 60`
+    ).bind(subscription.search_term_id).all<JobCandidate>();
+    candidates = result.results || [];
+  } else if (subscription.kind === 'company' && subscription.company_id) {
+    const result = await c.env.DB.prepare(
+      `${jobBaseSelect} WHERE j.company_id = ? ORDER BY j.created_at DESC LIMIT 60`
+    ).bind(subscription.company_id).all<JobCandidate>();
+    candidates = result.results || [];
+  } else if (subscription.kind === 'keyword' && subscription.query_text) {
+    const ids = await searchByVector(c.env.AI, c.env.VECTORIZE, subscription.query_text, 60).catch(() => [] as number[]);
+    if (ids.length > 0) {
+      const result = await c.env.DB.prepare(
+        `${jobBaseSelect} WHERE j.id IN (${ids.join(',')}) AND j.posted_at >= ?`
+      ).bind(activeCutoff()).all<JobCandidate>();
+      const map = new Map((result.results || []).map((r) => [r.id, r]));
+      candidates = ids.map((i) => map.get(i)).filter((r): r is JobCandidate => !!r);
+    }
+  }
+
+  const job = candidates.find((candidate) => jobMatchesSubscriptionFilters(subscription, candidate));
   if (!job) return c.json({ error: '暂无匹配的职位可发送' }, 404);
 
-  const locationLabel = [job.location_name_cn, job.country_name_cn]
-    .filter(Boolean)
-    .filter((value, index, array) => array.indexOf(value) === index)
-    .join(', ') || '远程';
-  const alertJob: SubscriptionJobAlert = {
-    title: job.title,
-    companyName: job.company_name || '',
-    locationLabel,
-    slug: job.slug,
-    salaryLabel: formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle) || '',
-  };
-
+  const alertJob = toAlertJob(job);
   const sent: string[] = [];
   const errors: string[] = [];
 
@@ -247,34 +246,18 @@ subscriptions.post('/api/subscriptions/:id/test', async (c) => {
   }
 
   if (subscription.notify_telegram && subscription.telegram_chat_id) {
-    const baseUrl = c.env.SITE_URL.replace(/\/$/, '');
-    const url = `${baseUrl}/job/${encodeURIComponent(alertJob.slug)}?utm_source=telegram&utm_medium=subscription-test`;
-    const text = `远程岛订阅测试\n\n<a href="${escapeTelegramText(url)}"><b>${escapeTelegramText(alertJob.title)}</b></a>\n${escapeTelegramText(alertJob.companyName)} · ${escapeTelegramText(alertJob.locationLabel)}`;
     try {
-      await sendTelegramDirectMessage(c.env, subscription.telegram_chat_id, text);
+      await sendTelegramDirectMessage(c.env, subscription.telegram_chat_id, buildTelegramAlert(c.env, [alertJob], '远程岛订阅测试'));
       sent.push('Telegram');
     } catch (err) {
       errors.push(`Telegram：${err instanceof Error ? err.message : '发送失败'}`);
     }
   }
 
-  if (sent.length === 0 && errors.length === 0) {
-    return c.json({ error: '未启用任何通知渠道' }, 400);
-  }
-  if (sent.length === 0) {
-    return c.json({ error: errors.join('；') }, 500);
-  }
-  return c.json({
-    ok: true,
-    channels: sent,
-    jobTitle: alertJob.title,
-    warning: errors.length > 0 ? errors.join('；') : undefined,
-  });
+  if (sent.length === 0 && errors.length === 0) return c.json({ error: '未启用任何通知渠道' }, 400);
+  if (sent.length === 0) return c.json({ error: errors.join('；') }, 500);
+  return c.json({ ok: true, channels: sent, jobTitle: alertJob.title, warning: errors.length > 0 ? errors.join('；') : undefined });
 });
-
-function escapeTelegramText(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 subscriptions.delete('/api/subscriptions/:id', async (c) => {
   const user = c.get('user');
@@ -283,10 +266,7 @@ subscriptions.delete('/api/subscriptions/:id', async (c) => {
   const id = parseInt(c.req.param('id'), 10);
   if (!Number.isFinite(id) || id <= 0) return c.json({ error: '无效订阅' }, 400);
 
-  await c.env.DB.prepare(
-    'DELETE FROM subscriptions WHERE id = ? AND user_id = ?'
-  ).bind(id, user.id).run();
-
+  await c.env.DB.prepare('DELETE FROM subscriptions WHERE id = ? AND user_id = ?').bind(id, user.id).run();
   return c.json({ ok: true });
 });
 
@@ -295,15 +275,11 @@ subscriptions.post('/api/telegram/link-token', async (c) => {
   if (!user) return c.json({ error: '请先登录' }, 401);
 
   const token = createTelegramLinkToken();
-  const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString()
-    .replace('T', ' ')
-    .replace(/\.\d{3}Z$/, '');
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
 
   await c.env.DB.batch([
     c.env.DB.prepare('DELETE FROM telegram_link_tokens WHERE user_id = ?').bind(user.id),
-    c.env.DB.prepare(
-      'INSERT INTO telegram_link_tokens (token, user_id, expires_at) VALUES (?, ?, ?)'
-    ).bind(token, user.id, expiresAt),
+    c.env.DB.prepare('INSERT INTO telegram_link_tokens (token, user_id, expires_at) VALUES (?, ?, ?)').bind(token, user.id, expiresAt),
   ]);
 
   let botUsername = c.env.TELEGRAM_BOT_USERNAME || '';
@@ -320,22 +296,13 @@ subscriptions.post('/api/telegram/link-token', async (c) => {
   }
 
   if (!botUsername) return c.json({ error: 'Telegram Bot 未配置' }, 500);
-
-  return c.json({
-    ok: true,
-    token,
-    deepLink: `https://t.me/${botUsername}?start=${token}`,
-  });
+  return c.json({ ok: true, token, deepLink: `https://t.me/${botUsername}?start=${token}` });
 });
 
 subscriptions.post('/api/telegram/unlink', async (c) => {
   const user = c.get('user');
   if (!user) return c.json({ error: '请先登录' }, 401);
-
-  await c.env.DB.prepare(
-    'UPDATE users SET telegram_chat_id = NULL WHERE id = ?'
-  ).bind(user.id).run();
-
+  await c.env.DB.prepare('UPDATE users SET telegram_chat_id = NULL WHERE id = ?').bind(user.id).run();
   return c.json({ ok: true });
 });
 

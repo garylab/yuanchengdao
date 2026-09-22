@@ -10,6 +10,19 @@ interface CompanyInfo {
   location_name_cn: string | null;
   country_name_cn: string | null;
   country_flag_emoji: string | null;
+  description?: string | null;
+  website?: string | null;
+  job_count?: number;
+}
+
+export interface CompanyStats {
+  activeJobs: number;
+  firstSeen: string | null;
+  lastPosted: string | null;
+  salaryMin: number;
+  salaryMax: number;
+  topLocations: Array<{ name_cn: string; slug: string; count: number }>;
+  topCategories: Array<{ term_cn: string; slug: string; count: number }>;
 }
 
 function renderJobRow(job: Job): string {
@@ -85,10 +98,29 @@ function renderJobRow(job: Job): string {
     </div>`;
 }
 
-export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: number, hasMore: boolean, gaId?: string, siteUrl?: string, staticUrl?: string, user?: AuthUser | null): string {
+export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: number, hasMore: boolean, gaId?: string, siteUrl?: string, staticUrl?: string, user?: AuthUser | null, stats?: CompanyStats | null): string {
   const logo = companyLogo(company.name, company.thumbnail, 'lg');
   const locationParts = [company.location_name_cn, company.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
   const location = locationParts.join(', ') || '';
+  let websiteHost = '';
+  if (company.website) {
+    try { websiteHost = new URL(company.website).hostname.replace(/^www\./, ''); } catch { websiteHost = company.website; }
+  }
+  const salaryRange = stats && stats.salaryMax > 0
+    ? `¥${Math.round(stats.salaryMin / 1000)}k – ¥${Math.round(stats.salaryMax / 1000)}k / 月`
+    : '';
+  const statsHtml = stats ? `
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-surface-100 text-sm">
+          <div><div class="text-xs text-surface-400">在招职位</div><div class="font-semibold text-surface-900 mt-0.5">${stats.activeJobs}</div></div>
+          <div><div class="text-xs text-surface-400">最近发布</div><div class="font-semibold text-surface-900 mt-0.5">${stats.lastPosted ? timeAgo(stats.lastPosted) : '—'}</div></div>
+          <div><div class="text-xs text-surface-400">首次出现</div><div class="font-semibold text-surface-900 mt-0.5">${stats.firstSeen ? timeAgo(stats.firstSeen) : '—'}</div></div>
+          <div><div class="text-xs text-surface-400">月薪区间</div><div class="font-semibold text-surface-900 mt-0.5">${salaryRange || '未标注'}</div></div>
+        </div>
+        ${stats.topCategories.length > 0 || stats.topLocations.length > 0 ? `
+        <div class="flex flex-wrap gap-x-6 gap-y-2 mt-4 text-xs text-surface-500">
+          ${stats.topCategories.length > 0 ? `<div class="flex flex-wrap items-center gap-1.5"><span class="font-semibold text-surface-600">常招岗位：</span>${stats.topCategories.map((c) => `<a href="/category/${escapeHtml(c.slug)}" class="px-2 py-0.5 rounded bg-surface-100 hover:bg-brand-50 hover:text-brand-600 transition no-underline">${escapeHtml(c.term_cn)} ${c.count}</a>`).join('')}</div>` : ''}
+          ${stats.topLocations.length > 0 ? `<div class="flex flex-wrap items-center gap-1.5"><span class="font-semibold text-surface-600">地点：</span>${stats.topLocations.map((l) => `<a href="/location/${escapeHtml(l.slug)}" class="px-2 py-0.5 rounded bg-surface-100 hover:bg-brand-50 hover:text-brand-600 transition no-underline">${escapeHtml(l.name_cn)} ${l.count}</a>`).join('')}</div>` : ''}
+        </div>` : ''}` : '';
 
   const bc = breadcrumb([
     { label: '首页', href: '/' },
@@ -100,16 +132,25 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
     ${bc}
     <div class="max-w-5xl mx-auto px-4 mt-4">
       <div class="bg-white rounded shadow-sm border border-surface-200 p-6 mb-4">
-        <div class="flex items-center gap-4">
+        <div class="flex flex-col sm:flex-row sm:items-start gap-4">
           ${logo}
-          <div>
-            <h1 class="text-xl font-bold text-surface-900">${escapeHtml(company.name)}</h1>
-            <div class="flex items-center gap-3 mt-1 text-sm text-surface-400">
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h1 class="text-xl font-bold text-surface-900">${escapeHtml(company.name)}</h1>
+              <a href="/account?kind=company&company=${company.id}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-brand-200 bg-brand-50 text-brand-600 text-sm font-medium hover:bg-brand-100 transition no-underline">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                订阅该公司新职位
+              </a>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 mt-1 text-sm text-surface-400">
               ${location ? `<span>${company.country_flag_emoji || '🌍'} ${escapeHtml(location)}</span>` : ''}
+              ${company.website ? `<a href="${escapeHtml(company.website)}" target="_blank" rel="noopener nofollow" class="text-brand-500 hover:text-brand-600 no-underline">${escapeHtml(websiteHost)} ↗</a>` : ''}
               <span>远程招聘中</span>
             </div>
+            ${company.description ? `<p class="text-sm text-surface-600 leading-relaxed mt-3">${escapeHtml(company.description)}</p>` : ''}
           </div>
         </div>
+        ${statsHtml}
       </div>
 
       <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden">
@@ -124,7 +165,9 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
     </div>`;
 
   const pageTitle = `${company.name} 远程工作 - 远程岛`;
-  const pageDesc = `${company.name} 远程岗位正在招聘${location ? `，总部位于${location}` : ''}。查看所有在招职位并直接申请。`;
+  const pageDesc = company.description
+    ? `${company.description.slice(0, 90)}${company.description.length > 90 ? '…' : ''} 查看 ${company.name} 全部在招远程职位。`
+    : `${company.name} 远程岗位正在招聘${location ? `，总部位于${location}` : ''}。查看所有在招职位并直接申请。`;
 
   return layout(pageTitle, content, {
     gaId,

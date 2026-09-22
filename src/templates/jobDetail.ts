@@ -1,6 +1,6 @@
 import { AuthUser, Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge } from '../utils/helpers';
+import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge, chineseFriendlyBadge } from '../utils/helpers';
 
 function payCycleToUnitText(cycle: string): string {
   switch (cycle) {
@@ -158,6 +158,7 @@ export function jobDetailPage(
                 ${salary ? `<span class="text-green-600 font-medium">💰 ${salary}</span>` : ''}
                 ${locationRequirementBadge(job.location_requirement)}
                 ${englishLevelBadge(job.english_level_required)}
+                ${chineseFriendlyBadge(job.chinese_friendly)}
                 <span>${posted}</span>
               </div>
             </div>
