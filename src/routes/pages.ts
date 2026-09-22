@@ -35,6 +35,16 @@ import { isSubscriptionKind } from '../constants/subscriptions';
 import { formatSalary } from '../utils/helpers';
 import { resolveThumbnail, activeCutoff } from '../utils/helpers';
 import { maxListPage, normalizedListPage } from '../constants/listPagination';
+import { cachedJson, FRAGMENT_TTL } from '../utils/fragmentCache';
+
+function waitUntilOf(c: { executionCtx?: ExecutionContext }): ((p: Promise<unknown>) => void) | null {
+  try {
+    const ctx = c.executionCtx;
+    return ctx && typeof ctx.waitUntil === 'function' ? ctx.waitUntil.bind(ctx) : null;
+  } catch {
+    return null;
+  }
+}
 
 const pages = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -124,34 +134,46 @@ pages.get('/', async (c) => {
   const jobIds = hasMoreRaw ? allIds.slice(0, limit) : allIds;
 
   const hydrateOrderClause = orderedByRelevance ? '' : ' ORDER BY j.created_at DESC';
-  const [jobsResult, countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
+  const waitUntil = waitUntilOf(c);
+  const [jobsResult, lists] = await Promise.all([
     jobIds.length > 0
       ? c.env.DB.prepare(`${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')})${hydrateOrderClause}`).all()
       : { results: [] },
-    c.env.DB.prepare(
-      `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
-       FROM countries ct
-       WHERE ct.is_active = 1 AND ct.job_count > 0
-       ORDER BY ct.job_count DESC`
-    ).all(),
-    c.env.DB.prepare(
-      `SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, lo.job_count
-       FROM locations lo
-       WHERE lo.is_active = 1 AND lo.job_count > 0
-       ORDER BY lo.job_count DESC`
-    ).all(),
-    c.env.DB.prepare(
-      `SELECT term_cn, slug, job_count FROM search_terms
-       WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL
-       ORDER BY job_count DESC LIMIT 7`
-    ).all(),
-    c.env.DB.prepare(
-      `SELECT lo.name_cn, lo.slug, lo.job_count, ct.flag_emoji as country_flag_emoji
-       FROM locations lo
-       LEFT JOIN countries ct ON lo.country_id = ct.id
-       WHERE lo.is_active = 1 AND lo.job_count > 0
-       ORDER BY lo.job_count DESC LIMIT 5`
-    ).all(),
+    // User-independent filter lists and shortcut pills; identical for every visitor, so served from the fragment cache.
+    cachedJson('home:lists', FRAGMENT_TTL.short, async () => {
+      const [countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
+        c.env.DB.prepare(
+          `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
+           FROM countries ct
+           WHERE ct.is_active = 1 AND ct.job_count > 0
+           ORDER BY ct.job_count DESC`
+        ).all(),
+        c.env.DB.prepare(
+          `SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, lo.job_count
+           FROM locations lo
+           WHERE lo.is_active = 1 AND lo.job_count > 0
+           ORDER BY lo.job_count DESC`
+        ).all(),
+        c.env.DB.prepare(
+          `SELECT term_cn, slug, job_count FROM search_terms
+           WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL
+           ORDER BY job_count DESC LIMIT 7`
+        ).all(),
+        c.env.DB.prepare(
+          `SELECT lo.name_cn, lo.slug, lo.job_count, ct.flag_emoji as country_flag_emoji
+           FROM locations lo
+           LEFT JOIN countries ct ON lo.country_id = ct.id
+           WHERE lo.is_active = 1 AND lo.job_count > 0
+           ORDER BY lo.job_count DESC LIMIT 5`
+        ).all(),
+      ]);
+      return {
+        countries: (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>,
+        locations: (locationsResult.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_id: number; job_count: number }>,
+        topSearchTerms: (topTermsResult.results || []) as unknown as Array<{ term_cn: string; slug: string; job_count: number }>,
+        topLocations: (topLocationsResult.results || []) as unknown as Array<{ name_cn: string; slug: string; job_count: number; country_flag_emoji: string | null }>,
+      };
+    }, waitUntil),
   ]);
 
   let jobs: Job[];
@@ -167,10 +189,7 @@ pages.get('/', async (c) => {
       company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
     }));
   }
-  const countries = (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>;
-  const locations = (locationsResult.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_id: number; job_count: number }>;
-  const topSearchTerms = (topTermsResult.results || []) as unknown as Array<{ term_cn: string; slug: string; job_count: number }>;
-  const topLocations = (topLocationsResult.results || []) as unknown as Array<{ name_cn: string; slug: string; job_count: number; country_flag_emoji: string | null }>;
+  const { countries, locations, topSearchTerms, topLocations } = lists;
 
   const currentUser = c.get('user');
   let favoritedJobIds = new Set<number>();
@@ -189,32 +208,43 @@ pages.get('/', async (c) => {
   let noEnglishCount = 0;
   if (showDiscovery) {
     try {
-      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
-      const [companiesRes, salaryRes, countsRes, recIds] = await Promise.all([
-        c.env.DB.prepare(
-          `SELECT name, slug, job_count, thumbnail FROM companies WHERE created_at >= ? AND job_count > 0 ORDER BY job_count DESC, id DESC LIMIT 12`
-        ).bind(weekAgo).all<{ name: string; slug: string; job_count: number; thumbnail: string | null }>(),
-        c.env.DB.prepare(`
-          SELECT j.slug, j.title, j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle, co.name as company_name
-          FROM jobs j LEFT JOIN companies co ON co.id = j.company_id
-          WHERE j.created_at >= ? AND j.salary_upper > 0 AND ${monthlySalarySql('j.salary_upper')} < 1000000
-          ORDER BY ${monthlySalarySql('j.salary_upper')} DESC LIMIT 5
-        `).bind(weekAgo).all<{ slug: string; title: string; salary_lower: number; salary_upper: number; salary_currency: string; salary_pay_cycle: string; company_name: string | null }>(),
-        c.env.DB.prepare(
-          `SELECT SUM(chinese_friendly) as cf, SUM(CASE WHEN english_level_required = 'none' THEN 1 ELSE 0 END) as ne FROM jobs WHERE posted_at >= ?`
-        ).bind(cutoff).first<{ cf: number | null; ne: number | null }>(),
+      const [discovery, recIds] = await Promise.all([
+        // Same for every visitor: new employers, top salaries, collection counts.
+        cachedJson('home:discovery', FRAGMENT_TTL.short, async () => {
+          const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
+          const [companiesRes, salaryRes, countsRes] = await Promise.all([
+            c.env.DB.prepare(
+              `SELECT name, slug, job_count, thumbnail FROM companies WHERE created_at >= ? AND job_count > 0 ORDER BY job_count DESC, id DESC LIMIT 12`
+            ).bind(weekAgo).all<{ name: string; slug: string; job_count: number; thumbnail: string | null }>(),
+            c.env.DB.prepare(`
+              SELECT j.slug, j.title, j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle, co.name as company_name
+              FROM jobs j LEFT JOIN companies co ON co.id = j.company_id
+              WHERE j.created_at >= ? AND j.salary_upper > 0 AND ${monthlySalarySql('j.salary_upper')} < 1000000
+              ORDER BY ${monthlySalarySql('j.salary_upper')} DESC LIMIT 5
+            `).bind(weekAgo).all<{ slug: string; title: string; salary_lower: number; salary_upper: number; salary_currency: string; salary_pay_cycle: string; company_name: string | null }>(),
+            c.env.DB.prepare(
+              `SELECT SUM(chinese_friendly) as cf, SUM(CASE WHEN english_level_required = 'none' THEN 1 ELSE 0 END) as ne FROM jobs WHERE posted_at >= ?`
+            ).bind(cutoff).first<{ cf: number | null; ne: number | null }>(),
+          ]);
+          return {
+            newCompanies: (companiesRes.results || []).map((co) => ({
+              name: co.name, slug: co.slug, job_count: co.job_count,
+              thumbnail: resolveThumbnail(co.thumbnail, c.env.STATIC_URL),
+            })),
+            topSalaryJobs: (salaryRes.results || []).map((j) => ({
+              slug: j.slug, title: j.title, company_name: j.company_name,
+              salary_label: formatSalary(j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle),
+            })),
+            chineseFriendlyCount: countsRes?.cf ?? 0,
+            noEnglishCount: countsRes?.ne ?? 0,
+          };
+        }, waitUntil),
         currentUser ? recommendJobIdsForUser(c.env, currentUser.id, 5).catch(() => [] as number[]) : Promise.resolve([] as number[]),
       ]);
-      newCompanies = (companiesRes.results || []).map((co) => ({
-        name: co.name, slug: co.slug, job_count: co.job_count,
-        thumbnail: resolveThumbnail(co.thumbnail, c.env.STATIC_URL),
-      }));
-      topSalaryJobs = (salaryRes.results || []).map((j) => ({
-        slug: j.slug, title: j.title, company_name: j.company_name,
-        salary_label: formatSalary(j.salary_lower, j.salary_upper, j.salary_currency, j.salary_pay_cycle),
-      }));
-      chineseFriendlyCount = countsRes?.cf ?? 0;
-      noEnglishCount = countsRes?.ne ?? 0;
+      newCompanies = discovery.newCompanies;
+      topSalaryJobs = discovery.topSalaryJobs;
+      chineseFriendlyCount = discovery.chineseFriendlyCount;
+      noEnglishCount = discovery.noEnglishCount;
       if (recIds.length > 0) {
         const recRes = await c.env.DB.prepare(`
           SELECT j.id, j.slug, j.title, co.name as company_name, lo.name_cn as location_name_cn, ct.name_cn as country_name_cn
@@ -897,11 +927,14 @@ pages.get('/jobs/chinese', async (c) => {
   const offset = (page - 1) * limit;
   const cutoff = activeCutoff();
 
-  const [idResult, totalRow] = await Promise.all([
+  const [idResult, total] = await Promise.all([
     c.env.DB.prepare(
       'SELECT id FROM jobs WHERE chinese_friendly = 1 AND posted_at >= ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
     ).bind(cutoff, limit + 1, offset).all<{ id: number }>(),
-    c.env.DB.prepare('SELECT COUNT(*) as c FROM jobs WHERE chinese_friendly = 1 AND posted_at >= ?').bind(cutoff).first<{ c: number }>(),
+    cachedJson('jobs:chinese:count', FRAGMENT_TTL.short, async () => {
+      const row = await c.env.DB.prepare('SELECT COUNT(*) as c FROM jobs WHERE chinese_friendly = 1 AND posted_at >= ?').bind(cutoff).first<{ c: number }>();
+      return row?.c ?? 0;
+    }, waitUntilOf(c)),
   ]);
   const allIds = (idResult.results || []).map((r) => r.id);
   const hasMoreRaw = allIds.length > limit;
@@ -913,7 +946,7 @@ pages.get('/jobs/chinese', async (c) => {
     jobs = ((jobsResult.results || []) as unknown as Job[]).map((j) => ({ ...j, company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL) }));
   }
 
-  return c.html(chineseJobsPage(jobs, page, hasMore, totalRow?.c ?? 0, {
+  return c.html(chineseJobsPage(jobs, page, hasMore, total, {
     gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL, user: c.get('user'),
   }));
 });
@@ -932,20 +965,23 @@ pages.get('/jobs/:collection', async (c) => {
   const cutoff = activeCutoff();
 
   const placeholders = group.levels.map(() => '?').join(',');
-  const [idResult, countsResult] = await Promise.all([
+  const [idResult, counts] = await Promise.all([
     c.env.DB.prepare(
       `SELECT id FROM jobs WHERE posted_at >= ? AND english_level_required IN (${placeholders}) ORDER BY created_at DESC LIMIT ? OFFSET ?`
     ).bind(cutoff, ...group.levels, limit + 1, offset).all<{ id: number }>(),
-    c.env.DB.prepare(
-      `SELECT english_level_required as level, COUNT(*) as count FROM jobs WHERE posted_at >= ? GROUP BY english_level_required`
-    ).bind(cutoff).all<{ level: string; count: number }>(),
+    cachedJson('jobs:english:counts', FRAGMENT_TTL.short, async () => {
+      const countsResult = await c.env.DB.prepare(
+        `SELECT english_level_required as level, COUNT(*) as count FROM jobs WHERE posted_at >= ? GROUP BY english_level_required`
+      ).bind(cutoff).all<{ level: string; count: number }>();
+      const out: Record<string, number> = {};
+      for (const g of ENGLISH_LEVEL_GROUPS) {
+        out[g.slug] = (countsResult.results || [])
+          .filter((r) => (g.levels as readonly string[]).includes(r.level))
+          .reduce((sum, r) => sum + r.count, 0);
+      }
+      return out;
+    }, waitUntilOf(c)),
   ]);
-  const counts: Record<string, number> = {};
-  for (const g of ENGLISH_LEVEL_GROUPS) {
-    counts[g.slug] = (countsResult.results || [])
-      .filter((r) => (g.levels as readonly string[]).includes(r.level))
-      .reduce((sum, r) => sum + r.count, 0);
-  }
 
   const allIds = (idResult.results || []).map((r) => r.id);
   const hasMoreRaw = allIds.length > limit;
@@ -1013,15 +1049,21 @@ function percentile(sorted: number[], p: number): number {
 }
 
 pages.get('/salary-reports', async (c) => {
+  // The full scan + percentile maths is identical for everyone; recompute at most once an hour.
+  const stats = await cachedJson('salary:stats', FRAGMENT_TTL.long, () => computeSalaryStats(c.env), waitUntilOf(c));
+  return c.html(salaryPage(stats.rows, stats.summary, { gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL, user: c.get('user') }));
+});
+
+async function computeSalaryStats(env: Env): Promise<{ rows: SalaryStatRow[]; summary: Parameters<typeof salaryPage>[1] }> {
   const cutoff = activeCutoff();
   const midpoint = 'CASE WHEN j.salary_lower > 0 AND j.salary_upper > 0 THEN (j.salary_lower + j.salary_upper) / 2.0 ELSE MAX(j.salary_lower, j.salary_upper) END';
   const [rowsRes, totalRes] = await Promise.all([
-    c.env.DB.prepare(`
+    env.DB.prepare(`
       SELECT j.search_term_id, st.term_cn, st.slug, ${monthlySalarySql(midpoint)} as monthly
       FROM jobs j LEFT JOIN search_terms st ON st.id = j.search_term_id
       WHERE j.posted_at >= ? AND (j.salary_lower > 0 OR j.salary_upper > 0)
     `).bind(cutoff).all<{ search_term_id: number | null; term_cn: string | null; slug: string | null; monthly: number }>(),
-    c.env.DB.prepare('SELECT COUNT(*) as c FROM jobs WHERE posted_at >= ?').bind(cutoff).first<{ c: number }>(),
+    env.DB.prepare('SELECT COUNT(*) as c FROM jobs WHERE posted_at >= ?').bind(cutoff).first<{ c: number }>(),
   ]);
 
   const samples = (rowsRes.results || []).filter((r) => Number.isFinite(r.monthly) && r.monthly >= 500 && r.monthly <= 500000);
@@ -1056,15 +1098,18 @@ pages.get('/salary-reports', async (c) => {
   ];
   const buckets = bucketDefs.map((b) => ({ label: b.label, count: allValues.filter((v) => v >= b.min && v < b.max).length }));
 
-  return c.html(salaryPage(rows, {
-    sampleCount: allValues.length,
-    totalActive: totalRes?.c ?? 0,
-    median: percentile(allValues, 0.5),
-    p25: percentile(allValues, 0.25),
-    p75: percentile(allValues, 0.75),
-    buckets,
-  }, { gaId: c.env.GA_ID, siteUrl: c.env.SITE_URL, staticUrl: c.env.STATIC_URL, user: c.get('user') }));
-});
+  return {
+    rows,
+    summary: {
+      sampleCount: allValues.length,
+      totalActive: totalRes?.c ?? 0,
+      median: percentile(allValues, 0.5),
+      p25: percentile(allValues, 0.25),
+      p75: percentile(allValues, 0.75),
+      buckets,
+    },
+  };
+}
 
 pages.get('/weekly-reports', async (c) => {
   const [report, weeks] = await Promise.all([loadLatestWeeklyReport(c.env), listWeeklyReportWeeks(c.env)]);
