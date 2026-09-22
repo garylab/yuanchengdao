@@ -143,7 +143,7 @@ export async function sendWeeklyDigestEmail(
       <p style="${EMAIL_MUTED_STYLE};margin:0 0 20px">${escapeHtml(report.weekStart)} ~ ${escapeHtml(report.weekEnd)}</p>
       <div style="background:#fef3ec;border-radius:8px;padding:14px 16px;margin-bottom:20px">
         本周新增 <strong>${report.newJobs}</strong> 个远程职位，来自 <strong>${report.newCompanies}</strong> 家新雇主；
-        其中 <strong>${report.noEnglishNew}</strong> 个不需要英语，<strong>${report.chineseFriendlyNew}</strong> 个华人友好。
+        其中 <strong>${report.noEnglishNew}</strong> 个未标明英语要求，<strong>${report.chineseFriendlyNew}</strong> 个中文优先。
         当前在招 <strong>${report.activeJobs}</strong> 个。
       </div>
       ${personalLines.length > 0 ? `<div style="border-left:3px solid #ec6517;padding:4px 12px;margin-bottom:20px">${personalLines.map((l) => `<p style="margin:4px 0">${l}</p>`).join('')}<p style="margin:6px 0 0"><a href="${base}/favorites" style="${EMAIL_LINK_STYLE}">查看我的收藏 →</a></p></div>` : ''}
@@ -155,7 +155,7 @@ export async function sendWeeklyDigestEmail(
 
   const text = [
     `远程岛周报 ${report.weekStart} ~ ${report.weekEnd}`,
-    `本周新增 ${report.newJobs} 个远程职位，${report.newCompanies} 家新雇主，${report.noEnglishNew} 个不需要英语。`,
+    `本周新增 ${report.newJobs} 个远程职位，${report.newCompanies} 家新雇主，${report.noEnglishNew} 个未标明英语要求。`,
     '',
     '本周高薪 Top 10：',
     ...report.topSalaryJobs.slice(0, 10).map((j, i) => `${i + 1}. ${j.title} - ${j.company_name} ${j.salary_label} ${base}/job/${j.slug}`),

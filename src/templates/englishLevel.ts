@@ -48,7 +48,7 @@ export function englishLevelPage(
   return layout(`${group.title} - 远程岛`, content, {
     gaId: opts.gaId,
     description: `${group.title}：${group.description} 每天更新，可直接申请。`,
-    keywords: `${group.title},不需要英语的远程工作,英语要求,远程工作,远程岛`,
+    keywords: `${group.title},未标明英语要求的远程工作,英语要求,远程工作,远程岛`,
     canonical: opts.siteUrl ? `${opts.siteUrl}/english/${group.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
     staticUrl: opts.staticUrl,
     activePath: '/english',

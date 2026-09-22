@@ -42,8 +42,8 @@ export function weeklyPage(
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div class="bg-white rounded shadow-sm border border-surface-200 p-4"><div class="text-xs text-surface-500">本周新增职位</div><div class="text-2xl font-bold text-brand-600 mt-1">${report.newJobs}</div></div>
         <div class="bg-white rounded shadow-sm border border-surface-200 p-4"><div class="text-xs text-surface-500">新入驻雇主</div><div class="text-2xl font-bold text-surface-900 mt-1">${report.newCompanies}</div></div>
-        <div class="bg-white rounded shadow-sm border border-surface-200 p-4"><div class="text-xs text-surface-500">不需要英语</div><div class="text-2xl font-bold text-surface-900 mt-1">${report.noEnglishNew}</div></div>
-        <div class="bg-white rounded shadow-sm border border-surface-200 p-4"><div class="text-xs text-surface-500">华人友好</div><div class="text-2xl font-bold text-surface-900 mt-1">${report.chineseFriendlyNew}</div></div>
+        <div class="bg-white rounded shadow-sm border border-surface-200 p-4"><div class="text-xs text-surface-500">未标明英语要求</div><div class="text-2xl font-bold text-surface-900 mt-1">${report.noEnglishNew}</div></div>
+        <div class="bg-white rounded shadow-sm border border-surface-200 p-4"><div class="text-xs text-surface-500">中文优先</div><div class="text-2xl font-bold text-surface-900 mt-1">${report.chineseFriendlyNew}</div></div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

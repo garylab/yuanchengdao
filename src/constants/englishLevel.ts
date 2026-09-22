@@ -31,9 +31,9 @@ export function parseEnglishLevel(raw: unknown): EnglishLevel {
 export const ENGLISH_LEVEL_GROUPS = [
   {
     slug: 'none',
-    label: '不需要英语',
-    title: '不需要英语的远程工作',
-    description: '岗位描述中未提出英语要求，适合英语暂时不是强项的求职者。',
+    label: '未标明英语要求',
+    title: '未标明英语要求的远程工作',
+    description: '岗位描述中没有写明英语水平要求（不代表完全不用英语），适合先从这类岗位入手的求职者。',
     levels: ['none'] as EnglishLevel[],
   },
   {

@@ -210,7 +210,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
         </div>
       </div>
 
-      ${chineseOnly ? `<span class="tag-pill bg-rose-50 text-rose-700 text-xs">🇨🇳 华人友好</span>` : ''}
+      ${chineseOnly ? `<span class="tag-pill bg-rose-50 text-rose-700 text-xs">🇨🇳 中文优先</span>` : ''}
       ${hasFilters || query ? `<a href="/" class="text-xs text-surface-400 hover:text-brand-500 transition">清除</a>` : ''}
       ${(() => {
         const params = new URLSearchParams();
@@ -260,8 +260,8 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
   const showDiscovery = page === 1 && !query && !hasFilters;
   const quickEntries = showDiscovery ? `
     <div class="max-w-5xl mx-auto mt-3 flex flex-wrap gap-2 text-xs">
-      <a href="/english/none" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">🗣️ 不需要英语 <span class="text-surface-400">${noEnglishCount}</span></a>
-      <a href="/?chinese=1" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">🇨🇳 华人友好 <span class="text-surface-400">${chineseFriendlyCount}</span></a>
+      <a href="/english/none" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">🗣️ 未标明英语要求 <span class="text-surface-400">${noEnglishCount}</span></a>
+      <a href="/?chinese=1" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">🇨🇳 中文优先 <span class="text-surface-400">${chineseFriendlyCount}</span></a>
       <a href="/salary" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">💰 薪资报告</a>
       <a href="/weekly" class="px-3 py-1.5 rounded-full bg-white border border-surface-200 text-surface-700 hover:border-brand-300 hover:text-brand-600 transition no-underline">📰 本周周报</a>
     </div>` : '';
@@ -338,7 +338,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
   if (query) subParts.push(`${query} 相关远程工作`);
   if (activeLocation) subParts.push(`${activeLocation.name_cn}远程岗位`);
   if (activeSalary && salaryRange) subParts.push(`薪资${activeSalary.label}`);
-  if (chineseOnly) subParts.push('华人友好远程工作');
+  if (chineseOnly) subParts.push('中文优先远程工作');
   if (page > 1) subParts.push(`第${page}页`);
   const pageTitle = subParts.length > 0
     ? `${subParts.join(' - ')} - 远程岛`

@@ -251,7 +251,7 @@ export function rewriteUtm(url: string): string {
 
 export function chineseFriendlyBadge(flag: number | null | undefined): string {
   if (!flag) return '';
-  return `<span class="tag-pill bg-rose-50 text-rose-700 text-xs">🇨🇳 华人友好</span>`;
+  return `<span class="tag-pill bg-rose-50 text-rose-700 text-xs">🇨🇳 中文优先</span>`;
 }
 
 export function formatDateCn(dateStr: string | null | undefined): string {
