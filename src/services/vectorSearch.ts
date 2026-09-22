@@ -51,6 +51,8 @@ export async function deleteJobVectors(
   vectorize: VectorizeIndex,
   jobIds: number[],
 ): Promise<void> {
-  if (jobIds.length === 0) return;
-  await vectorize.deleteByIds(jobIds.map(String));
+  const CHUNK = 200;
+  for (let i = 0; i < jobIds.length; i += CHUNK) {
+    await vectorize.deleteByIds(jobIds.slice(i, i + CHUNK).map(String));
+  }
 }

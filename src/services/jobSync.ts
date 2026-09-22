@@ -51,28 +51,69 @@ function isLikelyRemoteJob(crawled: CrawledJob): boolean {
   return REMOTE_KEYWORDS.some((keyword) => combined.includes(keyword));
 }
 
-function parsePostedAt(detectedExtensions: string | null, timezone: string): string | null {
-  if (!detectedExtensions) return null;
+const RELATIVE_DATE_RE = /(\d+)\s*(hour|day|week|month)/i;
+
+function parseJsonArray(value: string | null): string[] {
+  if (!value) return [];
   try {
-    const ext = JSON.parse(detectedExtensions);
-    const raw = ext.posted_at as string | undefined;
-    if (!raw) return null;
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
 
-    const offsetMs = getTimezoneOffsetMs(timezone);
-    const nowLocal = new Date(Date.now() + offsetMs);
+function parseDetected(value: string | null): Record<string, unknown> {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {};
+  } catch {
+    return {};
+  }
+}
 
-    const match = raw.match(/(\d+)\s*(hour|day|week|month)/i);
-    if (!match) return new Date(nowLocal.getTime() - offsetMs).toISOString();
+// SerpAPI stopped populating detected_extensions in Sep 2026; the same facts
+// still arrive as free-text strings in `extensions`, so rebuild what we need.
+function deriveDetectedExtensions(detectedJson: string | null, extensionsJson: string | null): Record<string, unknown> {
+  const detected = parseDetected(detectedJson);
+  const extensions = parseJsonArray(extensionsJson);
+  if (!detected.posted_at) {
+    const rel = extensions.find((e) => RELATIVE_DATE_RE.test(e) || /just now|today|yesterday/i.test(e));
+    if (rel) detected.posted_at = rel;
+  }
+  if (!detected.schedule_type) {
+    const schedule = extensions.find((e) => /full[\s\u2010-\u2015-]?time|part[\s\u2010-\u2015-]?time|contractor|contract|internship|temporary|freelance/i.test(e));
+    if (schedule) detected.schedule_type = schedule;
+  }
+  if (detected.work_from_home === undefined && extensions.some((e) => /work from home|remote/i.test(e))) {
+    detected.work_from_home = true;
+  }
+  if (!detected.salary) {
+    const salary = extensions.find((e) => /[$€£¥]\s?\d|\d\s?(k|K)\b.*(year|hour|month)|per (hour|year|month)|a year|an hour/i.test(e));
+    if (salary) detected.salary = salary;
+  }
+  return detected;
+}
+
+// Always returns a timestamp: an explicit relative date when SerpAPI gives one,
+// otherwise the crawl time (the listing is at least as fresh as our crawl).
+function parsePostedAt(detected: Record<string, unknown>, timezone: string): string {
+  const raw = typeof detected.posted_at === 'string' ? detected.posted_at : '';
+  const offsetMs = getTimezoneOffsetMs(timezone);
+  const nowLocal = new Date(Date.now() + offsetMs);
+  const match = raw.match(RELATIVE_DATE_RE);
+  if (match) {
     const num = parseInt(match[1], 10);
     const unit = match[2].toLowerCase();
     if (unit.startsWith('hour')) nowLocal.setHours(nowLocal.getHours() - num);
     else if (unit.startsWith('day')) nowLocal.setDate(nowLocal.getDate() - num);
     else if (unit.startsWith('week')) nowLocal.setDate(nowLocal.getDate() - num * 7);
     else if (unit.startsWith('month')) nowLocal.setMonth(nowLocal.getMonth() - num);
-    return new Date(nowLocal.getTime() - offsetMs).toISOString();
-  } catch {
-    return null;
+  } else if (/yesterday/i.test(raw)) {
+    nowLocal.setDate(nowLocal.getDate() - 1);
   }
+  return new Date(nowLocal.getTime() - offsetMs).toISOString();
 }
 
 async function saveCrawledJob(
@@ -189,16 +230,34 @@ export async function generateJobSlug(db: D1Database, title: string, companyName
   return `${base}-${crawledId}-${Date.now()}`;
 }
 
+const PROCESS_STATUS_CLAIMED = 2;
+
 async function processUnprocessedJobs(env: Env): Promise<number> {
   const BATCH_SIZE = 5;
+
+  // Release claims left behind by a run that died mid-translation.
+  await env.DB.prepare(
+    `UPDATE jobs_crawled SET process_status = 0
+     WHERE process_status = ? AND created_at < datetime('now', '-15 minutes')`
+  ).bind(PROCESS_STATUS_CLAIMED).run();
+
   const unprocessed = await env.DB.prepare(
     'SELECT * FROM jobs_crawled WHERE process_status = 0 ORDER BY id LIMIT ?'
   ).bind(BATCH_SIZE).all();
 
-  const crawledJobs = (unprocessed.results || []) as unknown as CrawledJob[];
+  const candidates = (unprocessed.results || []) as unknown as CrawledJob[];
+  if (candidates.length === 0) return 0;
+
+  // Claim atomically so overlapping cron ticks never translate the same row twice.
+  const crawledJobs: CrawledJob[] = [];
+  for (const crawled of candidates) {
+    const claim = await env.DB.prepare(
+      'UPDATE jobs_crawled SET process_status = ? WHERE id = ? AND process_status = 0'
+    ).bind(PROCESS_STATUS_CLAIMED, crawled.id).run();
+    if (claim.meta.changes === 1) crawledJobs.push(crawled);
+  }
   if (crawledJobs.length === 0) return 0;
 
-  // Skip crawled jobs that already have a processed job (from a previous partial run)
   const toTranslate: CrawledJob[] = [];
   for (const crawled of crawledJobs) {
     const existing = await env.DB.prepare(
@@ -209,16 +268,19 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         'UPDATE jobs_crawled SET process_status = 1 WHERE id = ?'
       ).bind(crawled.id).run();
       console.log(`  Skipped crawled #${crawled.id} — already in jobs table`);
-    } else {
-      if (!isLikelyRemoteJob(crawled)) {
-        await env.DB.prepare(
-          'UPDATE jobs_crawled SET process_status = 44, failed_reason = ? WHERE id = ?'
-        ).bind('not remote', crawled.id).run();
-        console.log(`  Skipped crawled #${crawled.id} — not a remote job`);
-      } else {
-        toTranslate.push(crawled);
-      }
+      continue;
     }
+    if (!isLikelyRemoteJob(crawled)) {
+      await env.DB.prepare(
+        'UPDATE jobs_crawled SET process_status = 44, failed_reason = ? WHERE id = ?'
+      ).bind('not remote', crawled.id).run();
+      console.log(`  Skipped crawled #${crawled.id} — not a remote job`);
+      continue;
+    }
+    // Feed the translator the reconstructed extensions so it still sees schedule/salary hints.
+    const derived = deriveDetectedExtensions(crawled.detected_extensions, crawled.extensions);
+    crawled.detected_extensions = Object.keys(derived).length > 0 ? JSON.stringify(derived) : null;
+    toTranslate.push(crawled);
   }
 
   if (toTranslate.length === 0) return 0;
@@ -272,7 +334,7 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         crawled.apply_options,
       );
 
-      const postedAt = parsePostedAt(crawled.detected_extensions, country?.timezone || 'UTC');
+      const postedAt = parsePostedAt(parseDetected(crawled.detected_extensions), country?.timezone || 'UTC');
       const slug = await generateJobSlug(env.DB, crawled.title, crawled.company_name, crawled.id);
 
       const searchTermId = crawled.search_term_id;
