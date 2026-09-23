@@ -116,17 +116,6 @@ export async function deliverSubscriptionAlerts(
   const subscriptions = (subscriptionsResult.results || []) as MatchingSubscription[];
   if (subscriptions.length === 0) return;
 
-  const subscriptionIds = subscriptions.map((s) => s.id);
-  const deliveredResult = await env.DB.prepare(
-    `SELECT subscription_id, job_id FROM subscription_deliveries
-     WHERE subscription_id IN (${subscriptionIds.join(',')})
-       AND job_id IN (${jobIds.join(',')})
-       AND ${channelColumn} IS NOT NULL`
-  ).all<{ subscription_id: number; job_id: number }>();
-  const deliveredSet = new Set(
-    (deliveredResult.results || []).map((row) => `${row.subscription_id}:${row.job_id}`),
-  );
-
   const keywordQueries = [...new Set(
     subscriptions.filter((s) => s.kind === 'keyword').map((s) => (s.query_text || '').trim()).filter(Boolean),
   )];
@@ -139,7 +128,6 @@ export async function deliverSubscriptionAlerts(
   for (const job of jobs) {
     for (const subscription of subscriptions) {
       if (channel === 'telegram' && !subscription.telegram_chat_id) continue;
-      if (deliveredSet.has(`${subscription.id}:${job.id}`)) continue;
 
       let baseMatch = false;
       if (subscription.kind === 'category') {
@@ -158,29 +146,43 @@ export async function deliverSubscriptionAlerts(
 
   if (pending.length === 0) return;
 
+  // Claim atomically so an at-least-once cron delivery never sends the same
+  // (subscription, job, channel) twice. The row is inserted with the channel
+  // timestamp set; if the row already exists we only flip the timestamp when
+  // it was NULL. RETURNING id tells us which pairs we actually won.
+  const claimed: PendingDelivery[] = [];
+  for (const item of pending) {
+    const result = await env.DB.prepare(
+      `INSERT INTO subscription_deliveries (subscription_id, job_id, ${channelColumn})
+       VALUES (?, ?, datetime('now'))
+       ON CONFLICT(subscription_id, job_id) DO UPDATE
+         SET ${channelColumn} = excluded.${channelColumn}
+         WHERE subscription_deliveries.${channelColumn} IS NULL
+       RETURNING id`
+    ).bind(item.subscription.id, item.job.id).first<{ id: number }>();
+    if (result) claimed.push(item);
+  }
+
+  if (claimed.length === 0) return;
+
   const byUser = new Map<number, {
     email: string;
     telegramChatId: string | null;
     jobs: Map<number, NewJobRow>;
-    subscriptionJobPairs: Array<{ subscriptionId: number; jobId: number }>;
   }>();
 
-  for (const item of pending) {
+  for (const item of claimed) {
     let bucket = byUser.get(item.subscription.user_id);
     if (!bucket) {
       bucket = {
         email: item.subscription.email,
         telegramChatId: item.subscription.telegram_chat_id,
         jobs: new Map(),
-        subscriptionJobPairs: [],
       };
       byUser.set(item.subscription.user_id, bucket);
     }
     bucket.jobs.set(item.job.id, item.job);
-    bucket.subscriptionJobPairs.push({ subscriptionId: item.subscription.id, jobId: item.job.id });
   }
-
-  const deliveryStatements: D1PreparedStatement[] = [];
 
   for (const [, bucket] of byUser) {
     const alertJobs: SubscriptionJobAlert[] = [...bucket.jobs.values()].map((job) => toAlertJob(job));
@@ -188,24 +190,7 @@ export async function deliverSubscriptionAlerts(
     if (channel === 'email' && bucket.email) {
       await sendSubscriptionAlertEmail(env, bucket.email, alertJobs);
     } else if (channel === 'telegram' && bucket.telegramChatId) {
-      await sendTelegramDirectMessage(env, bucket.telegramChatId, buildTelegramAlert(env, alertJobs, '远程岛订阅提醒'));
-    }
-
-    for (const pair of bucket.subscriptionJobPairs) {
-      deliveryStatements.push(
-        env.DB.prepare(
-          `INSERT INTO subscription_deliveries (subscription_id, job_id, ${channelColumn})
-           VALUES (?, ?, datetime('now'))
-           ON CONFLICT(subscription_id, job_id) DO UPDATE SET ${channelColumn} = datetime('now')`
-        ).bind(pair.subscriptionId, pair.jobId),
-      );
-    }
-  }
-
-  if (deliveryStatements.length > 0) {
-    const chunkSize = 50;
-    for (let index = 0; index < deliveryStatements.length; index += chunkSize) {
-      await env.DB.batch(deliveryStatements.slice(index, index + chunkSize));
+      await sendTelegramDirectMessage(env, bucket.telegramChatId, buildTelegramAlert(env, alertJobs));
     }
   }
 }
@@ -228,13 +213,13 @@ export function toAlertJob(job: {
   };
 }
 
-export function buildTelegramAlert(env: Env, jobs: SubscriptionJobAlert[], heading: string): string {
+export function buildTelegramAlert(env: Env, jobs: SubscriptionJobAlert[], heading?: string): string {
   const baseUrl = env.SITE_URL.replace(/\/$/, '');
   const lines = jobs.map((job) => {
     const url = `${baseUrl}/job/${encodeURIComponent(job.slug)}?utm_source=telegram&utm_medium=subscription`;
     return `<a href="${escapeTelegram(url)}"><b>${escapeTelegram(job.title)}</b></a>\n${escapeTelegram(job.companyName)} · ${escapeTelegram(job.locationLabel)}${job.salaryLabel ? ` · ${escapeTelegram(job.salaryLabel)}` : ''}`;
   });
-  return `${heading}\n\n${lines.join('\n\n')}`;
+  return heading ? `${heading}\n\n${lines.join('\n\n')}` : lines.join('\n\n');
 }
 
 export function escapeTelegram(text: string): string {
