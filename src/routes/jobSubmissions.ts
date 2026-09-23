@@ -9,6 +9,8 @@ import {
   sendSubmissionReceivedEmail,
 } from '../services/email';
 import { loadSubmission, publishSubmission } from '../services/jobSubmissions';
+import { sendTelegramDirectMessage } from '../services/telegramDm';
+import { escapeTelegram } from '../services/subscriptions';
 
 const jobSubmissions = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -116,9 +118,21 @@ jobSubmissions.post('/api/job-submissions', async (c) => {
 
   const notify = async () => {
     await sendSubmissionReceivedEmail(c.env, contactEmail, info).catch(() => null);
-    const admins = await c.env.DB.prepare("SELECT email FROM users WHERE role = 'admin'").all<{ email: string }>();
+    const admins = await c.env.DB.prepare(
+      "SELECT email, telegram_chat_id FROM users WHERE role = 'admin'"
+    ).all<{ email: string; telegram_chat_id: string | null }>();
+    const base = c.env.SITE_URL.replace(/\/$/, '');
+    const tgText = [
+      `<b>[待审核] 新职位投递 #${submissionId}</b>`,
+      `${escapeTelegram(companyName)} · ${escapeTelegram(title)}`,
+      `联系邮箱：${escapeTelegram(contactEmail)}`,
+      `<a href="${escapeTelegram(`${base}/admin/submissions`)}">前往审核 →</a>`,
+    ].join('\n');
     for (const admin of admins.results || []) {
       await sendAdminNewSubmissionEmail(c.env, admin.email, { ...info, contact_email: contactEmail }).catch(() => null);
+      if (admin.telegram_chat_id) {
+        await sendTelegramDirectMessage(c.env, admin.telegram_chat_id, tgText).catch(() => null);
+      }
     }
   };
   c.executionCtx.waitUntil(notify());
