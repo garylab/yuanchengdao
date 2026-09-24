@@ -5,10 +5,9 @@ import { AuthUser } from '../types';
 export function postJobPage(options: {
   gaId?: string;
   staticUrl?: string;
-  user?: AuthUser | null;
-  turnstileSiteKey?: string;
+  user: AuthUser;
 }): string {
-  const { user, turnstileSiteKey = '' } = options;
+  const { user } = options;
   const bc = breadcrumb([
     { label: '首页', href: '/' },
     { label: '发布职位', href: '/post-job' },
@@ -17,7 +16,6 @@ export function postJobPage(options: {
   const fieldClass =
     'w-full rounded border border-surface-200 px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 focus:outline-none focus:ring-1 focus:ring-brand-300 focus:border-brand-300';
   const labelClass = 'block text-sm font-medium text-surface-700 mb-1.5';
-  const needTurnstile = !!turnstileSiteKey && !user;
 
   const content = `
     ${bc}
@@ -138,8 +136,6 @@ export function postJobPage(options: {
             <input id="contact-email" name="contactEmail" type="email" required maxlength="120" value="${user?.email ? escapeHtml(user.email) : ''}" placeholder="用于接收审核结果，不会公开" class="${fieldClass}">
           </div>
 
-          ${needTurnstile ? `<div class="cf-turnstile" data-sitekey="${escapeHtml(turnstileSiteKey)}" data-theme="light"></div>` : ''}
-
           <p id="post-job-status" class="hidden text-sm"></p>
 
           <div class="pt-2 flex items-center gap-4">
@@ -156,7 +152,6 @@ export function postJobPage(options: {
         </div>
       </div>
     </div>
-    ${needTurnstile ? `<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
     <script>
       (function () {
         var form = document.getElementById('post-job-form');
@@ -164,7 +159,6 @@ export function postJobPage(options: {
         var statusEl = document.getElementById('post-job-status');
         var submitBtn = document.getElementById('post-job-submit');
         var successEl = document.getElementById('post-job-success');
-        var needTurnstile = ${needTurnstile ? 'true' : 'false'};
 
         function showStatus(text, isError) {
           statusEl.textContent = text;
@@ -174,10 +168,6 @@ export function postJobPage(options: {
         function value(name) {
           var el = form.elements.namedItem(name);
           return el && 'value' in el ? String(el.value).trim() : '';
-        }
-        function getTurnstileToken() {
-          var input = form.querySelector('input[name="cf-turnstile-response"]');
-          return input ? input.value : '';
         }
 
         form.addEventListener('submit', async function (event) {
@@ -201,7 +191,6 @@ export function postJobPage(options: {
             applyEmail: value('applyEmail'),
             description: value('description'),
             contactEmail: value('contactEmail'),
-            turnstileToken: getTurnstileToken()
           };
           submitBtn.disabled = true;
           var original = submitBtn.textContent;
@@ -211,7 +200,6 @@ export function postJobPage(options: {
             var data = await res.json().catch(function () { return {}; });
             if (!res.ok) {
               showStatus(data.error || '提交失败', true);
-              if (needTurnstile && window.turnstile) { var w = form.querySelector('.cf-turnstile'); if (w) window.turnstile.reset(w); }
               return;
             }
             statusEl.classList.add('hidden');
@@ -260,7 +248,6 @@ export function postJobPage(options: {
           if (logoStatus) { logoStatus.textContent = 'PNG / JPG / WebP / SVG，≤ 2MB'; logoStatus.className = 'text-xs text-surface-400 mt-1'; }
           form.classList.remove('hidden');
           successEl.classList.add('hidden');
-          if (needTurnstile && window.turnstile) { var w = form.querySelector('.cf-turnstile'); if (w) window.turnstile.reset(w); }
           form.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
       })();

@@ -648,11 +648,12 @@ pages.get('/about', (c) => {
 });
 
 pages.get('/post-job', (c) => {
+  const user = c.get('user');
+  if (!user) return c.redirect(`/login?next=${encodeURIComponent('/post-job')}`, 302);
   return c.html(postJobPage({
     gaId: c.env.GA_ID,
     staticUrl: c.env.STATIC_URL,
-    user: c.get('user'),
-    turnstileSiteKey: c.env.TURNSTILE_SITE_KEY,
+    user,
   }));
 });
 

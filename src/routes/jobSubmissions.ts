@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { Env, AppVariables } from '../types';
-import { verifyTurnstile } from '../services/turnstile';
 import { checkRateLimit, isValidEmail, normalizeEmail } from '../services/auth';
 import { parseEnglishLevel } from '../constants/englishLevel';
 import {
@@ -44,6 +43,8 @@ const LOGO_TYPES: Record<string, string> = {
 const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 
 jobSubmissions.post('/api/job-submissions/logo', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.json({ error: '请先登录' }, 401);
   const ip = clientIp(c);
   const allowed = await checkRateLimit(c.env.DB, `logo-upload:${ip}`, 20, 60);
   if (!allowed) return c.json({ error: '上传过于频繁，请稍后再试' }, 429);
@@ -64,6 +65,7 @@ jobSubmissions.post('/api/job-submissions/logo', async (c) => {
 
 jobSubmissions.post('/api/job-submissions', async (c) => {
   const user = c.get('user');
+  if (!user) return c.json({ error: '请先登录' }, 401);
   const body = await c.req.json<{
     companyName?: string;
     companyWebsite?: string;
@@ -81,7 +83,6 @@ jobSubmissions.post('/api/job-submissions', async (c) => {
     salaryUpper?: number;
     salaryPayCycle?: string;
     contactEmail?: string;
-    turnstileToken?: string;
   }>().catch(() => null);
   if (!body) return c.json({ error: '无效请求' }, 400);
 
@@ -125,11 +126,6 @@ jobSubmissions.post('/api/job-submissions', async (c) => {
   const salaryPayCycle = PAY_CYCLES.has(body.salaryPayCycle || '') ? (body.salaryPayCycle as string) : 'month';
 
   const ip = clientIp(c);
-  if (!user) {
-    const turnstileOk = await verifyTurnstile(c.env, body.turnstileToken || '', ip);
-    if (!turnstileOk) return c.json({ error: '人机验证失败' }, 400);
-  }
-
   const allowed = await checkRateLimit(c.env.DB, `job-submit:${ip}`, 5, 60);
   if (!allowed) return c.json({ error: '提交过于频繁，请稍后再试' }, 429);
 
