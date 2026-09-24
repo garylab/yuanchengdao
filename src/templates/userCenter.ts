@@ -1,5 +1,4 @@
 import { AuthUser } from '../types';
-import { escapeHtml } from '../utils/helpers';
 
 function shell(
   activePath: string,
@@ -43,11 +42,10 @@ function shell(
 export function userCenterShell(
   activePath: string,
   innerContent: string,
-  user: AuthUser,
+  _user: AuthUser,
 ): string {
-  const meLabel = user.name ? escapeHtml(user.name) : '我';
   const items = [
-    { href: '/account', label: meLabel },
+    { href: '/account', label: '我的' },
     { href: '/favorites', label: '收藏' },
   ];
   return shell(activePath, innerContent, items, 'max-w-5xl mx-auto px-4 py-6');

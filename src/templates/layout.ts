@@ -46,10 +46,10 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   const meLabel = user?.name ? escapeHtml(user.name) : '我的';
   const isAdminPath = ap.startsWith('/admin') || ap === '/users' || ap.startsWith('/users/');
   const adminNavDesktop = user?.role === 'admin'
-    ? `<a href="/admin/submissions" class="text-sm px-2 py-1 transition no-underline whitespace-nowrap ${isAdminPath ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">管理</a>`
+    ? `<a href="/users" class="text-sm px-2 py-1 transition no-underline whitespace-nowrap ${isAdminPath ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">管理</a>`
     : '';
   const adminNavMobile = user?.role === 'admin'
-    ? `<a href="/admin/submissions" class="block px-4 py-2 text-sm no-underline ${isAdminPath ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">管理</a>`
+    ? `<a href="/users" class="block px-4 py-2 text-sm no-underline ${isAdminPath ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">管理</a>`
     : '';
   const authNavDesktop = user
     ? `<a href="/account" class="text-sm px-2 py-1 transition no-underline whitespace-nowrap ${ap.startsWith('/account') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">${meLabel}</a>`
