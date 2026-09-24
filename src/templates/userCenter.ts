@@ -30,8 +30,9 @@ export function userCenterShell(
     sidebarLink(it.href, it.label, 'px-3 py-1.5 rounded text-sm border border-transparent')
   ).join('\n          ');
 
+  const wrapperClass = activePath.startsWith('/admin/') ? 'w-full px-4 py-6' : 'max-w-5xl mx-auto px-4 py-6';
   return `
-    <div class="max-w-5xl mx-auto px-4 py-6">
+    <div class="${wrapperClass}">
       <div class="flex flex-col sm:flex-row gap-6">
         <aside class="sm:w-48 sm:flex-shrink-0">
           <nav class="hidden sm:block bg-white rounded shadow-sm border border-surface-200 p-2 sticky top-20">

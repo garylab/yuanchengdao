@@ -137,7 +137,7 @@ export function accountPage(options: {
           </div>
         </div>
         <form method="post" action="/api/auth/logout" class="mt-6">
-          <button type="submit" class="text-sm text-surface-500 hover:text-red-600">退出登录</button>
+          <button type="submit" class="border border-surface-300 text-surface-700 rounded px-4 py-2 text-sm font-medium hover:border-red-500 hover:text-red-600 transition">退出登录</button>
         </form>
       </div>
 
