@@ -1,7 +1,7 @@
 import { AuthUser } from '../types';
 import { layout } from './layout';
 import { breadcrumb, escapeHtml } from '../utils/helpers';
-import { userCenterShell } from './userCenter';
+import { adminShell } from './userCenter';
 import type { JobSubmissionRow } from '../services/jobSubmissions';
 
 export function adminSubmissionsPage(options: {
@@ -144,7 +144,7 @@ export function adminSubmissionsPage(options: {
       })();
     </script>`;
 
-  const content = `${bc}${userCenterShell('/admin/submissions', inner, user)}`;
+  const content = `${bc}${adminShell('/admin/submissions', inner, user)}`;
   return layout('投递审核 - 远程岛', content, {
     gaId: options.gaId,
     staticUrl: options.staticUrl,

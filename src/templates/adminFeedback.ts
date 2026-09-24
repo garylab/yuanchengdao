@@ -1,7 +1,7 @@
 import { AuthUser } from '../types';
 import { layout } from './layout';
 import { breadcrumb, escapeHtml } from '../utils/helpers';
-import { userCenterShell } from './userCenter';
+import { adminShell } from './userCenter';
 import { feedbackCategoryLabel } from '../constants/feedback';
 
 export type AdminFeedbackRow = {
@@ -116,7 +116,7 @@ export function adminFeedbackPage(options: {
       })();
     </script>`;
 
-  const content = `${bc}${userCenterShell('/admin/feedback', inner, user)}`;
+  const content = `${bc}${adminShell('/admin/feedback', inner, user)}`;
 
   return layout('反馈管理 - 远程岛', content, {
     gaId: options.gaId,

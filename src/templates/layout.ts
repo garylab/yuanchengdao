@@ -44,6 +44,13 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   const postJobMobile = `<a href="/post-job" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/post-job') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-brand-500 hover:bg-brand-50 hover:text-brand-600'}">+ 发布</a>`;
 
   const meLabel = user?.name ? escapeHtml(user.name) : '我的';
+  const isAdminPath = ap.startsWith('/admin') || ap === '/users' || ap.startsWith('/users/');
+  const adminNavDesktop = user?.role === 'admin'
+    ? `<a href="/admin/submissions" class="text-sm px-2 py-1 transition no-underline whitespace-nowrap ${isAdminPath ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">管理</a>`
+    : '';
+  const adminNavMobile = user?.role === 'admin'
+    ? `<a href="/admin/submissions" class="block px-4 py-2 text-sm no-underline ${isAdminPath ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">管理</a>`
+    : '';
   const authNavDesktop = user
     ? `<a href="/account" class="text-sm px-2 py-1 transition no-underline whitespace-nowrap ${ap.startsWith('/account') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">${meLabel}</a>`
     : `<a href="/login" class="text-sm px-2 py-1 transition no-underline whitespace-nowrap ${ap.startsWith('/login') ? 'text-brand-500 font-semibold' : 'text-surface-600 hover:text-brand-500'}">登录</a>`;
@@ -101,6 +108,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
       </div>
       <div class="flex items-center gap-2 sm:gap-4">
         <div class="hidden sm:flex items-center gap-4">
+          ${adminNavDesktop}
           ${authNavDesktop}
         </div>
         <div class="relative sm:hidden">
@@ -110,6 +118,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
           <div id="mobile-menu" class="hidden absolute right-0 top-full mt-1 w-40 bg-white rounded shadow-lg border border-surface-200 py-1 z-50">
             ${mobileNav}
             ${postJobMobile}
+            ${adminNavMobile}
             ${authNavMobile}
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { AuthUser } from '../types';
 import { layout } from './layout';
 import { breadcrumb, escapeHtml } from '../utils/helpers';
-import { userCenterShell } from './userCenter';
+import { adminShell } from './userCenter';
 import { salaryLabel } from '../constants/salary';
 
 export type AdminUserSubscription = {
@@ -93,7 +93,7 @@ export function usersPage(options: {
         </div>
       </div>`;
 
-  const content = `${bc}${userCenterShell('/users', inner, user)}`;
+  const content = `${bc}${adminShell('/users', inner, user)}`;
 
   return layout('所有用户 - 远程岛', content, {
     gaId: options.gaId,

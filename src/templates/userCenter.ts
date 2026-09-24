@@ -1,20 +1,11 @@
 import { AuthUser } from '../types';
 
-export function userCenterShell(
+function shell(
   activePath: string,
   innerContent: string,
-  user: AuthUser,
+  items: Array<{ href: string; label: string }>,
+  wrapperClass: string,
 ): string {
-  const items: Array<{ href: string; label: string }> = [
-    { href: '/account', label: '我的' },
-    { href: '/favorites', label: '收藏' },
-  ];
-  if (user.role === 'admin') {
-    items.push({ href: '/users', label: '所有用户' });
-    items.push({ href: '/admin/feedback', label: '反馈管理' });
-    items.push({ href: '/admin/submissions', label: '投递审核' });
-  }
-
   const isActive = (href: string) => activePath === href || activePath.startsWith(href + '/');
   const sidebarLink = (href: string, label: string, extraClasses = '') =>
     `<a href="${href}" class="${extraClasses} no-underline transition ${
@@ -30,7 +21,6 @@ export function userCenterShell(
     sidebarLink(it.href, it.label, 'px-3 py-1.5 rounded text-sm border border-transparent')
   ).join('\n          ');
 
-  const wrapperClass = activePath.startsWith('/admin/') ? 'w-full px-4 py-6' : 'max-w-5xl mx-auto px-4 py-6';
   return `
     <div class="${wrapperClass}">
       <div class="flex flex-col sm:flex-row gap-6">
@@ -47,4 +37,29 @@ export function userCenterShell(
         </main>
       </div>
     </div>`;
+}
+
+export function userCenterShell(
+  activePath: string,
+  innerContent: string,
+  _user: AuthUser,
+): string {
+  const items = [
+    { href: '/account', label: '我的' },
+    { href: '/favorites', label: '收藏' },
+  ];
+  return shell(activePath, innerContent, items, 'max-w-5xl mx-auto px-4 py-6');
+}
+
+export function adminShell(
+  activePath: string,
+  innerContent: string,
+  _user: AuthUser,
+): string {
+  const items = [
+    { href: '/users', label: '所有用户' },
+    { href: '/admin/feedback', label: '反馈管理' },
+    { href: '/admin/submissions', label: '投递审核' },
+  ];
+  return shell(activePath, innerContent, items, 'w-full px-4 py-6');
 }
