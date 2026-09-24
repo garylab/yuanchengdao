@@ -6,7 +6,6 @@ function shell(
   innerContent: string,
   items: Array<{ href: string; label: string }>,
   wrapperClass: string,
-  footer?: string,
 ): string {
   const isActive = (href: string) => activePath === href || activePath.startsWith(href + '/');
   const sidebarLink = (href: string, label: string, extraClasses = '') =>
@@ -29,7 +28,6 @@ function shell(
         <aside class="sm:w-48 sm:flex-shrink-0">
           <nav class="hidden sm:block bg-white rounded shadow-sm border border-surface-200 p-2 sticky top-20">
             ${desktopNav}
-            ${footer || ''}
           </nav>
           <nav class="sm:hidden flex flex-wrap gap-2 mb-2">
             ${mobileNav}
@@ -52,11 +50,7 @@ export function userCenterShell(
     { href: '/account', label: meLabel },
     { href: '/favorites', label: '收藏' },
   ];
-  const logout = `
-            <form method="post" action="/api/auth/logout" class="mt-8 pt-3 border-t border-surface-100">
-              <button type="submit" class="w-full text-left px-4 py-2 rounded text-sm text-surface-500 hover:bg-surface-100 hover:text-red-600 transition">退出登录</button>
-            </form>`;
-  return shell(activePath, innerContent, items, 'max-w-5xl mx-auto px-4 py-6', logout);
+  return shell(activePath, innerContent, items, 'max-w-5xl mx-auto px-4 py-6');
 }
 
 export function adminShell(

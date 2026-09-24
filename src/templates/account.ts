@@ -118,7 +118,12 @@ export function accountPage(options: {
 
   const inner = `
       <div class="bg-white rounded shadow-sm border border-surface-200 p-6">
-        <h1 class="text-2xl font-bold mb-4">我的</h1>
+        <div class="flex items-center justify-between mb-4 gap-3">
+          <h1 class="text-2xl font-bold">我的</h1>
+          <form method="post" action="/api/auth/logout">
+            <button type="submit" class="text-sm text-surface-500 hover:text-red-600 transition">退出登录</button>
+          </form>
+        </div>
         <div class="text-sm text-surface-600 space-y-2">
           <div><span class="text-surface-400">邮箱</span> · ${escapeHtml(user.email)}</div>
           <div class="flex flex-wrap items-center gap-2">
