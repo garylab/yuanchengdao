@@ -121,7 +121,13 @@ export function accountPage(options: {
         <h1 class="text-2xl font-bold mb-4">我的</h1>
         <div class="text-sm text-surface-600 space-y-2">
           <div><span class="text-surface-400">邮箱</span> · ${escapeHtml(user.email)}</div>
-          ${user.name ? `<div><span class="text-surface-400">昵称</span> · ${escapeHtml(user.name)}</div>` : ''}
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-surface-400">昵称</span>
+            <input type="text" id="name-input" maxlength="40" value="${escapeHtml(user.name || '')}" placeholder="给自己起个昵称"
+              class="border border-surface-200 rounded px-2 py-1 text-sm focus:outline-none focus:border-brand-400 w-48">
+            <button type="button" id="name-save" class="text-sm text-brand-500 hover:text-brand-600">保存</button>
+            <span id="name-status" class="text-xs text-surface-400"></span>
+          </div>
           <div class="flex flex-wrap items-center gap-2 pt-2">
             <span class="text-surface-400">Telegram</span>
             ${telegramStatus}
@@ -136,13 +142,13 @@ export function accountPage(options: {
             <a href="/weekly" class="text-xs text-brand-500 hover:text-brand-600 no-underline">查看最新一期</a>
           </div>
         </div>
-        <form method="post" action="/api/auth/logout" class="mt-6">
-          <button type="submit" class="border border-surface-300 text-surface-700 rounded px-4 py-2 text-sm font-medium hover:border-red-500 hover:text-red-600 transition">退出登录</button>
-        </form>
       </div>
 
       <div class="bg-white rounded shadow-sm border border-surface-200 p-6">
-        <h2 class="text-lg font-bold mb-4">职位订阅</h2>
+        <div class="mb-4">
+          <h2 class="text-lg font-bold">职位订阅</h2>
+          <p class="text-xs text-surface-500 mt-1">邮件每天早上 06:00 汇总一次,Telegram 匹配到即时推送。</p>
+        </div>
         <div id="subscription-list">${subscriptionRows}</div>
 
         <form id="subscription-form" class="mt-6 pt-6 border-t border-surface-100 space-y-3">
@@ -375,6 +381,21 @@ export function accountPage(options: {
           form.scrollIntoView({ behavior: 'smooth', block: 'center' });
           var focusEl = prefill.kind === 'keyword' ? form.queryText : (prefill.kind === 'company' ? companyCombo : termCombo);
           if (focusEl) { var fi = focusEl.querySelector ? focusEl.querySelector('[data-combobox-input]') : focusEl; if (fi && !fi.value) fi.focus(); }
+        }
+
+        var nameInput = document.getElementById('name-input');
+        var nameSave = document.getElementById('name-save');
+        var nameStatus = document.getElementById('name-status');
+        if (nameSave && nameInput) {
+          nameSave.addEventListener('click', async function() {
+            nameSave.disabled = true;
+            try {
+              var res = await fetch('/api/account/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: nameInput.value }) });
+              if (res.ok) { nameStatus.textContent = '已保存'; setTimeout(function() { window.location.reload(); }, 400); }
+              else { var d = await res.json().catch(function() { return {}; }); nameStatus.textContent = d.error || '保存失败'; }
+            } catch (e) { nameStatus.textContent = '保存失败'; }
+            finally { nameSave.disabled = false; }
+          });
         }
 
         var weeklyToggle = document.getElementById('weekly-digest-toggle');
