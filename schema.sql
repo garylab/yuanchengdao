@@ -285,6 +285,7 @@ CREATE TABLE IF NOT EXISTS job_submissions (
   salary_upper INTEGER NOT NULL DEFAULT 0,
   salary_pay_cycle TEXT NOT NULL DEFAULT 'month',
   contact_email TEXT NOT NULL,
+  company_logo TEXT,
   status TEXT NOT NULL DEFAULT 'pending',
   admin_notes TEXT,
   job_id INTEGER REFERENCES jobs(id) ON DELETE SET NULL,

@@ -35,11 +35,39 @@ const LOCATION_REQUIREMENTS = new Set([0, 1, 2, 3, 4]);
 const SCHEDULE_TYPES = new Set(['全职', '兼职', '合同制', '实习']);
 const PAY_CYCLES = new Set(['hour', 'day', 'week', 'month', 'year']);
 
+const LOGO_TYPES: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+  'image/svg+xml': 'svg',
+};
+const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+
+jobSubmissions.post('/api/job-submissions/logo', async (c) => {
+  const ip = clientIp(c);
+  const allowed = await checkRateLimit(c.env.DB, `logo-upload:${ip}`, 20, 60);
+  if (!allowed) return c.json({ error: '上传过于频繁，请稍后再试' }, 429);
+
+  const form = await c.req.formData().catch(() => null);
+  const raw = form?.get('file');
+  if (!raw || typeof raw === 'string') return c.json({ error: '请选择文件' }, 400);
+  const file = raw as unknown as { type: string; size: number; arrayBuffer(): Promise<ArrayBuffer> };
+  const ext = LOGO_TYPES[file.type];
+  if (!ext) return c.json({ error: '仅支持 PNG / JPG / WebP / SVG' }, 400);
+  if (file.size <= 0 || file.size > LOGO_MAX_BYTES) return c.json({ error: '文件需 ≤ 2MB' }, 400);
+
+  const uuid = crypto.randomUUID();
+  const key = `submissions/${uuid}.${ext}`;
+  await c.env.R2.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type } });
+  return c.json({ key });
+});
+
 jobSubmissions.post('/api/job-submissions', async (c) => {
   const user = c.get('user');
   const body = await c.req.json<{
     companyName?: string;
     companyWebsite?: string;
+    companyLogo?: string;
     title?: string;
     description?: string;
     applyUrl?: string;
@@ -56,6 +84,11 @@ jobSubmissions.post('/api/job-submissions', async (c) => {
     turnstileToken?: string;
   }>().catch(() => null);
   if (!body) return c.json({ error: '无效请求' }, 400);
+
+  const companyLogo = (body.companyLogo || '').trim() || null;
+  if (companyLogo && !/^submissions\/[a-f0-9-]{36}\.(png|jpg|webp|svg)$/.test(companyLogo)) {
+    return c.json({ error: 'logo 文件无效' }, 400);
+  }
 
   const companyName = (body.companyName || '').trim();
   const title = (body.title || '').trim();
@@ -102,13 +135,13 @@ jobSubmissions.post('/api/job-submissions', async (c) => {
 
   const inserted = await c.env.DB.prepare(`
     INSERT INTO job_submissions
-      (user_id, company_name, company_website, title, description, apply_url, apply_email, location_text,
+      (user_id, company_name, company_website, company_logo, title, description, apply_url, apply_email, location_text,
        location_requirement, english_level, schedule_type, salary_text, salary_lower, salary_upper, salary_pay_cycle,
        contact_email, ip, user_agent)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     RETURNING id
   `).bind(
-    user?.id ?? null, companyName, companyWebsite, title, description, applyUrl, applyEmail, locationText,
+    user?.id ?? null, companyName, companyWebsite, companyLogo, title, description, applyUrl, applyEmail, locationText,
     locationRequirement, englishLevel, scheduleType || null, salaryText, salaryLower, salaryUpper, salaryPayCycle,
     contactEmail, ip, c.req.header('User-Agent') || null,
   ).first<{ id: number }>();

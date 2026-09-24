@@ -9,6 +9,7 @@ export type JobSubmissionRow = {
   user_id: number | null;
   company_name: string;
   company_website: string | null;
+  company_logo: string | null;
   title: string;
   description: string;
   apply_url: string | null;
@@ -97,6 +98,12 @@ export async function publishSubmission(
     null,
     submission.company_website,
   );
+
+  if (submission.company_logo) {
+    await env.DB.prepare(
+      `UPDATE companies SET thumbnail = ? WHERE id = ? AND (thumbnail IS NULL OR thumbnail = '')`
+    ).bind(submission.company_logo, companyId).run();
+  }
 
   const slug = await generateJobSlug(env.DB, submission.title, submission.company_name, crawledId);
   const chineseFriendly = detectChineseFriendly(submission.title, submission.description) ? 1 : 0;

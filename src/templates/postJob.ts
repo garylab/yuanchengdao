@@ -56,6 +56,18 @@ export function postJobPage(options: {
             </div>
           </div>
 
+          <div>
+            <label class="${labelClass}">公司 Logo</label>
+            <div class="flex items-center gap-4">
+              <div id="logo-preview" class="w-16 h-16 rounded border border-dashed border-surface-300 bg-surface-50 flex items-center justify-center text-xs text-surface-400 overflow-hidden">未上传</div>
+              <div class="flex-1 min-w-0">
+                <input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="text-sm">
+                <input type="hidden" name="companyLogo" id="logo-key" value="">
+                <p id="logo-status" class="text-xs text-surface-400 mt-1">PNG / JPG / WebP / SVG，≤ 2MB</p>
+              </div>
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div>
               <label for="location-requirement" class="${labelClass}">地点限制</label>
@@ -176,6 +188,7 @@ export function postJobPage(options: {
             title: value('title'),
             companyName: value('companyName'),
             companyWebsite: value('companyWebsite'),
+            companyLogo: value('companyLogo'),
             locationText: value('locationText'),
             locationRequirement: Number(value('locationRequirement') || 0),
             scheduleType: value('scheduleType'),
@@ -212,9 +225,39 @@ export function postJobPage(options: {
           }
         });
 
+        var logoFile = document.getElementById('logo-file');
+        var logoKey = document.getElementById('logo-key');
+        var logoStatus = document.getElementById('logo-status');
+        var logoPreview = document.getElementById('logo-preview');
+        if (logoFile) {
+          logoFile.addEventListener('change', async function () {
+            var f = logoFile.files && logoFile.files[0];
+            if (!f) return;
+            if (f.size > 2 * 1024 * 1024) { logoStatus.textContent = '文件超过 2MB'; logoStatus.className = 'text-xs text-red-600 mt-1'; return; }
+            logoStatus.textContent = '上传中…'; logoStatus.className = 'text-xs text-surface-500 mt-1';
+            var fd = new FormData(); fd.append('file', f);
+            try {
+              var res = await fetch('/api/job-submissions/logo', { method: 'POST', body: fd });
+              var data = await res.json().catch(function () { return {}; });
+              if (!res.ok) { logoStatus.textContent = data.error || '上传失败'; logoStatus.className = 'text-xs text-red-600 mt-1'; return; }
+              logoKey.value = data.key;
+              logoStatus.textContent = '已上传，审核后随公司一起展示。'; logoStatus.className = 'text-xs text-green-600 mt-1';
+              var reader = new FileReader();
+              reader.onload = function (e) {
+                logoPreview.innerHTML = '<img src="' + e.target.result + '" alt="logo" class="w-full h-full object-contain">';
+              };
+              reader.readAsDataURL(f);
+            } catch (err) {
+              logoStatus.textContent = '上传失败'; logoStatus.className = 'text-xs text-red-600 mt-1';
+            }
+          });
+        }
+
         var again = document.getElementById('post-job-again');
         if (again) again.addEventListener('click', function () {
           form.reset();
+          if (logoPreview) logoPreview.innerHTML = '未上传';
+          if (logoStatus) { logoStatus.textContent = 'PNG / JPG / WebP / SVG，≤ 2MB'; logoStatus.className = 'text-xs text-surface-400 mt-1'; }
           form.classList.remove('hidden');
           successEl.classList.add('hidden');
           if (needTurnstile && window.turnstile) { var w = form.querySelector('.cf-turnstile'); if (w) window.turnstile.reset(w); }

@@ -12,7 +12,8 @@ export function adminSubmissionsPage(options: {
   gaId?: string;
   staticUrl?: string;
 }): string {
-  const { user, submissions, searchTerms, countries } = options;
+  const { user, submissions, searchTerms, countries, staticUrl } = options;
+  const cdn = (staticUrl || '').replace(/\/$/, '');
   const bc = breadcrumb([
     { label: '首页', href: '/' },
     { label: '投递审核', href: '/admin/submissions' },
@@ -33,7 +34,9 @@ export function adminSubmissionsPage(options: {
   const card = (s: JobSubmissionRow & { job_slug: string | null }) => `
     <div class="border border-surface-200 rounded p-4 space-y-3" data-submission-id="${s.id}">
       <div class="flex flex-wrap items-start justify-between gap-2">
-        <div class="min-w-0">
+        <div class="min-w-0 flex items-start gap-3">
+          ${s.company_logo && cdn ? `<img src="${escapeHtml(cdn + '/' + s.company_logo)}" alt="${escapeHtml(s.company_name)} logo" class="w-12 h-12 rounded object-contain bg-surface-100 flex-shrink-0">` : ''}
+          <div class="min-w-0">
           <div class="flex flex-wrap items-center gap-2">
             <span class="text-xs text-surface-400">#${s.id}</span>
             ${statusBadge(s.status)}
@@ -51,6 +54,7 @@ export function adminSubmissionsPage(options: {
             ${s.salary_lower || s.salary_upper ? `<span>¥${s.salary_lower}–${s.salary_upper}/月</span>` : ''}
             <span>英语：${escapeHtml(s.english_level)}</span>
             <span>${escapeHtml(s.created_at)}</span>
+          </div>
           </div>
         </div>
         ${s.job_slug ? `<a href="/job/${escapeHtml(s.job_slug)}" target="_blank" class="text-xs text-brand-500 hover:underline">查看职位页</a>` : ''}
