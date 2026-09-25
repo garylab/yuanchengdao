@@ -2,7 +2,7 @@ import { Env } from '../types';
 
 export async function sendResendEmail(
   env: Env,
-  options: { to: string; subject: string; html: string; text?: string },
+  options: { to: string; subject: string; html: string; text?: string; idempotencyKey?: string },
 ): Promise<{ ok: boolean; error?: string }> {
   const apiKey = env.RESEND_API_KEY;
   const from = env.RESEND_FROM;
@@ -10,12 +10,15 @@ export async function sendResendEmail(
     return { ok: false, error: '邮件服务未配置' };
   }
 
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  };
+  if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey;
+
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       from,
       to: [options.to],
@@ -54,6 +57,7 @@ export async function sendSubscriptionAlertEmail(
   env: Env,
   email: string,
   jobs: SubscriptionJobAlert[],
+  idempotencyKey?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const baseUrl = env.SITE_URL.replace(/\/$/, '');
   const items = jobs.map((job) => {
@@ -67,6 +71,7 @@ export async function sendSubscriptionAlertEmail(
     subject: `${jobs.length} 个新职位匹配你的订阅`,
     html: `<p>以下新职位匹配你的订阅：</p><ul>${items}</ul><p><a href="${baseUrl}/account" style="color:#dd4c0e">管理订阅</a></p>`,
     text: jobs.map((job) => `${job.title} - ${job.companyName} - ${baseUrl}/job/${job.slug}`).join('\n'),
+    idempotencyKey,
   });
 }
 

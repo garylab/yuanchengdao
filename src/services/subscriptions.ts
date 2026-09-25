@@ -184,11 +184,12 @@ export async function deliverSubscriptionAlerts(
     bucket.jobs.set(item.job.id, item.job);
   }
 
-  for (const [, bucket] of byUser) {
+  const runDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  for (const [userId, bucket] of byUser) {
     const alertJobs: SubscriptionJobAlert[] = [...bucket.jobs.values()].map((job) => toAlertJob(job));
 
     if (channel === 'email' && bucket.email) {
-      await sendSubscriptionAlertEmail(env, bucket.email, alertJobs);
+      await sendSubscriptionAlertEmail(env, bucket.email, alertJobs, `sub-digest-${userId}-${runDate}`);
     } else if (channel === 'telegram' && bucket.telegramChatId) {
       await sendTelegramDirectMessage(env, bucket.telegramChatId, buildTelegramAlert(env, alertJobs));
     }
