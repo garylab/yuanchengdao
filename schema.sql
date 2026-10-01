@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   job_highlights TEXT,
   apply_options TEXT,
   location_requirement INTEGER DEFAULT 0,
+  location_requirement_label TEXT,
   english_level_required TEXT NOT NULL DEFAULT 'none' CHECK (english_level_required IN (
     'none', 'basic', 'intermediate', 'upper_intermediate', 'B2', 'C1', 'C2', 'advanced', 'fluent', 'native'
   )),
@@ -278,6 +279,7 @@ CREATE TABLE IF NOT EXISTS job_submissions (
   apply_email TEXT,
   location_text TEXT,
   location_requirement INTEGER NOT NULL DEFAULT 0,
+  location_requirement_label TEXT,
   english_level TEXT NOT NULL DEFAULT 'none',
   schedule_type TEXT,
   salary_text TEXT,

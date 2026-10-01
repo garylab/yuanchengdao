@@ -36,7 +36,7 @@ function renderJobRow(job: Job, eagerLogo = false): string {
           </div>
           <div class="flex flex-wrap items-center gap-2 mt-1.5">
             ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs">💰 ${salary}</span>` : ''}
-            ${locationRequirementBadge(job.location_requirement)}
+            ${locationRequirementBadge(job.location_requirement, job.location_requirement_label)}
             ${englishLevelBadge(job.english_level_required)}
             <span class="text-xs text-surface-400 flex-shrink-0 sm:hidden">${posted}</span>
           </div>

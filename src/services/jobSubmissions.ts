@@ -16,6 +16,7 @@ export type JobSubmissionRow = {
   apply_email: string | null;
   location_text: string | null;
   location_requirement: number;
+  location_requirement_label: string | null;
   english_level: string;
   schedule_type: string | null;
   salary_text: string | null;
@@ -114,9 +115,9 @@ export async function publishSubmission(
     INSERT INTO jobs
       (crawled_id, slug, title, description, company_id, location_id, country_id, search_term_id, posted_at,
        salary_lower, salary_upper, salary_currency, salary_pay_cycle,
-       detected_extensions, job_highlights, apply_options, location_requirement, english_level_required,
-       chinese_friendly, source)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CNY', ?, ?, NULL, ?, ?, ?, ?, 'employer')
+       detected_extensions, job_highlights, apply_options, location_requirement, location_requirement_label,
+       english_level_required, chinese_friendly, source)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CNY', ?, ?, NULL, ?, ?, ?, ?, ?, 'employer')
   `).bind(
     crawledId,
     slug,
@@ -133,6 +134,7 @@ export async function publishSubmission(
     JSON.stringify(detectedExtensions),
     applyOptions.length > 0 ? JSON.stringify(applyOptions) : null,
     submission.location_requirement,
+    submission.location_requirement_label,
     englishLevel,
     chineseFriendly,
   ).run();

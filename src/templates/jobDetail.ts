@@ -156,7 +156,7 @@ export function jobDetailPage(
                 })()}
                 ${scheduleBadge}
                 ${salary ? `<span class="text-green-600 font-medium">💰 ${salary}</span>` : ''}
-                ${locationRequirementBadge(job.location_requirement)}
+                ${locationRequirementBadge(job.location_requirement, job.location_requirement_label)}
                 ${englishLevelBadge(job.english_level_required)}
                 ${chineseFriendlyBadge(job.chinese_friendly)}
                 <span>${posted}</span>

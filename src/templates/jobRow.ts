@@ -90,7 +90,7 @@ export function renderJobRow(job: Job, options: JobRowOptions): string {
             ${locationHtml}
             ${scheduleBadge}
             ${salary ? `<span class="${CSS_SALARY_BADGE}">💰 ${salary}</span>` : ''}
-            ${locationRequirementBadge(job.location_requirement)}
+            ${locationRequirementBadge(job.location_requirement, job.location_requirement_label)}
             ${englishLevelBadge(job.english_level_required)}
             ${chineseFriendlyBadge(job.chinese_friendly)}
             <span class="${CSS_POSTED} flex-shrink-0 sm:hidden">${posted}</span>

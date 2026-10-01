@@ -1,6 +1,16 @@
 import OpenAI from 'openai';
 import { TranslationResult, CrawledJob, DecodedJobId } from '../types';
 import { parseEnglishLevel } from '../constants/englishLevel';
+import { LOCATION_REQ } from './locationRequirement';
+
+const LOCATION_REQUIREMENT_CODES: Record<string, number> = {
+  anywhere: LOCATION_REQ.ANYWHERE,
+  country: LOCATION_REQ.COUNTRY,
+  region: LOCATION_REQ.REGION,
+  timezone: LOCATION_REQ.TIMEZONE,
+  authorized: LOCATION_REQ.AUTHORIZED,
+  unknown: LOCATION_REQ.UNKNOWN,
+};
 
 export interface TranslateInput {
   crawled: CrawledJob;
@@ -72,6 +82,8 @@ Return a JSON object with:
   - "authorized": must have existing work authorization or visa for a specific country
   - "unknown": cannot determine from the posting
   Look for phrases like "must be based in", "work authorization required", "US time zones", "open to candidates worldwide", "EU residents only", visa requirements, etc.
+  IMPORTANT: a sentence naming where candidates may be located is a restriction even when it appears in the very first line, e.g. "Note: The job is a remote job and is open to candidates in USA." -> "country". Do NOT answer "anywhere" just because the posting says "remote"; remote and geographically restricted are not mutually exclusive. Answer "anywhere" ONLY when the posting explicitly says it is open worldwide / from anywhere. If no eligibility statement appears at all, answer "unknown".
+- "location_requirement_label": the specific country or region the restriction names, in Chinese, as a short noun: "美国", "欧盟", "欧洲", "亚太", "北美", "英国", "美东时区". When the posting lists several, give the BROADEST one that still makes a candidate eligible (for "EMEA, Europe, Germany" answer "EMEA"). Empty string when location_requirement is "anywhere" or "unknown".
 - "english_level_required": Minimum English proficiency required for the role ONLY when the posting explicitly states an English (language) requirement, or clearly states a standard English-language c[...]
   - "none": Use this whenever the posting does not explicitly say that English proficiency is required, or that candidates must speak/read/write English at some level, or name English-language credent[...]
   - "basic": elementary / conversational / working English
@@ -107,7 +119,10 @@ function parseResult(r: Record<string, unknown>): TranslationResult {
     salary_currency: ((r.salary_currency as string) || 'CNY').substring(0, 3).toUpperCase(),
     salary_pay_cycle: (['hour', 'day', 'week', 'month', 'year'].includes(r.salary_pay_cycle as string) ? r.salary_pay_cycle : 'month') as 'hour' | 'day' | 'week' | 'month' | 'year',
     job_highlights_zh: Array.isArray(r.job_highlights_zh) ? r.job_highlights_zh : [],
-    location_requirement: ({ anywhere: 0, country: 1, region: 2, timezone: 3, authorized: 4 } as Record<string, number>)[r.location_requirement as string] ?? 0,
+    // "unknown" is NOT "anywhere" — it used to fall through `?? 0` and get stored
+    // as "no restrictions", which is why 94% of jobs claimed to be unrestricted.
+    location_requirement: LOCATION_REQUIREMENT_CODES[r.location_requirement as string] ?? LOCATION_REQ.UNKNOWN,
+    location_requirement_label: typeof r.location_requirement_label === 'string' ? r.location_requirement_label.trim().slice(0, 40) : '',
     english_level_required: parseEnglishLevel(r.english_level_required),
   };
 }

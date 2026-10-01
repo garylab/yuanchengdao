@@ -76,6 +76,7 @@ jobSubmissions.post('/api/job-submissions', async (c) => {
     applyEmail?: string;
     locationText?: string;
     locationRequirement?: number;
+  locationRequirementLabel?: string;
     englishLevel?: string;
     scheduleType?: string;
     salaryText?: string;
@@ -116,6 +117,10 @@ jobSubmissions.post('/api/job-submissions', async (c) => {
   const locationText = (body.locationText || '').trim().slice(0, 120) || null;
   const locationRequirement = Number(body.locationRequirement ?? 0);
   if (!LOCATION_REQUIREMENTS.has(locationRequirement)) return c.json({ error: '地点要求无效' }, 400);
+  // Which country/region, so the badge can read "仅限美国" instead of "限本国".
+  const locationRequirementLabel = locationRequirement === 0
+    ? null
+    : (body.locationRequirementLabel || '').trim().slice(0, 40) || null;
   const englishLevel = parseEnglishLevel(body.englishLevel);
   const scheduleType = (body.scheduleType || '').trim();
   if (scheduleType && !SCHEDULE_TYPES.has(scheduleType)) return c.json({ error: '工作类型无效' }, 400);
@@ -132,13 +137,13 @@ jobSubmissions.post('/api/job-submissions', async (c) => {
   const inserted = await c.env.DB.prepare(`
     INSERT INTO job_submissions
       (user_id, company_name, company_website, company_logo, title, description, apply_url, apply_email, location_text,
-       location_requirement, english_level, schedule_type, salary_text, salary_lower, salary_upper, salary_pay_cycle,
+       location_requirement, location_requirement_label, english_level, schedule_type, salary_text, salary_lower, salary_upper, salary_pay_cycle,
        contact_email, ip, user_agent)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     RETURNING id
   `).bind(
     user?.id ?? null, companyName, companyWebsite, companyLogo, title, description, applyUrl, applyEmail, locationText,
-    locationRequirement, englishLevel, scheduleType || null, salaryText, salaryLower, salaryUpper, salaryPayCycle,
+    locationRequirement, locationRequirementLabel, englishLevel, scheduleType || null, salaryText, salaryLower, salaryUpper, salaryPayCycle,
     contactEmail, ip, c.req.header('User-Agent') || null,
   ).first<{ id: number }>();
 

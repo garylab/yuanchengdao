@@ -164,6 +164,7 @@ export interface Job {
   job_highlights: string | null;
   apply_options: string | null;
   location_requirement: number;
+  location_requirement_label?: string | null;
   english_level_required: EnglishLevel;
   chinese_friendly?: number;
   source?: string;
@@ -201,5 +202,7 @@ export interface TranslationResult {
     items: string[];
   }>;
   location_requirement: number;
+  /** Which country/region, in Chinese: 美国 / 欧盟 / 亚太. Empty when unrestricted or unknown. */
+  location_requirement_label: string;
   english_level_required: EnglishLevel;
 }

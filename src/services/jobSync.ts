@@ -5,6 +5,7 @@ import { uploadThumbnail } from './thumbnail';
 import { upsertJobVector, deleteJobVectors } from './vectorSearch';
 import { detectChineseFriendly } from '../constants/chineseFriendly';
 import { guessCompanyWebsite, enrichCompanies } from './companyEnrich';
+import { detectLocationRequirement, mergeLocationRequirement } from './locationRequirement';
 
 export function toSlug(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -343,12 +344,20 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         tr.title_zh, tr.description_zh,
       ) ? 1 : 0;
 
+      // The two templated feeds state eligibility verbatim; where the rule fires
+      // it is more reliable than the model, so it decides the location.
+      const ruled = detectLocationRequirement(crawled.description);
+      const merged = mergeLocationRequirement(ruled, tr.location_requirement, tr.location_requirement_label);
+      const locationRequirement = merged.requirement;
+      const locationRequirementLabel = merged.label || null;
+
       const jobInsert = await env.DB.prepare(`
         INSERT INTO jobs
           (crawled_id, slug, title, description, company_id, location_id, country_id, search_term_id, posted_at,
            salary_lower, salary_upper, salary_currency, salary_pay_cycle,
-           detected_extensions, job_highlights, apply_options, location_requirement, english_level_required, chinese_friendly)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           detected_extensions, job_highlights, apply_options, location_requirement, location_requirement_label,
+           english_level_required, chinese_friendly)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         crawled.id,
         slug,
@@ -366,7 +375,8 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
         crawled.detected_extensions,
         tr.job_highlights_zh.length > 0 ? JSON.stringify(tr.job_highlights_zh) : crawled.job_highlights,
         crawled.apply_options,
-        tr.location_requirement,
+        locationRequirement,
+        locationRequirementLabel,
         tr.english_level_required,
         chineseFriendly,
       ).run();

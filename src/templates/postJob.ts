@@ -76,6 +76,8 @@ export function postJobPage(options: {
                 <option value="1">限本国居民</option>
                 <option value="4">需当地工作许可</option>
               </select>
+              <input type="text" id="location-requirement-label" name="locationRequirementLabel" maxlength="40"
+                class="${fieldClass} mt-2 hidden" placeholder="限哪里？如：美国 / 欧盟 / 美东时区">
             </div>
             <div>
               <label for="job-type" class="${labelClass}">工作类型</label>
@@ -170,6 +172,14 @@ export function postJobPage(options: {
           return el && 'value' in el ? String(el.value).trim() : '';
         }
 
+        var reqSelect = document.getElementById('location-requirement');
+        var reqLabel = document.getElementById('location-requirement-label');
+        if (reqSelect && reqLabel) {
+          var syncReqLabel = function () { reqLabel.classList.toggle('hidden', reqSelect.value === '0'); };
+          reqSelect.addEventListener('change', syncReqLabel);
+          syncReqLabel();
+        }
+
         form.addEventListener('submit', async function (event) {
           event.preventDefault();
           if (!form.reportValidity()) return;
@@ -181,6 +191,7 @@ export function postJobPage(options: {
             companyLogo: value('companyLogo'),
             locationText: value('locationText'),
             locationRequirement: Number(value('locationRequirement') || 0),
+            locationRequirementLabel: value('locationRequirementLabel'),
             scheduleType: value('scheduleType'),
             englishLevel: value('englishLevel'),
             salaryText: value('salaryText'),

@@ -166,18 +166,23 @@ export function companyLogo(name: string | null | undefined, thumbnail: string |
   return `<div class="flex-shrink-0 ${c.wh}">${img}${fallback}</div>`;
 }
 
-const LOCATION_REQ_BADGES: Record<number, { icon: string; label: string; css: string }> = {
-  1: { icon: '📍', label: '限本国',      css: 'bg-amber-50 text-amber-700' },
-  2: { icon: '🗺️', label: '限特定地区',  css: 'bg-orange-50 text-orange-700' },
-  3: { icon: '🕐', label: '限时区',      css: 'bg-violet-50 text-violet-700' },
-  4: { icon: '📋', label: '需工作许可',  css: 'bg-red-50 text-red-700' },
+const LOCATION_REQ_BADGES: Record<number, { icon: string; label: string; labelled: (where: string) => string; css: string }> = {
+  1: { icon: '📍', label: '限本国',     labelled: (w) => `仅限${w}`,     css: 'bg-amber-50 text-amber-700' },
+  2: { icon: '🗺️', label: '限特定地区', labelled: (w) => `仅限${w}`,     css: 'bg-orange-50 text-orange-700' },
+  3: { icon: '🕐', label: '限时区',     labelled: (w) => `限${w}`,       css: 'bg-violet-50 text-violet-700' },
+  4: { icon: '📋', label: '需工作许可', labelled: (w) => `需${w}工作许可`, css: 'bg-red-50 text-red-700' },
+  // 5 = unknown: the posting says nothing about eligibility, so show nothing.
 };
 
-export function locationRequirementBadge(req: number | null | undefined): string {
+export function locationRequirementBadge(req: number | null | undefined, where?: string | null): string {
   if (!req) return '';
   const cfg = LOCATION_REQ_BADGES[req];
   if (!cfg) return '';
-  return `<span class="tag-pill ${cfg.css} text-xs">${cfg.icon} ${cfg.label}</span>`;
+  const trimmed = (where || '').trim();
+  // Name the country/region when we know it — a bare "限本国" does not tell the
+  // reader which country they need to be in.
+  const text = trimmed ? cfg.labelled(escapeHtml(trimmed)) : cfg.label;
+  return `<span class="tag-pill ${cfg.css} text-xs">${cfg.icon} ${text}</span>`;
 }
 
 const ENGLISH_LEVEL_BADGES: Record<EnglishLevel, { label: string; css: string } | null> = {

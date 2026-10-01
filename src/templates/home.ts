@@ -48,7 +48,7 @@ function renderJobRow(job: Job, isNew: boolean = false, favorited = false, showF
             ${locationLink}
             ${scheduleBadge}
             ${salary ? `<span class="tag-pill bg-green-50 text-green-700 text-xs">💰 ${salary}</span>` : ''}
-            ${locationRequirementBadge(job.location_requirement)}
+            ${locationRequirementBadge(job.location_requirement, job.location_requirement_label)}
             ${englishLevelBadge(job.english_level_required)}
             ${chineseFriendlyBadge(job.chinese_friendly)}
             <span class="text-xs text-surface-400 flex-shrink-0 sm:hidden">${posted}</span>
