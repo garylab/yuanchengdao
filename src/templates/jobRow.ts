@@ -1,5 +1,5 @@
 import { Job } from '../types';
-import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge, chineseFriendlyBadge } from '../utils/helpers';
+import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge, chineseFriendlyBadge, jobDescriptionPreview } from '../utils/helpers';
 
 export interface JobRowOptions {
   dataFrom: string;
@@ -9,6 +9,7 @@ export interface JobRowOptions {
   showScheduleBadge?: boolean;
   showNewBadge?: boolean;
   isNew?: boolean;
+  eagerLogo?: boolean;
 }
 
 const CSS_JOB_ROW = 'job-row border-b border-surface-100';
@@ -42,11 +43,12 @@ export function renderJobRow(job: Job, options: JobRowOptions): string {
     showScheduleBadge = true,
     showNewBadge = false,
     isNew = false,
+    eagerLogo = false,
   } = options;
 
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(jobDisplayTimestamp(job));
-  const logo = showLogo ? companyLogo(job.company_name, job.company_thumbnail) : '';
+  const logo = showLogo ? companyLogo(job.company_name, job.company_thumbnail, 'md', eagerLogo) : '';
   const scheduleBadge = showScheduleBadge ? scheduleTypeBadge(job.detected_extensions) : '';
 
   const locationLabel = [job.location_name_cn, job.country_name_cn]
@@ -66,21 +68,23 @@ export function renderJobRow(job: Job, options: JobRowOptions): string {
       : `<span class="${CSS_COMPANY_SPAN}">${escapeHtml(job.company_name || '')}</span>`)
     : '';
 
-  const highlights = job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
+  const descPreview = jobDescriptionPreview(job.description);
+  // When the preview is cut short the highlights come down with the full text.
+  const highlights = !descPreview.truncated && job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
   const applyOptions = job.apply_options ? JSON.parse(job.apply_options) as Array<{ title: string; link: string }> : [];
   const primaryApply = applyOptions[0]?.link ? rewriteUtm(applyOptions[0].link) : null;
 
   const expandIndent = showLogo ? 'ml-16 ' : '';
 
   return `
-    <div class="${CSS_JOB_ROW}" data-job-id="${job.id}">
+    <div class="${CSS_JOB_ROW}" data-job-id="${job.id}" data-desc-full="${descPreview.truncated ? '0' : '1'}">
       <div class="${CSS_JOB_ROW_HEADER}">
         ${logo}
         <div class="flex-1 min-w-0">
           <div class="${CSS_TITLE_ROW}">
             <a href="/job/${escapeHtml(job.slug)}" class="${CSS_JOB_TITLE}">${escapeHtml(job.title)}</a>
             ${companyHtml}
-            ${showNewBadge && isNew ? '<img src="/new2x.webp" alt="New" class="h-4 flex-shrink-0">' : ''}
+            ${showNewBadge && isNew ? '<img src="/new2x.webp" alt="New" width="34" height="16" decoding="async" class="h-4 flex-shrink-0">' : ''}
           </div>
           <div class="${CSS_BADGE_ROW}">
             ${locationHtml}
@@ -99,8 +103,8 @@ export function renderJobRow(job: Job, options: JobRowOptions): string {
 
       <div class="${CSS_EXPAND_PANEL}">
         <div class="${expandIndent}border-t border-surface-100 pt-4">
-          <div class="${CSS_DESCRIPTION}">${escapeHtml(job.description)}</div>
-          ${highlights.length > 0 ? `
+          <div class="${CSS_DESCRIPTION}" data-job-desc>${escapeHtml(descPreview.text)}</div>
+          <div data-job-highlights>${highlights.length > 0 ? `
             <div class="${CSS_HIGHLIGHTS_WRAP}">
               ${highlights.map(h => `
                 <div>
@@ -111,7 +115,7 @@ export function renderJobRow(job: Job, options: JobRowOptions): string {
                 </div>
               `).join('')}
             </div>
-          ` : ''}
+          ` : ''}</div>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               ${primaryApply ? `

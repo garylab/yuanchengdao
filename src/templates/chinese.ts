@@ -1,7 +1,7 @@
 import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { renderJobRow } from './jobRow';
-import { breadcrumb } from '../utils/helpers';
+import { breadcrumb, EAGER_LOGO_ROWS } from '../utils/helpers';
 
 export function chineseJobsPage(
   jobs: Job[],
@@ -31,7 +31,7 @@ export function chineseJobsPage(
       <p class="text-sm text-surface-500 mb-4">职位描述中明确提到中文、普通话或粤语（要求或优先）的远程岗位，面向中文使用者，每天更新。</p>
       <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden">
         ${jobs.length > 0
-          ? jobs.map((j) => renderJobRow(j, { dataFrom: 'chinese-list' })).join('')
+          ? jobs.map((j, i) => renderJobRow(j, { dataFrom: 'chinese-list', eagerLogo: i < EAGER_LOGO_ROWS })).join('')
           : `<div class="text-center py-20 text-surface-400"><p class="text-lg">暂无相关职位</p></div>`}
       </div>
       ${pagination}

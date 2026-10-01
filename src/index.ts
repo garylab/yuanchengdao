@@ -211,10 +211,10 @@ app.notFound((c) => {
     <html lang="zh-CN">
     <head><meta charset="UTF-8"><title>404 | 远程岛</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <script src="${c.env.STATIC_URL}/js/tailwindcss.js"></script></head>
+    <link rel="stylesheet" href="/css/${appStylesAssetFilename}"></head>
     <body class="bg-stone-50 flex items-center justify-center min-h-screen">
       <div class="text-center">
-        <img src="/yuanchengdao-logo.png" alt="远程岛" class="h-12 mx-auto mb-4">
+        <img src="/yuanchengdao-logo.png" alt="远程岛" class="h-12 mx-auto mb-4" width="96" height="48" decoding="async">
         <h1 class="text-3xl font-bold mb-2">页面未找到</h1>
         <p class="text-stone-500 mb-6">你访问的页面不存在</p>
         <a href="/" class="px-6 py-3 bg-orange-500 text-white rounded font-semibold hover:bg-orange-600 transition">返回首页</a>

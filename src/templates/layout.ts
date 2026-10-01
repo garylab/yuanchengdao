@@ -18,9 +18,15 @@ export interface LayoutOptions {
 export function layout(title: string, content: string, options?: LayoutOptions): string {
   const desc = options?.description || '远程岛是面向华人的全球远程工作平台，每天更新来自世界各地的远程岗位，帮你找到不限地点、自由办公的理想工作。';
   const fullTitle = title;
+  // gtag() is stubbed immediately so page scripts can queue events, but the
+  // googletagmanager request is deferred until the page has loaded (or the user
+  // interacts). It is unreachable from mainland China and used to sit on a
+  // connection slot during the critical path.
   const ga = options?.gaId?.trim() ? `
-  <script async src="https://www.googletagmanager.com/gtag/js?id=${options.gaId}"></script>
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${options.gaId}');</script>` : '';
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${options.gaId}');
+  (function(){var loaded=false;function load(){if(loaded)return;loaded=true;var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=${options.gaId}';document.head.appendChild(s);}
+  if(document.readyState==='complete'){setTimeout(load,1000);}else{window.addEventListener('load',function(){setTimeout(load,1000);});}
+  ['pointerdown','keydown','touchstart'].forEach(function(ev){window.addEventListener(ev,load,{once:true,passive:true});});})();</script>` : '';
   const canonical = options?.canonical ? `\n  <link rel="canonical" href="${options.canonical}">` : '';
   const ogImage = options?.ogImage || '';
   const keywords = options?.keywords || '远程工作,远程岗位,remote jobs,海外远程,远程招聘,在家工作,远程办公,华人远程工作';
@@ -59,8 +65,10 @@ export function layout(title: string, content: string, options?: LayoutOptions):
     ? `<a href="/account" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/account') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">${meLabel}</a>`
     : `<a href="/login" class="block px-4 py-2 text-sm no-underline ${ap.startsWith('/login') ? 'text-brand-500 bg-brand-50 font-semibold' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-500'}">登录</a>`;
 
+  // Company logos are served from the static CDN; warm the connection early now
+  // that nothing else in <head> opens it.
   const cdnStatic = (options?.staticUrl || '').trim().replace(/\/$/, '');
-  const tailwindSrc = cdnStatic ? `${cdnStatic}/js/tailwindcss.js` : '/js/tailwindcss.js';
+  const cdnPreconnect = cdnStatic ? `\n  <link rel="preconnect" href="${cdnStatic}" crossorigin>\n  <link rel="dns-prefetch" href="${cdnStatic}">` : '';
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -78,20 +86,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="${fullTitle}">
   <meta name="twitter:description" content="${desc}">${canonical}${ga}${jsonLd}
-  <link rel="icon" href="/favicon.ico" type="image/x-icon">
-  <script src="${tailwindSrc}"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: { 50: '#fef3ec', 100: '#fde4d4', 200: '#f9c5a8', 300: '#f5a071', 400: '#f07a3a', 500: '#ec6517', 600: '#dd4c0e', 700: '#b7370f', 800: '#922e14', 900: '#782814' },
-            surface: { 50: '#fafaf9', 100: '#f5f5f4', 200: '#e7e5e4', 800: '#292524', 900: '#1c1917' }
-          }
-        }
-      }
-    }
-  </script>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">${cdnPreconnect}
   <link rel="stylesheet" href="/css/${appStylesAssetFilename}">
 </head>
 <body class="bg-surface-50 text-surface-900 min-h-screen">
@@ -99,7 +94,7 @@ export function layout(title: string, content: string, options?: LayoutOptions):
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
       <div class="flex items-center gap-4 sm:gap-6 min-w-0">
         <a href="/" class="flex items-center gap-2 no-underline flex-shrink-0">
-          <img src="/yuanchengdao-logo.png" alt="远程岛" class="h-8">
+          <img src="/yuanchengdao-logo.png" alt="远程岛" class="h-8" width="64" height="32" fetchpriority="high" decoding="async">
         </a>
         <nav class="hidden sm:flex items-center gap-4 text-sm">
           ${desktopNav}

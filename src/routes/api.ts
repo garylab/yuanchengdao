@@ -86,6 +86,30 @@ api.get('/api/jobs', async (c) => {
   return c.json({ jobs, page, limit });
 });
 
+// Full description + highlights for one job. List pages render only a preview
+// and pull the rest from here when a row is expanded.
+api.get('/api/jobs/:id/description', async (c) => {
+  const id = parseInt(c.req.param('id'), 10);
+  if (!Number.isFinite(id)) return c.json({ error: 'Bad id' }, 400);
+
+  const row = await c.env.DB.prepare(
+    'SELECT description, job_highlights FROM jobs WHERE id = ?'
+  ).bind(id).first<{ description: string | null; job_highlights: string | null }>();
+  if (!row) return c.notFound();
+
+  let highlights: Array<{ title: string; items: string[] }> = [];
+  if (row.job_highlights) {
+    try {
+      highlights = JSON.parse(row.job_highlights);
+    } catch {
+      highlights = [];
+    }
+  }
+
+  c.header('Cache-Control', 'public, max-age=3600');
+  return c.json({ description: row.description || '', highlights });
+});
+
 api.get('/api/countries', async (c) => {
   const result = await c.env.DB.prepare(`
     SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count

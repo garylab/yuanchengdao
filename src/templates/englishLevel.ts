@@ -1,7 +1,7 @@
 import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { renderJobRow } from './jobRow';
-import { breadcrumb, escapeHtml } from '../utils/helpers';
+import { breadcrumb, escapeHtml, EAGER_LOGO_ROWS } from '../utils/helpers';
 import { ENGLISH_LEVEL_GROUPS } from '../constants/englishLevel';
 
 type Group = (typeof ENGLISH_LEVEL_GROUPS)[number];
@@ -39,7 +39,7 @@ export function englishLevelPage(
       <div class="flex flex-wrap gap-2 mb-4">${tabs}</div>
       <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden">
         ${jobs.length > 0
-          ? jobs.map((j) => renderJobRow(j, { dataFrom: `english-${group.slug}` })).join('')
+          ? jobs.map((j, i) => renderJobRow(j, { dataFrom: `english-${group.slug}`, eagerLogo: i < EAGER_LOGO_ROWS })).join('')
           : `<div class="text-center py-20 text-surface-400"><p class="text-lg">暂无相关职位</p></div>`}
       </div>
       ${pagination}

@@ -1,0 +1,10 @@
+# Content-hashed asset routes are served by the Worker; these are the static
+# files under public/, which Workers Assets otherwise serves with max-age=0.
+/*.png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/*.webp
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/*.svg
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/favicon.ico
+  Cache-Control: public, max-age=604800

@@ -1,12 +1,12 @@
 import { AuthUser, Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge, chineseFriendlyBadge } from '../utils/helpers';
+import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge, chineseFriendlyBadge, jobDescriptionPreview, EAGER_LOGO_ROWS } from '../utils/helpers';
 import { SALARY_OPTIONS } from '../constants/salary';
 
-function renderJobRow(job: Job, isNew: boolean = false, favorited = false, showFavorite = false): string {
+function renderJobRow(job: Job, isNew: boolean = false, favorited = false, showFavorite = false, eagerLogo = false): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(jobDisplayTimestamp(job));
-  const logo = companyLogo(job.company_name, job.company_thumbnail);
+  const logo = companyLogo(job.company_name, job.company_thumbnail, 'md', eagerLogo);
   const scheduleBadge = scheduleTypeBadge(job.detected_extensions);
 
   const locationLabel = [job.location_name_cn, job.country_name_cn]
@@ -18,7 +18,9 @@ function renderJobRow(job: Job, isNew: boolean = false, favorited = false, showF
     ? `<a href="/location/${escapeHtml(job.location_slug)}" class="text-xs text-surface-400 hover:text-brand-500 transition no-underline flex-shrink-0">${flag} ${escapeHtml(locationLabel)}</a>`
     : `<span class="text-xs text-surface-400 flex-shrink-0">${flag} ${escapeHtml(locationLabel)}</span>`;
 
-  const highlights = job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
+  const descPreview = jobDescriptionPreview(job.description);
+  // When the preview is cut short the highlights come down with the full text.
+  const highlights = !descPreview.truncated && job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
   const applyOptions = job.apply_options ? JSON.parse(job.apply_options) as Array<{ title: string; link: string }> : [];
   const primaryApply = applyOptions[0]?.link ? rewriteUtm(applyOptions[0].link) : null;
   const favoriteButton = showFavorite
@@ -29,7 +31,7 @@ function renderJobRow(job: Job, isNew: boolean = false, favorited = false, showF
     : '';
 
   return `
-    <div class="job-row border-b border-surface-100" data-job-id="${job.id}">
+    <div class="job-row border-b border-surface-100" data-job-id="${job.id}" data-desc-full="${descPreview.truncated ? '0' : '1'}">
       <div class="job-row-header flex items-center gap-4 px-4 py-4 cursor-pointer select-none">
         ${logo}
 
@@ -40,7 +42,7 @@ function renderJobRow(job: Job, isNew: boolean = false, favorited = false, showF
               ? `<a href="/company/${escapeHtml(job.company_slug)}" class="text-sm text-surface-500 hover:text-brand-500 transition no-underline flex-shrink-0">${escapeHtml(job.company_name || '')}</a>`
               : `<span class="text-sm text-surface-500 flex-shrink-0">${escapeHtml(job.company_name || '')}</span>`
             }
-            ${isNew ? `<img src="/new2x.webp" alt="New" class="h-4 flex-shrink-0">` : ''}
+            ${isNew ? `<img src="/new2x.webp" alt="New" width="34" height="16" decoding="async" class="h-4 flex-shrink-0">` : ''}
           </div>
           <div class="flex flex-wrap items-center gap-2 mt-1.5">
             ${locationLink}
@@ -62,9 +64,9 @@ function renderJobRow(job: Job, isNew: boolean = false, favorited = false, showF
 
       <div class="job-expand hidden px-4 pb-4">
         <div class="ml-16 border-t border-surface-100 pt-4">
-          <div class="text-sm text-surface-600 leading-relaxed mb-4 whitespace-pre-line">${escapeHtml(job.description)}</div>
+          <div class="text-sm text-surface-600 leading-relaxed mb-4 whitespace-pre-line" data-job-desc>${escapeHtml(descPreview.text)}</div>
 
-          ${highlights.length > 0 ? `
+          <div data-job-highlights>${highlights.length > 0 ? `
             <div class="mb-4 space-y-3">
               ${highlights.map(h => `
                 <div>
@@ -75,7 +77,7 @@ function renderJobRow(job: Job, isNew: boolean = false, favorited = false, showF
                 </div>
               `).join('')}
             </div>
-          ` : ''}
+          ` : ''}</div>
 
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -156,11 +158,11 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
   const { query, countrySlug, locationSlug, salaryRange = '', gaId, siteUrl, staticUrl, topSearchTerms = [], topLocations = [], feishuGroupLink, telegramChannelUrl, user, favoritedJobIds, newCompanies = [], topSalaryJobs = [], recommended = [], chineseFriendlyCount = 0, noEnglishCount = 0 } = opts;
   const activeLocation = locationSlug ? locations.find(l => l.slug === locationSlug) : null;
 
-  const locationOptions = locations.map(l =>
-    `<li data-value="${escapeHtml(l.slug)}" data-label="${escapeHtml(l.name_cn)}" class="filter-option px-3 py-2 cursor-pointer hover:bg-brand-50 text-sm ${locationSlug === l.slug ? 'bg-brand-50 text-brand-600 font-medium' : 'text-surface-700'}">
-      ${escapeHtml(l.name_cn)}
-    </li>`
-  ).join('');
+  // ~320 locations as markup was the single largest block on the page. Ship the
+  // raw pairs instead and let the client build the <li>s the first time the
+  // dropdown is opened — same search behaviour, a fraction of the bytes and no
+  // DOM nodes until someone actually opens it.
+  const locationOptionData = escapeHtml(JSON.stringify(locations.map(l => [l.slug, l.name_cn])));
 
   const activeSalary = SALARY_OPTIONS.find(s => s.value === salaryRange);
 
@@ -190,9 +192,8 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
           <div class="p-2 border-b border-surface-100">
             <input type="text" class="filter-search w-full px-2 py-1.5 text-sm border border-surface-200 rounded outline-none focus:ring-1 focus:ring-brand-300" placeholder="搜索位置...">
           </div>
-          <ul class="overflow-y-auto max-h-52">
+          <ul class="filter-options overflow-y-auto max-h-52" data-options="${locationOptionData}" data-selected="${locationSlug ? escapeHtml(locationSlug) : ''}">
             <li data-value="" data-label="位置" class="filter-option px-3 py-2 cursor-pointer hover:bg-brand-50 text-sm ${!locationSlug ? 'bg-brand-50 text-brand-600 font-medium' : 'text-surface-700'}">全部</li>
-            ${locationOptions}
           </ul>
         </div>
       </div>
@@ -225,7 +226,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
       <div class="flex items-center gap-4 ml-auto text-xs">
         ${feishuGroupLink ? `
         <div class="qr-hover-wrap relative inline-flex">
-          <a href="${escapeHtml(feishuGroupLink)}" target="_blank" class="inline-flex items-center gap-0.5 no-underline text-brand-500 hover:text-brand-600 font-medium transition"><img src="/feishu.svg" alt="" class="w-3.5 h-3.5">飞书群</a>
+          <a href="${escapeHtml(feishuGroupLink)}" target="_blank" class="inline-flex items-center gap-0.5 no-underline text-brand-500 hover:text-brand-600 font-medium transition"><img src="/feishu.svg" alt="" width="14" height="14" decoding="async" class="w-3.5 h-3.5">飞书群</a>
           <div class="qr-hover-popover hidden absolute right-0 top-full mt-2 bg-white border border-surface-200 rounded-lg shadow-xl z-50 p-3" style="width:200px;height:228px" data-qr-src="/qr-code-feishu-yuanchengdao.png">
             <p class="text-xs text-surface-400 text-center mt-1">扫码加入飞书群</p>
           </div>
@@ -285,8 +286,10 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
         <ul class="space-y-1.5">${newCompanies.slice(0, 6).map((c) => `<li><a href="/company/${escapeHtml(c.slug)}" class="flex items-center gap-2 no-underline group">${companyLogo(c.name, c.thumbnail, 'sm')}<span class="text-sm text-surface-800 group-hover:text-brand-600 truncate">${escapeHtml(c.name)}</span><span class="text-xs text-surface-400 flex-shrink-0">${c.job_count} 个职位</span></a></li>`).join('')}</ul>
       </div>`);
   }
+  // Written out in full so Tailwind's content scanner can see the class names.
+  const discoveryGridCols = discoveryCols.length >= 3 ? 'md:grid-cols-3' : discoveryCols.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-1';
   const discoveryStrip = discoveryCols.length > 0
-    ? `<div class="grid grid-cols-1 md:grid-cols-${Math.min(discoveryCols.length, 3)} gap-3 mb-3">${discoveryCols.join('')}</div>`
+    ? `<div class="grid grid-cols-1 ${discoveryGridCols} gap-3 mb-3">${discoveryCols.join('')}</div>`
     : '';
 
   const jobStats = query ? `
@@ -301,7 +304,7 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
         ${quickEntries}
         <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden mt-3">
           ${jobStats}
-          ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3, favoritedJobIds?.has(job.id) ?? false, !!user)).join('')}
+          ${jobs.map((job, i) => renderJobRow(job, page === 1 && i < 3, favoritedJobIds?.has(job.id) ?? false, !!user, i < EAGER_LOGO_ROWS)).join('')}
         </div>
        </div>`
     : `<div class="max-w-5xl mx-auto mt-6">

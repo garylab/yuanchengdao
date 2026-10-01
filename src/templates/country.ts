@@ -1,7 +1,7 @@
 import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { renderJobRow } from './jobRow';
-import { breadcrumb, escapeHtml } from '../utils/helpers';
+import { breadcrumb, escapeHtml, EAGER_LOGO_ROWS } from '../utils/helpers';
 
 export type CountryPageInfo = {
   id: number;
@@ -60,7 +60,7 @@ export function countryPage(
       ${locationChips}
       <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden">
         ${jobs.length > 0
-          ? jobs.map((j) => renderJobRow(j, { dataFrom: `country-${country.slug}` })).join('')
+          ? jobs.map((j, i) => renderJobRow(j, { dataFrom: `country-${country.slug}`, eagerLogo: i < EAGER_LOGO_ROWS })).join('')
           : `<div class="text-center py-20 text-surface-400"><p class="text-lg">暂无相关职位</p></div>`}
       </div>
       ${pagination}

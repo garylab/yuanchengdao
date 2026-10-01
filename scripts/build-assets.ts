@@ -1,11 +1,33 @@
 import { minify as terserMinify } from 'terser';
-import CleanCSS from 'clean-css';
-import { writeFileSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { execFileSync } from 'child_process';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { resolve, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const outDir = resolve(__dirname, '../src/public/generated');
+const rootDir = resolve(__dirname, '..');
+const outDir = resolve(rootDir, 'src/public/generated');
+
+/**
+ * Compiles the site stylesheet with the Tailwind CLI at build time. This used to
+ * be the Tailwind Play CDN (a 400KB in-browser JIT compiler loaded synchronously
+ * in <head>); compiling here ships only the classes the templates actually use.
+ */
+function buildCss(): string {
+  const tmp = mkdtempSync(join(tmpdir(), 'ycd-css-'));
+  try {
+    const out = join(tmp, 'app.css');
+    execFileSync(
+      resolve(rootDir, 'node_modules/.bin/tailwindcss'),
+      ['-c', resolve(rootDir, 'tailwind.config.js'), '-i', resolve(rootDir, 'src/public/tailwind.css'), '-o', out, '--minify'],
+      { cwd: rootDir, stdio: ['ignore', 'ignore', 'inherit'] },
+    );
+    return readFileSync(out, 'utf-8').trim();
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
 
 function simpleHash(str: string): string {
   let h = 0;
@@ -15,16 +37,49 @@ function simpleHash(str: string): string {
   return (h >>> 0).toString(36);
 }
 
-const rawCss = `
-body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
-.job-row-header:hover { background-color: #fef3ec; }
-.job-row-header { transition: background-color 0.15s ease; }
-.job-row.expanded .job-row-header { background-color: #fef3ec; }
-.job-row.visited .job-row-header { background-color: #fef3ec; }
-.tag-pill { display: inline-block; padding: 0.125rem 0.5rem; font-size: 0.75rem; line-height: 1rem; border-radius: 0.25rem; }
-`;
-
 const rawJs = `
+// List rows ship a truncated description; pull the full text the first time a
+// row is expanded.
+function hydrateJobDescription(row) {
+  if (!row || row.dataset.descFull === '1' || row.dataset.descLoading === '1') return;
+  var id = row.dataset.jobId;
+  if (!id) return;
+  row.dataset.descLoading = '1';
+  fetch('/api/jobs/' + encodeURIComponent(id) + '/description')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(data) {
+      if (!data) return;
+      var desc = row.querySelector('[data-job-desc]');
+      if (desc && data.description) desc.textContent = data.description;
+      var box = row.querySelector('[data-job-highlights]');
+      if (box && data.highlights && data.highlights.length) {
+        var wrap = document.createElement('div');
+        wrap.className = 'mb-4 space-y-3';
+        data.highlights.forEach(function(h) {
+          var group = document.createElement('div');
+          var title = document.createElement('h4');
+          title.className = 'text-xs font-semibold text-surface-500 uppercase mb-1';
+          title.textContent = h.title || '';
+          var ul = document.createElement('ul');
+          ul.className = 'list-disc list-inside text-sm text-surface-600 space-y-0.5';
+          (h.items || []).forEach(function(item) {
+            var li = document.createElement('li');
+            li.textContent = item;
+            ul.appendChild(li);
+          });
+          group.appendChild(title);
+          group.appendChild(ul);
+          wrap.appendChild(group);
+        });
+        box.textContent = '';
+        box.appendChild(wrap);
+      }
+      row.dataset.descFull = '1';
+    })
+    .catch(function() {})
+    .finally(function() { row.dataset.descLoading = '0'; });
+}
+
 document.addEventListener('click', function(e) {
   var collapse = e.target.closest('.job-collapse');
   if (collapse) {
@@ -57,6 +112,7 @@ document.addEventListener('click', function(e) {
     row.classList.remove('visited');
     row.classList.add('expanded');
     panel.classList.remove('hidden');
+    hydrateJobDescription(row);
   }
 });
 
@@ -118,38 +174,61 @@ document.addEventListener('click', function(e) {
     var btn = dd.querySelector('.filter-btn');
     var panel = dd.querySelector('.filter-panel');
     var search = dd.querySelector('.filter-search');
-    var options = dd.querySelectorAll('.filter-option');
+    // Long option lists arrive as JSON in data-options and become <li>s on first open.
+    var list = dd.querySelector('.filter-options');
     var param = dd.dataset.param;
+
+    function hydrate() {
+      if (!list || list.dataset.hydrated === '1') return;
+      list.dataset.hydrated = '1';
+      var data;
+      try { data = JSON.parse(list.dataset.options || '[]'); } catch (err) { data = []; }
+      var selected = list.dataset.selected || '';
+      var frag = document.createDocumentFragment();
+      data.forEach(function(row) {
+        var li = document.createElement('li');
+        li.dataset.value = row[0];
+        li.dataset.label = row[1];
+        li.className = 'filter-option px-3 py-2 cursor-pointer hover:bg-brand-50 text-sm ' + (selected === row[0] ? 'bg-brand-50 text-brand-600 font-medium' : 'text-surface-700');
+        li.textContent = row[1];
+        frag.appendChild(li);
+      });
+      list.appendChild(frag);
+    }
+
+    function options() { return dd.querySelectorAll('.filter-option'); }
+
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
       if (openPanel && openPanel !== panel) { openPanel.classList.add('hidden'); }
+      hydrate();
       panel.classList.toggle('hidden');
       openPanel = panel.classList.contains('hidden') ? null : panel;
       if (search && !panel.classList.contains('hidden')) {
         search.value = '';
-        options.forEach(function(o) { o.style.display = ''; });
+        options().forEach(function(o) { o.style.display = ''; });
         search.focus();
       }
     });
     if (search) {
       search.addEventListener('input', function() {
         var q = this.value.toLowerCase();
-        options.forEach(function(o) {
+        options().forEach(function(o) {
           var label = (o.dataset.label || o.textContent || '').toLowerCase();
           o.style.display = label.indexOf(q) >= 0 ? '' : 'none';
         });
       });
       search.addEventListener('click', function(e) { e.stopPropagation(); });
     }
-    options.forEach(function(o) {
-      o.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var val = this.dataset.value;
-        var url = new URL(window.location.href);
-        url.searchParams.delete('page');
-        if (val) { url.searchParams.set(param, val); } else { url.searchParams.delete(param); }
-        window.location.href = url.toString();
-      });
+    dd.addEventListener('click', function(e) {
+      var o = e.target.closest('.filter-option');
+      if (!o) return;
+      e.stopPropagation();
+      var val = o.dataset.value;
+      var url = new URL(window.location.href);
+      url.searchParams.delete('page');
+      if (val) { url.searchParams.set(param, val); } else { url.searchParams.delete(param); }
+      window.location.href = url.toString();
     });
   });
   document.addEventListener('click', function() {
@@ -221,10 +300,9 @@ document.addEventListener('click', function(e) {
 `;
 
 async function build() {
-  const { mkdirSync } = await import('fs');
   mkdirSync(outDir, { recursive: true });
 
-  const minCss = new CleanCSS({ level: 2 }).minify(rawCss).styles;
+  const minCss = buildCss();
   const cssHash = simpleHash(minCss);
 
   const jsResult = await terserMinify(rawJs, {
@@ -243,11 +321,9 @@ export const appScriptAssetFilename = ${JSON.stringify(`app.${jsHash}.js`)};
 
   writeFileSync(resolve(outDir, 'assets.ts'), generated);
 
-  const rawCssSize = Buffer.byteLength(rawCss);
   const rawJsSize = Buffer.byteLength(rawJs);
-  const minCssSize = Buffer.byteLength(minCss);
   const minJsSize = Buffer.byteLength(minJs);
-  console.log(`CSS: ${rawCssSize}B → ${minCssSize}B (${Math.round((1 - minCssSize / rawCssSize) * 100)}% saved)`);
+  console.log(`CSS: ${Buffer.byteLength(minCss)}B (tailwind, minified)`);
   console.log(`JS:  ${rawJsSize}B → ${minJsSize}B (${Math.round((1 - minJsSize / rawJsSize) * 100)}% saved)`);
   console.log(`Generated: src/public/generated/assets.ts`);
 }

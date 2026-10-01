@@ -77,6 +77,9 @@ pages.get('/', async (c) => {
 
   let allIds: number[] = [];
   let orderedByRelevance = false;
+  // Set when the browse query already returned fully hydrated rows, so the
+  // hydrate step below has nothing left to fetch.
+  let hydratedRows: Record<string, unknown>[] | null = null;
 
   let valid = true;
   const filterClauses: string[] = ['posted_at >= ?'];
@@ -109,6 +112,44 @@ pages.get('/', async (c) => {
       filterParams.push(salaryMin);
     }
   }
+  const waitUntil = waitUntilOf(c);
+  // User-independent filter lists and shortcut pills; identical for every visitor, so served from the fragment cache.
+  // Started before the job query so both are in flight at once.
+  const listsPromise = cachedJson('home:lists', FRAGMENT_TTL.short, async () => {
+    const [countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
+      c.env.DB.prepare(
+        `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
+         FROM countries ct
+         WHERE ct.is_active = 1 AND ct.job_count > 0
+         ORDER BY ct.job_count DESC`
+      ).all(),
+      c.env.DB.prepare(
+        `SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, lo.job_count
+         FROM locations lo
+         WHERE lo.is_active = 1 AND lo.job_count > 0
+         ORDER BY lo.job_count DESC`
+      ).all(),
+      c.env.DB.prepare(
+        `SELECT term_cn, slug, job_count FROM search_terms
+         WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL
+         ORDER BY job_count DESC LIMIT 7`
+      ).all(),
+      c.env.DB.prepare(
+        `SELECT lo.name_cn, lo.slug, lo.job_count, ct.flag_emoji as country_flag_emoji
+         FROM locations lo
+         LEFT JOIN countries ct ON lo.country_id = ct.id
+         WHERE lo.is_active = 1 AND lo.job_count > 0
+         ORDER BY lo.job_count DESC LIMIT 5`
+      ).all(),
+    ]);
+    return {
+      countries: (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>,
+      locations: (locationsResult.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_id: number; job_count: number }>,
+      topSearchTerms: (topTermsResult.results || []) as unknown as Array<{ term_cn: string; slug: string; job_count: number }>,
+      topLocations: (topLocationsResult.results || []) as unknown as Array<{ name_cn: string; slug: string; job_count: number; country_flag_emoji: string | null }>,
+    };
+  }, waitUntil);
+
   if (valid) {
     if (query) {
       const rankedIds = await hybridSearchJobIds(c.env, query, cutoff);
@@ -122,10 +163,15 @@ pages.get('/', async (c) => {
         orderedByRelevance = true;
       }
     } else {
-      const idResult = await c.env.DB.prepare(
-        `SELECT id FROM jobs WHERE ${filterClauses.join(' AND ')} ORDER BY created_at DESC LIMIT ? OFFSET ?`
-      ).bind(...filterParams, limit + 1, offset).all<{ id: number }>();
-      allIds = (idResult.results || []).map((r) => r.id);
+      // Page selection runs as a subquery of the hydrate query rather than as a
+      // separate D1 call, halving the round trips on the critical path.
+      const browseResult = await c.env.DB.prepare(
+        `${JOBS_HYDRATE}
+         WHERE j.id IN (SELECT id FROM jobs WHERE ${filterClauses.join(' AND ')} ORDER BY created_at DESC LIMIT ? OFFSET ?)
+         ORDER BY j.created_at DESC`
+      ).bind(...filterParams, limit + 1, offset).all();
+      hydratedRows = (browseResult.results || []) as unknown as Record<string, unknown>[];
+      allIds = hydratedRows.map((r) => r.id as number);
     }
   }
 
@@ -134,46 +180,13 @@ pages.get('/', async (c) => {
   const jobIds = hasMoreRaw ? allIds.slice(0, limit) : allIds;
 
   const hydrateOrderClause = orderedByRelevance ? '' : ' ORDER BY j.created_at DESC';
-  const waitUntil = waitUntilOf(c);
   const [jobsResult, lists] = await Promise.all([
-    jobIds.length > 0
-      ? c.env.DB.prepare(`${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')})${hydrateOrderClause}`).all()
-      : { results: [] },
-    // User-independent filter lists and shortcut pills; identical for every visitor, so served from the fragment cache.
-    cachedJson('home:lists', FRAGMENT_TTL.short, async () => {
-      const [countriesResult, locationsResult, topTermsResult, topLocationsResult] = await Promise.all([
-        c.env.DB.prepare(
-          `SELECT ct.id, ct.code, ct.name, ct.name_cn, ct.slug, ct.flag_emoji, ct.job_count
-           FROM countries ct
-           WHERE ct.is_active = 1 AND ct.job_count > 0
-           ORDER BY ct.job_count DESC`
-        ).all(),
-        c.env.DB.prepare(
-          `SELECT lo.id, lo.name, lo.name_cn, lo.slug, lo.country_id, lo.job_count
-           FROM locations lo
-           WHERE lo.is_active = 1 AND lo.job_count > 0
-           ORDER BY lo.job_count DESC`
-        ).all(),
-        c.env.DB.prepare(
-          `SELECT term_cn, slug, job_count FROM search_terms
-           WHERE is_active = 1 AND slug IS NOT NULL AND term_cn IS NOT NULL
-           ORDER BY job_count DESC LIMIT 7`
-        ).all(),
-        c.env.DB.prepare(
-          `SELECT lo.name_cn, lo.slug, lo.job_count, ct.flag_emoji as country_flag_emoji
-           FROM locations lo
-           LEFT JOIN countries ct ON lo.country_id = ct.id
-           WHERE lo.is_active = 1 AND lo.job_count > 0
-           ORDER BY lo.job_count DESC LIMIT 5`
-        ).all(),
-      ]);
-      return {
-        countries: (countriesResult.results || []) as unknown as Array<{ id: number; code: string; name: string; name_cn: string; slug: string; job_count: number }>,
-        locations: (locationsResult.results || []) as unknown as Array<{ id: number; name: string; name_cn: string; slug: string; country_id: number; job_count: number }>,
-        topSearchTerms: (topTermsResult.results || []) as unknown as Array<{ term_cn: string; slug: string; job_count: number }>,
-        topLocations: (topLocationsResult.results || []) as unknown as Array<{ name_cn: string; slug: string; job_count: number; country_flag_emoji: string | null }>,
-      };
-    }, waitUntil),
+    hydratedRows
+      ? { results: hydratedRows }
+      : jobIds.length > 0
+        ? c.env.DB.prepare(`${JOBS_HYDRATE} WHERE j.id IN (${jobIds.join(',')})${hydrateOrderClause}`).all()
+        : { results: [] },
+    listsPromise,
   ]);
 
   let jobs: Job[];
@@ -184,7 +197,7 @@ pages.get('/', async (c) => {
       .filter((j): j is Job => j !== undefined)
       .map((j) => ({ ...j, company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL) }));
   } else {
-    jobs = ((jobsResult.results || []) as unknown as Job[]).map((j) => ({
+    jobs = ((jobsResult.results || []) as unknown as Job[]).slice(0, limit).map((j) => ({
       ...j,
       company_thumbnail: resolveThumbnail(j.company_thumbnail, c.env.STATIC_URL),
     }));

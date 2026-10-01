@@ -35,7 +35,7 @@ export function adminSubmissionsPage(options: {
     <div class="border border-surface-200 rounded p-4 space-y-3" data-submission-id="${s.id}">
       <div class="flex flex-wrap items-start justify-between gap-2">
         <div class="min-w-0 flex items-start gap-3">
-          ${s.company_logo && cdn ? `<img src="${escapeHtml(cdn + '/' + s.company_logo)}" alt="${escapeHtml(s.company_name)} logo" class="w-12 h-12 rounded object-contain bg-surface-100 flex-shrink-0">` : ''}
+          ${s.company_logo && cdn ? `<img src="${escapeHtml(cdn + '/' + s.company_logo)}" alt="${escapeHtml(s.company_name)} logo" width="48" height="48" loading="lazy" decoding="async" class="w-12 h-12 rounded object-contain bg-surface-100 flex-shrink-0">` : ''}
           <div class="min-w-0">
           <div class="flex flex-wrap items-center gap-2">
             <span class="text-xs text-surface-400">#${s.id}</span>

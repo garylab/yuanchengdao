@@ -1,7 +1,7 @@
 import { Job, AuthUser } from '../types';
 import { layout } from './layout';
 import { renderJobRow } from './jobRow';
-import { breadcrumb, escapeHtml, isJobStale, timeAgo } from '../utils/helpers';
+import { breadcrumb, escapeHtml, isJobStale, timeAgo, EAGER_LOGO_ROWS } from '../utils/helpers';
 import { userCenterShell } from './userCenter';
 import { FAVORITE_STATUSES, favoriteStatusMeta } from '../constants/favorites';
 
@@ -101,7 +101,7 @@ export function favoritesPage(
         <span class="text-xs text-surface-400">基于你收藏的职位</span>
       </div>
       <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden">
-        ${recommended.map((j) => renderJobRow(j, { dataFrom: 'favorites-recommend' })).join('')}
+        ${recommended.map((j, i) => renderJobRow(j, { dataFrom: 'favorites-recommend', eagerLogo: i < EAGER_LOGO_ROWS })).join('')}
       </div>
     </div>` : '';
 

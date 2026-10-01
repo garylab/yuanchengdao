@@ -103,6 +103,22 @@ export function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
+/**
+ * List rows ship only a preview of each description; the full text (and the
+ * highlight blocks) are fetched from /api/jobs/:id/description when the row is
+ * expanded. Thirty untruncated descriptions were ~80% of the homepage HTML.
+ */
+export const JOB_DESCRIPTION_PREVIEW_CHARS = 320;
+
+/** Logos above the fold load eagerly; the rest of a list is lazy. */
+export const EAGER_LOGO_ROWS = 5;
+
+export function jobDescriptionPreview(description: string | null | undefined): { text: string; truncated: boolean } {
+  const full = description || '';
+  if (full.length <= JOB_DESCRIPTION_PREVIEW_CHARS) return { text: full, truncated: false };
+  return { text: full.slice(0, JOB_DESCRIPTION_PREVIEW_CHARS).trimEnd() + '…', truncated: true };
+}
+
 export function truncate(str: string, len: number): string {
   if (str.length <= len) return str;
   return str.substring(0, len) + '...';
@@ -124,25 +140,27 @@ export function breadcrumb(items: Array<{ label: string; href?: string }>): stri
   return `<nav class="max-w-5xl mx-auto px-4 mt-4 text-xs flex items-center gap-1.5">${parts.join('<span class="text-surface-300">/</span>')}</nav>`;
 }
 
-export function companyLogo(name: string | null | undefined, thumbnail: string | null | undefined, size: 'sm' | 'md' | 'lg' = 'md'): string {
+export function companyLogo(name: string | null | undefined, thumbnail: string | null | undefined, size: 'sm' | 'md' | 'lg' = 'md', eager = false): string {
   const companyName = name || '?';
   const firstWord = companyName.split(/\s+/)[0];
   const label = firstWord.length <= 7 ? firstWord : companyName[0];
   const escaped = escapeHtml(label);
   const alt = escapeHtml(`${companyName} logo`);
 
-  const cfg: Record<string, { wh: string; rounded: string; pad: string; fontSize: string }> = {
-    sm:  { wh: 'w-8 h-8',   rounded: 'rounded', pad: 'p-0.5', fontSize: label.length <= 2 ? 'text-xs' : 'text-[9px]' },
-    md:  { wh: 'w-12 h-12', rounded: 'rounded', pad: 'p-1.5', fontSize: label.length <= 2 ? 'text-lg' : label.length <= 5 ? 'text-xs' : 'text-[10px]' },
-    lg:  { wh: 'w-16 h-16', rounded: 'rounded', pad: 'p-2',   fontSize: label.length <= 2 ? 'text-xl' : label.length <= 5 ? 'text-sm' : 'text-xs' },
+  const cfg: Record<string, { wh: string; px: number; rounded: string; pad: string; fontSize: string }> = {
+    sm:  { wh: 'w-8 h-8',   px: 32, rounded: 'rounded', pad: 'p-0.5', fontSize: label.length <= 2 ? 'text-xs' : 'text-[9px]' },
+    md:  { wh: 'w-12 h-12', px: 48, rounded: 'rounded', pad: 'p-1.5', fontSize: label.length <= 2 ? 'text-lg' : label.length <= 5 ? 'text-xs' : 'text-[10px]' },
+    lg:  { wh: 'w-16 h-16', px: 64, rounded: 'rounded', pad: 'p-2',   fontSize: label.length <= 2 ? 'text-xl' : label.length <= 5 ? 'text-sm' : 'text-xs' },
   };
   const c = cfg[size];
 
   const fallbackDisplay = thumbnail ? 'hidden' : 'flex';
   const fallback = `<div class="${fallbackDisplay} ${c.wh} ${c.rounded} bg-brand-50 items-center justify-center ${c.fontSize} font-bold text-brand-500 leading-tight text-center overflow-hidden ${c.pad}">${escaped}</div>`;
 
+  // Intrinsic size reserves the box (no CLS); only the handful of logos above the
+  // fold are eager, the rest of a 30-row list is lazy.
   const img = thumbnail
-    ? `<img src="${escapeHtml(thumbnail)}" alt="${alt}" class="${c.wh} ${c.rounded} object-contain bg-surface-100 flex-shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    ? `<img src="${escapeHtml(thumbnail)}" alt="${alt}" width="${c.px}" height="${c.px}" loading="${eager ? 'eager' : 'lazy'}" decoding="async" class="${c.wh} ${c.rounded} object-contain bg-surface-100 flex-shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
     : '';
 
   return `<div class="flex-shrink-0 ${c.wh}">${img}${fallback}</div>`;

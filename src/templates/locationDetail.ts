@@ -1,6 +1,6 @@
 import { AuthUser, Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge } from '../utils/helpers';
+import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge, jobDescriptionPreview, EAGER_LOGO_ROWS } from '../utils/helpers';
 
 interface LocationInfo {
   id: number;
@@ -11,17 +11,19 @@ interface LocationInfo {
   country_flag_emoji: string | null;
 }
 
-function renderJobRow(job: Job): string {
+function renderJobRow(job: Job, eagerLogo = false): string {
   const salary = formatSalary(job.salary_lower, job.salary_upper, job.salary_currency, job.salary_pay_cycle);
   const posted = timeAgo(jobDisplayTimestamp(job));
-  const logo = companyLogo(job.company_name, job.company_thumbnail);
+  const logo = companyLogo(job.company_name, job.company_thumbnail, 'md', eagerLogo);
 
-  const highlights = job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
+  const descPreview = jobDescriptionPreview(job.description);
+  // When the preview is cut short the highlights come down with the full text.
+  const highlights = !descPreview.truncated && job.job_highlights ? JSON.parse(job.job_highlights) as Array<{ title: string; items: string[] }> : [];
   const applyOptions = job.apply_options ? JSON.parse(job.apply_options) as Array<{ title: string; link: string }> : [];
   const primaryApply = applyOptions[0]?.link ? rewriteUtm(applyOptions[0].link) : null;
 
   return `
-    <div class="job-row border-b border-surface-100" data-job-id="${job.id}">
+    <div class="job-row border-b border-surface-100" data-job-id="${job.id}" data-desc-full="${descPreview.truncated ? '0' : '1'}">
       <div class="job-row-header flex items-center gap-4 px-4 py-4 cursor-pointer select-none">
         ${logo}
         <div class="flex-1 min-w-0">
@@ -46,8 +48,8 @@ function renderJobRow(job: Job): string {
 
       <div class="job-expand hidden px-4 pb-4">
         <div class="ml-16 border-t border-surface-100 pt-4">
-          <div class="text-sm text-surface-600 leading-relaxed mb-4 whitespace-pre-line">${escapeHtml(job.description)}</div>
-          ${highlights.length > 0 ? `
+          <div class="text-sm text-surface-600 leading-relaxed mb-4 whitespace-pre-line" data-job-desc>${escapeHtml(descPreview.text)}</div>
+          <div data-job-highlights>${highlights.length > 0 ? `
             <div class="mb-4 space-y-3">
               ${highlights.map(h => `
                 <div>
@@ -58,7 +60,7 @@ function renderJobRow(job: Job): string {
                 </div>
               `).join('')}
             </div>
-          ` : ''}
+          ` : ''}</div>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               ${primaryApply ? `
@@ -108,7 +110,7 @@ export function locationDetailPage(location: LocationInfo, jobs: Job[], page: nu
       </div>
       <div class="bg-white rounded shadow-sm border border-surface-200 overflow-hidden">
         ${jobs.length > 0
-          ? jobs.map(j => renderJobRow(j)).join('')
+          ? jobs.map((j, i) => renderJobRow(j, i < EAGER_LOGO_ROWS)).join('')
           : `<div class="text-center py-20 text-surface-400">
               <p class="text-lg">暂无相关职位</p>
             </div>`
