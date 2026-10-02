@@ -60,6 +60,9 @@ export function adminShell(
     { href: '/users', label: '所有用户' },
     { href: '/admin/feedback', label: '反馈管理' },
     { href: '/admin/submissions', label: '投递审核' },
+    { href: '/admin/countries', label: '国家管理' },
+    { href: '/admin/locations', label: '地区管理' },
+    { href: '/admin/search-terms', label: '采集关键词' },
   ];
   return shell(activePath, innerContent, items, 'w-full px-4 py-6');
 }

@@ -22,6 +22,7 @@ import { countryPage, CountryPageInfo } from '../templates/country';
 import { salaryPage, SalaryStatRow } from '../templates/salary';
 import { weeklyPage } from '../templates/weekly';
 import { adminSubmissionsPage } from '../templates/adminSubmissions';
+import { taxonomyPage, TaxonomyRow } from '../templates/adminTaxonomy';
 import { FavoriteRecord } from '../templates/favorites';
 import { CompanyStats } from '../templates/companyDetail';
 import { hybridSearchJobIds } from '../services/search';
@@ -919,6 +920,124 @@ pages.get('/admin/feedback', async (c) => {
     staticUrl: c.env.STATIC_URL,
   }));
 });
+
+const ADMIN_GUARD_REDIRECT = (path: string) => `/login?next=${encodeURIComponent(path)}`;
+
+pages.get('/admin/countries', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.redirect(ADMIN_GUARD_REDIRECT('/admin/countries'), 302);
+  if (user.role !== 'admin') return c.notFound();
+
+  const result = await c.env.DB.prepare(
+    `SELECT id, code, name, name_cn, slug, flag_emoji, timezone, job_count, is_active
+     FROM countries ORDER BY is_active DESC, job_count DESC, id ASC`
+  ).all<TaxonomyRow>();
+
+  return c.html(taxonomyPage({
+    user,
+    title: '国家管理',
+    path: '/admin/countries',
+    apiBase: '/api/admin/countries',
+    description: '管理员维护可采集与展示的国家。',
+    hint: '停用后该国家不再参与职位采集，也不再出现在前台筛选列表中（已有职位和直接链接仍可访问）。',
+    countLabel: '共',
+    fields: [
+      { key: 'code', label: '代码', column: 'code', editable: false },
+      { key: 'name', label: '英文名', column: 'name', placeholder: 'United Kingdom' },
+      { key: 'nameCn', label: '中文名', column: 'name_cn', placeholder: '英国' },
+      { key: 'slug', label: 'slug', column: 'slug', placeholder: '留空则按英文名生成' },
+      { key: 'flagEmoji', label: '国旗', column: 'flag_emoji', placeholder: '🇬🇧' },
+      { key: 'timezone', label: '时区', column: 'timezone', placeholder: 'Europe/London' },
+    ],
+    rows: (result.results || []) as TaxonomyRow[],
+    gaId: c.env.GA_ID,
+    staticUrl: c.env.STATIC_URL,
+  }));
+});
+
+pages.get('/admin/locations', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.redirect(ADMIN_GUARD_REDIRECT('/admin/locations'), 302);
+  if (user.role !== 'admin') return c.notFound();
+
+  // Locations run into the hundreds and keep growing as the crawler finds new
+  // ones, so this page is searched and paged rather than rendered whole.
+  const url = new URL(c.req.url);
+  const q = (url.searchParams.get('q') || '').trim();
+  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
+  const pageSize = 100;
+  const like = `%${q}%`;
+  const where = q ? 'WHERE name LIKE ? OR name_cn LIKE ? OR slug LIKE ?' : '';
+  const filterArgs = q ? [like, like, like] : [];
+
+  const [result, countResult, countriesResult] = await Promise.all([
+    c.env.DB.prepare(
+      `SELECT id, name, name_cn, slug, country_id, job_count, is_active
+       FROM locations ${where}
+       ORDER BY is_active DESC, job_count DESC, id ASC
+       LIMIT ? OFFSET ?`
+    ).bind(...filterArgs, pageSize, (page - 1) * pageSize).all<TaxonomyRow>(),
+    c.env.DB.prepare(`SELECT COUNT(*) as total FROM locations ${where}`)
+      .bind(...filterArgs).first<{ total: number }>(),
+    c.env.DB.prepare('SELECT id, name_cn FROM countries ORDER BY name_cn ASC')
+      .all<{ id: number; name_cn: string }>(),
+  ]);
+
+  const countryOptions = (countriesResult.results || []).map((row) => ({
+    value: String(row.id),
+    label: row.name_cn,
+  }));
+
+  return c.html(taxonomyPage({
+    user,
+    title: '地区管理',
+    path: '/admin/locations',
+    apiBase: '/api/admin/locations',
+    description: '管理员维护职位展示用的地区。',
+    hint: '地区用于职位的展示与筛选，停用后不再出现在前台列表中。',
+    countLabel: '共',
+    fields: [
+      { key: 'name', label: '英文名', column: 'name', placeholder: 'London' },
+      { key: 'nameCn', label: '中文名', column: 'name_cn', placeholder: '伦敦' },
+      { key: 'slug', label: 'slug', column: 'slug', placeholder: '留空则按英文名生成' },
+      { key: 'countryId', label: '所属国家', column: 'country_id', type: 'select', options: countryOptions },
+    ],
+    rows: (result.results || []) as TaxonomyRow[],
+    pagination: { page, pageSize, total: countResult?.total ?? 0, q },
+    gaId: c.env.GA_ID,
+    staticUrl: c.env.STATIC_URL,
+  }));
+});
+
+pages.get('/admin/search-terms', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.redirect(ADMIN_GUARD_REDIRECT('/admin/search-terms'), 302);
+  if (user.role !== 'admin') return c.notFound();
+
+  const result = await c.env.DB.prepare(
+    `SELECT id, term, term_cn, slug, job_count, is_active
+     FROM search_terms ORDER BY is_active DESC, job_count DESC, id ASC`
+  ).all<TaxonomyRow>();
+
+  return c.html(taxonomyPage({
+    user,
+    title: '采集关键词',
+    path: '/admin/search-terms',
+    apiBase: '/api/admin/search-terms',
+    description: '管理员维护职位采集使用的关键词。',
+    hint: '采集任务按「启用的关键词 × 启用的国家」生成，停用后下一轮不再采集该关键词。',
+    countLabel: '共',
+    fields: [
+      { key: 'term', label: '采集关键词', column: 'term', placeholder: 'data analyst' },
+      { key: 'termCn', label: '中文名', column: 'term_cn', placeholder: '数据分析师' },
+      { key: 'slug', label: 'slug', column: 'slug', placeholder: '留空则按关键词生成' },
+    ],
+    rows: (result.results || []) as TaxonomyRow[],
+    gaId: c.env.GA_ID,
+    staticUrl: c.env.STATIC_URL,
+  }));
+});
+
 
 // Legacy URLs: keep old links/search results working with permanent redirects.
 function legacyRedirect(c: { req: { url: string }; redirect: (to: string, status: 301) => Response }, to: string): Response {

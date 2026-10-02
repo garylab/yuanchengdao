@@ -10,6 +10,7 @@ import telegram from './routes/telegram';
 import feedback from './routes/feedback';
 import account from './routes/account';
 import jobSubmissions from './routes/jobSubmissions';
+import taxonomy from './routes/taxonomy';
 import { syncJobs } from './services/jobSync';
 import { deliverSubscriptionAlerts } from './services/subscriptions';
 import { runWeeklyDigest } from './services/weekly';
@@ -82,6 +83,7 @@ app.route('/', telegram);
 app.route('/', feedback);
 app.route('/', account);
 app.route('/', jobSubmissions);
+app.route('/', taxonomy);
 
 app.get('/robots.txt', (c) => {
   return c.text(`User-agent: *\nAllow: /\nSitemap: ${c.env.SITE_URL}/sitemap.xml`);
