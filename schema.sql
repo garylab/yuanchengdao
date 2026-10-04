@@ -316,3 +316,20 @@ CREATE TABLE IF NOT EXISTS telegram_link_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_telegram_link_tokens_token ON telegram_link_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_telegram_link_tokens_user_id ON telegram_link_tokens(user_id);
+
+-- Source blocklist: listings that reach us through a scraper/aggregator site
+-- are rejected before translation rather than republished as our own.
+-- Seeded separately by migrations/0011_blocked_sources.sql.
+CREATE TABLE IF NOT EXISTS blocked_sources (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  pattern TEXT NOT NULL,
+  match_type TEXT NOT NULL DEFAULT 'via' CHECK (match_type IN ('via', 'domain')),
+  note TEXT,
+  blocked_count INTEGER NOT NULL DEFAULT 0,
+  last_blocked_at TEXT,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_blocked_sources_pattern ON blocked_sources(match_type, pattern);
+CREATE INDEX IF NOT EXISTS idx_blocked_sources_active ON blocked_sources(is_active);

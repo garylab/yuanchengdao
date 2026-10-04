@@ -1039,6 +1039,46 @@ pages.get('/admin/search-terms', async (c) => {
 });
 
 
+pages.get('/admin/blocked-sources', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.redirect(ADMIN_GUARD_REDIRECT('/admin/blocked-sources'), 302);
+  if (user.role !== 'admin') return c.notFound();
+
+  const result = await c.env.DB.prepare(
+    `SELECT id, pattern, match_type, note, blocked_count, last_blocked_at, is_active
+     FROM blocked_sources ORDER BY is_active DESC, blocked_count DESC, id ASC`
+  ).all<TaxonomyRow>();
+
+  return c.html(taxonomyPage({
+    user,
+    title: '来源屏蔽',
+    path: '/admin/blocked-sources',
+    apiBase: '/api/admin/blocked-sources',
+    description: '管理员维护不予收录的职位来源站点。',
+    hint: '命中规则的职位在翻译入库前就被丢弃，不消耗翻译额度，也不会出现在前台。'
+      + '「来源名称」比对 Google 给出的 via 标注，「域名」比对投递链接的域名（含子域名）。'
+      + '规则只对之后采集的职位生效，已收录的历史职位不受影响。',
+    countLabel: '共',
+    statColumn: 'blocked_count',
+    statHeader: '已拦截',
+    fields: [
+      { key: 'pattern', label: '屏蔽内容', column: 'pattern', placeholder: 'lensa 或 lensa.com' },
+      {
+        key: 'matchType', label: '匹配方式', column: 'match_type', type: 'select',
+        options: [
+          { value: 'via', label: '来源名称 (via)' },
+          { value: 'domain', label: '域名' },
+        ],
+      },
+      { key: 'note', label: '备注', column: 'note', placeholder: '为什么屏蔽' },
+      { key: 'lastBlockedAt', label: '最近拦截', column: 'last_blocked_at', editable: false },
+    ],
+    rows: (result.results || []) as TaxonomyRow[],
+    gaId: c.env.GA_ID,
+    staticUrl: c.env.STATIC_URL,
+  }));
+});
+
 // Legacy URLs: keep old links/search results working with permanent redirects.
 function legacyRedirect(c: { req: { url: string }; redirect: (to: string, status: 301) => Response }, to: string): Response {
   const search = new URL(c.req.url).search;

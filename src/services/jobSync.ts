@@ -6,6 +6,7 @@ import { upsertJobVector, deleteJobVectors } from './vectorSearch';
 import { detectChineseFriendly } from '../constants/chineseFriendly';
 import { guessCompanyWebsite, enrichCompanies } from './companyEnrich';
 import { detectLocationRequirement, mergeLocationRequirement } from './locationRequirement';
+import { loadBlockedSources, matchBlockedSource } from './sourceBlocklist';
 
 export function toSlug(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -232,6 +233,10 @@ export async function generateJobSlug(db: D1Database, title: string, companyName
 }
 
 const PROCESS_STATUS_CLAIMED = 2;
+const PROCESS_STATUS_FAILED = 44;
+// Kept distinct from the generic failure bucket so that unblocking a source
+// later means resetting these rows, not re-running everything that ever failed.
+const PROCESS_STATUS_BLOCKED = 45;
 
 async function processUnprocessedJobs(env: Env): Promise<number> {
   const BATCH_SIZE = 5;
@@ -259,6 +264,8 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
   }
   if (crawledJobs.length === 0) return 0;
 
+  const blockedSources = await loadBlockedSources(env.DB);
+
   const toTranslate: CrawledJob[] = [];
   for (const crawled of crawledJobs) {
     const existing = await env.DB.prepare(
@@ -271,10 +278,23 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
       console.log(`  Skipped crawled #${crawled.id} — already in jobs table`);
       continue;
     }
+    // Before translating: a listing that reached us through an aggregator is
+    // already second-hand, so drop it rather than spend an OpenAI call on it.
+    const blocked = matchBlockedSource(crawled, blockedSources);
+    if (blocked) {
+      await env.DB.prepare(
+        'UPDATE jobs_crawled SET process_status = ?, failed_reason = ? WHERE id = ?'
+      ).bind(PROCESS_STATUS_BLOCKED, `blocked source: ${blocked.match_type}:${blocked.pattern}`, crawled.id).run();
+      await env.DB.prepare(
+        "UPDATE blocked_sources SET blocked_count = blocked_count + 1, last_blocked_at = datetime('now') WHERE id = ?"
+      ).bind(blocked.id).run();
+      console.log(`  Skipped crawled #${crawled.id} — blocked source ${blocked.match_type}:${blocked.pattern}`);
+      continue;
+    }
     if (!isLikelyRemoteJob(crawled)) {
       await env.DB.prepare(
-        'UPDATE jobs_crawled SET process_status = 44, failed_reason = ? WHERE id = ?'
-      ).bind('not remote', crawled.id).run();
+        'UPDATE jobs_crawled SET process_status = ?, failed_reason = ? WHERE id = ?'
+      ).bind(PROCESS_STATUS_FAILED, 'not remote', crawled.id).run();
       console.log(`  Skipped crawled #${crawled.id} — not a remote job`);
       continue;
     }

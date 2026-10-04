@@ -23,7 +23,7 @@ export type TaxonomyField = {
 export type TaxonomyRow = {
   id: number;
   is_active: number;
-  job_count: number;
+  job_count?: number;
   [key: string]: unknown;
 };
 
@@ -60,6 +60,9 @@ export function taxonomyPage(options: {
   /** Shown under the heading to explain what toggling actually affects. */
   hint: string;
   countLabel: string;
+  /** Row column shown in the rightmost stat column; defaults to the job count. */
+  statColumn?: string;
+  statHeader?: string;
   fields: TaxonomyField[];
   rows: TaxonomyRow[];
   /** Omit for small tables that are fine to render whole. */
@@ -68,6 +71,8 @@ export function taxonomyPage(options: {
   staticUrl?: string;
 }): string {
   const { user, title, path, apiBase, hint, countLabel, fields, rows, pagination } = options;
+  const statColumn = options.statColumn || 'job_count';
+  const statHeader = options.statHeader || '职位数';
   const bc = breadcrumb([
     { label: '首页', href: '/' },
     { label: title, href: path },
@@ -126,7 +131,7 @@ export function taxonomyPage(options: {
       <tr class="border-b border-surface-100 align-top" data-row="${row.id}" data-values="${escapeHtml(JSON.stringify(values))}">
         <td class="py-3 pr-3 text-sm text-surface-500">${row.id}</td>
         ${fields.map((f) => `<td class="py-3 pr-3 text-sm text-surface-700">${cell(row, f)}</td>`).join('')}
-        <td class="py-3 pr-3 text-sm text-surface-700">${row.job_count}</td>
+        <td class="py-3 pr-3 text-sm text-surface-700">${escapeHtml(String(row[statColumn] ?? 0))}</td>
         <td class="py-3 pr-3">${statusBadge}</td>
         <td class="py-3 whitespace-nowrap">
           <button type="button" data-edit="${row.id}" class="text-xs text-brand-500 hover:underline mr-3">编辑</button>
@@ -184,7 +189,7 @@ export function taxonomyPage(options: {
               <tr class="border-b border-surface-200 text-xs text-surface-500 uppercase tracking-wide">
                 <th class="py-2 pr-3 font-medium">ID</th>
                 ${fields.map((f) => `<th class="py-2 pr-3 font-medium">${escapeHtml(f.label)}</th>`).join('')}
-                <th class="py-2 pr-3 font-medium">职位数</th>
+                <th class="py-2 pr-3 font-medium">${escapeHtml(statHeader)}</th>
                 <th class="py-2 pr-3 font-medium">状态</th>
                 <th class="py-2 font-medium">操作</th>
               </tr>

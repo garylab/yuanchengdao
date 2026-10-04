@@ -13,6 +13,8 @@
     "db:migrate:local": "wrangler d1 execute yuanchengdao --local --file=./schema.sql",
     "db:migrate:auth": "wrangler d1 execute yuanchengdao --remote --file=./migrations/0003_users_auth.sql",
     "db:migrate:auth:local": "wrangler d1 execute yuanchengdao --local --file=./migrations/0003_users_auth.sql",
+    "db:migrate:blocked": "wrangler d1 execute yuanchengdao --remote --file=./migrations/0011_blocked_sources.sql",
+    "db:migrate:blocked:local": "wrangler d1 execute yuanchengdao --local --file=./migrations/0011_blocked_sources.sql",
     "vectorize:create": "wrangler vectorize create jobs-search --dimensions=1024 --metric=cosine",
     "tail": "wrangler tail"
   },

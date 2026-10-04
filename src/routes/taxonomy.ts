@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Env, AppVariables } from '../types';
 import { toSlug } from '../services/jobSync';
+import { BlockMatchType, isBlockMatchType, normalizePattern } from '../services/sourceBlocklist';
 
 const taxonomy = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -28,6 +29,7 @@ function constraintMessage(err: unknown, fallback: string): string {
   if (!/UNIQUE constraint failed/i.test(text)) return fallback;
   if (/\.code/.test(text)) return '国家代码已存在';
   if (/\.term/.test(text)) return '该关键词已存在';
+  if (/\.pattern/.test(text)) return '该屏蔽规则已存在';
   if (/\.slug/.test(text)) return 'slug 已被占用，请换一个';
   return '已存在重复记录';
 }
@@ -263,6 +265,80 @@ taxonomy.post('/api/admin/search-terms/:id/toggle', async (c) => {
 
   const next = row.is_active ? 0 : 1;
   await c.env.DB.prepare('UPDATE search_terms SET is_active = ? WHERE id = ?').bind(next, id).run();
+  return c.json({ ok: true, isActive: next === 1 });
+});
+
+// --------------------------------------------------------- blocked sources
+
+/** Shared by create and update: validates and normalizes the rule fields. */
+function parseBlockedSource(body: Record<string, unknown>):
+  | { ok: true; pattern: string; matchType: BlockMatchType; note: string | null }
+  | { ok: false; error: string } {
+  const rawType = str(body.matchType) || 'via';
+  if (!isBlockMatchType(rawType)) return { ok: false, error: '匹配方式只能是来源名称或域名' };
+
+  const pattern = normalizePattern(str(body.pattern), rawType);
+  if (!pattern) return { ok: false, error: '屏蔽内容为必填' };
+  if (rawType === 'domain' && !pattern.includes('.')) {
+    return { ok: false, error: '域名需要包含点，例如 lensa.com' };
+  }
+
+  return { ok: true, pattern, matchType: rawType, note: str(body.note) || null };
+}
+
+taxonomy.post('/api/admin/blocked-sources', async (c) => {
+  const guard = requireAdmin(c.get('user'));
+  if (!guard.ok) return c.json({ error: guard.error }, guard.status);
+
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const parsed = parseBlockedSource(body);
+  if (!parsed.ok) return c.json({ error: parsed.error }, 400);
+
+  try {
+    const res = await c.env.DB.prepare(
+      `INSERT INTO blocked_sources (pattern, match_type, note) VALUES (?, ?, ?)`
+    ).bind(parsed.pattern, parsed.matchType, parsed.note).run();
+    return c.json({ ok: true, id: res.meta.last_row_id });
+  } catch (err) {
+    return c.json({ error: constraintMessage(err, '创建失败') }, 400);
+  }
+});
+
+taxonomy.post('/api/admin/blocked-sources/:id', async (c) => {
+  const guard = requireAdmin(c.get('user'));
+  if (!guard.ok) return c.json({ error: guard.error }, guard.status);
+
+  const id = parseId(c.req.param('id'));
+  if (!id) return c.json({ error: '无效规则' }, 400);
+
+  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
+  const parsed = parseBlockedSource(body);
+  if (!parsed.ok) return c.json({ error: parsed.error }, 400);
+
+  try {
+    const res = await c.env.DB.prepare(
+      `UPDATE blocked_sources SET pattern = ?, match_type = ?, note = ? WHERE id = ?`
+    ).bind(parsed.pattern, parsed.matchType, parsed.note, id).run();
+    if (!res.meta.changes) return c.json({ error: '规则不存在' }, 404);
+    return c.json({ ok: true });
+  } catch (err) {
+    return c.json({ error: constraintMessage(err, '保存失败') }, 400);
+  }
+});
+
+taxonomy.post('/api/admin/blocked-sources/:id/toggle', async (c) => {
+  const guard = requireAdmin(c.get('user'));
+  if (!guard.ok) return c.json({ error: guard.error }, guard.status);
+
+  const id = parseId(c.req.param('id'));
+  if (!id) return c.json({ error: '无效规则' }, 400);
+
+  const row = await c.env.DB.prepare('SELECT is_active FROM blocked_sources WHERE id = ?')
+    .bind(id).first<{ is_active: number }>();
+  if (!row) return c.json({ error: '规则不存在' }, 404);
+
+  const next = row.is_active ? 0 : 1;
+  await c.env.DB.prepare('UPDATE blocked_sources SET is_active = ? WHERE id = ?').bind(next, id).run();
   return c.json({ ok: true, isActive: next === 1 });
 });
 
