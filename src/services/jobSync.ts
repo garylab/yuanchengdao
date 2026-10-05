@@ -7,6 +7,7 @@ import { detectChineseFriendly } from '../constants/chineseFriendly';
 import { guessCompanyWebsite, enrichCompanies } from './companyEnrich';
 import { detectLocationRequirement, mergeLocationRequirement } from './locationRequirement';
 import { loadBlockedSources, matchBlockedSource } from './sourceBlocklist';
+import { activeCutoff } from '../utils/helpers';
 
 export function toSlug(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -550,27 +551,11 @@ async function deleteExpiredJobs(env: Env): Promise<number> {
   const cutoff = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
 
   const expired = await env.DB.prepare(
-    'SELECT id, company_id, location_id, country_id, search_term_id FROM jobs WHERE posted_at < ?'
-  ).bind(cutoff).all();
+    'SELECT id FROM jobs WHERE posted_at < ?'
+  ).bind(cutoff).all<{ id: number }>();
 
-  const rows = (expired.results || []) as unknown as Array<{
-    id: number; company_id: number | null; location_id: number | null;
-    country_id: number | null; search_term_id: number | null;
-  }>;
-  if (rows.length === 0) return 0;
-
-  const ids = rows.map(r => r.id);
-
-  const companyCount = new Map<number, number>();
-  const locationCount = new Map<number, number>();
-  const countryCount = new Map<number, number>();
-  const termCount = new Map<number, number>();
-  for (const r of rows) {
-    if (r.company_id) companyCount.set(r.company_id, (companyCount.get(r.company_id) || 0) + 1);
-    if (r.location_id) locationCount.set(r.location_id, (locationCount.get(r.location_id) || 0) + 1);
-    if (r.country_id) countryCount.set(r.country_id, (countryCount.get(r.country_id) || 0) + 1);
-    if (r.search_term_id) termCount.set(r.search_term_id, (termCount.get(r.search_term_id) || 0) + 1);
-  }
+  const ids = (expired.results || []).map((r) => r.id);
+  if (ids.length === 0) return 0;
 
   try {
     await deleteJobVectors(env.VECTORIZE, ids);
@@ -580,29 +565,46 @@ async function deleteExpiredJobs(env: Env): Promise<number> {
 
   const BATCH = 50;
   for (let i = 0; i < ids.length; i += BATCH) {
-    const batch = ids.slice(i, i + BATCH);
-    const placeholders = batch.join(',');
-    await env.DB.prepare(`DELETE FROM jobs WHERE id IN (${placeholders})`).run();
+    await env.DB.prepare(`DELETE FROM jobs WHERE id IN (${ids.slice(i, i + BATCH).join(',')})`).run();
   }
 
-  const stmts: D1PreparedStatement[] = [];
-  for (const [id, cnt] of companyCount) {
-    stmts.push(env.DB.prepare('UPDATE companies SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
-  }
-  for (const [id, cnt] of locationCount) {
-    stmts.push(env.DB.prepare('UPDATE locations SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
-  }
-  for (const [id, cnt] of countryCount) {
-    stmts.push(env.DB.prepare('UPDATE countries SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
-  }
-  for (const [id, cnt] of termCount) {
-    stmts.push(env.DB.prepare('UPDATE search_terms SET job_count = MAX(0, job_count - ?) WHERE id = ?').bind(cnt, id));
-  }
-  if (stmts.length > 0) {
-    await env.DB.batch(stmts);
-  }
+  // The job_count columns used to be decremented here. They are recomputed by
+  // recountEntityJobs() instead: decrementing at deletion time meant the
+  // counters tracked the 90-day retention window, while every page that renders
+  // them lists the last 30 days.
+  return ids.length;
+}
 
-  return rows.length;
+/**
+ * Recompute the denormalised job_count columns against the 30-day window the
+ * pages actually render.
+ *
+ * These counters were only ever incremented on insert and decremented when a job
+ * was deleted at 90 days, so a company whose jobs had all aged out still
+ * reported them. Measured on production: 37 of 60 sampled company pages carried
+ * a non-zero job_count while rendering no jobs at all.
+ *
+ * Cheap enough to run hourly — the (company_id, posted_at) indexes cover every
+ * subquery, and these are the only four tables that denormalise the count.
+ */
+export async function recountEntityJobs(env: Env): Promise<void> {
+  const cutoff = activeCutoff();
+  const targets: Array<[string, string]> = [
+    ['companies', 'company_id'],
+    ['locations', 'location_id'],
+    ['countries', 'country_id'],
+    ['search_terms', 'search_term_id'],
+  ];
+
+  // Sequential rather than batched: these are full-table updates, and one
+  // transaction spanning all four is a long statement for no benefit.
+  for (const [table, column] of targets) {
+    await env.DB.prepare(
+      `UPDATE ${table} SET job_count = (
+         SELECT COUNT(*) FROM jobs j WHERE j.${column} = ${table}.id AND j.posted_at >= ?
+       )`
+    ).bind(cutoff).run();
+  }
 }
 
 export async function syncJobs(env: Env): Promise<{ fetched: number; saved: number }> {

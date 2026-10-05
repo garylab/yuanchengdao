@@ -13,7 +13,7 @@ import jobSubmissions from './routes/jobSubmissions';
 import taxonomy from './routes/taxonomy';
 import feeds from './routes/feeds';
 import og from './routes/og';
-import { syncJobs } from './services/jobSync';
+import { syncJobs, recountEntityJobs } from './services/jobSync';
 import { deliverSubscriptionAlerts } from './services/subscriptions';
 import { runWeeklyDigest } from './services/weekly';
 import { ENGLISH_LEVEL_GROUPS } from './constants/englishLevel';
@@ -298,7 +298,13 @@ export default {
               console.error(`Weekly digest failed: ${message}`);
             })
           : Promise.resolve();
-        const combined = Promise.all([telegramSubscriptionJob, emailSubscriptionJob, weeklyJob]);
+        // Hourly is enough: the counters only drift as jobs cross the 30-day
+        // boundary, and every page that shows them tolerates an hour of lag.
+        const recountJob = recountEntityJobs(env).catch((err) => {
+          const message = err instanceof Error ? (err.stack || err.message) : String(err);
+          console.error(`Entity job_count recount failed: ${message}`);
+        });
+        const combined = Promise.all([telegramSubscriptionJob, emailSubscriptionJob, weeklyJob, recountJob]);
         if (waitUntil) waitUntil(combined);
         else await combined;
         return;
