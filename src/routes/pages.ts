@@ -663,12 +663,14 @@ pages.get('/about', (c) => {
 });
 
 pages.get('/post-job', (c) => {
-  const user = c.get('user');
-  if (!user) return c.redirect(`/login?next=${encodeURIComponent('/post-job')}`, 302);
+  // Renders signed out too: this is the only page aimed at employers, and
+  // bouncing anonymous visitors to /login made it unreachable for search —
+  // it sat in the sitemap while redirecting crawlers to a disallowed path.
   return c.html(postJobPage({
     gaId: c.env.GA_ID,
+    siteUrl: c.env.SITE_URL,
     staticUrl: c.env.STATIC_URL,
-    user,
+    user: c.get('user'),
   }));
 });
 

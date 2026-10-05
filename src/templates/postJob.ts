@@ -1,36 +1,28 @@
 import { layout } from './layout';
 import { breadcrumb, escapeHtml } from '../utils/helpers';
+import { breadcrumbJsonLd } from '../utils/jsonLd';
 import { AuthUser } from '../types';
 
 export function postJobPage(options: {
   gaId?: string;
+  siteUrl?: string;
   staticUrl?: string;
-  user: AuthUser;
+  /** Null for signed-out visitors: the page is the employer-facing landing page,
+   *  so it has to render (and be indexable) without an account. */
+  user: AuthUser | null;
 }): string {
   const { user } = options;
-  const bc = breadcrumb([
+  const crumbs = [
     { label: '首页', href: '/' },
     { label: '发布职位', href: '/post-job' },
-  ]);
+  ];
+  const bc = breadcrumb(crumbs);
 
   const fieldClass =
     'w-full rounded border border-surface-200 px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 focus:outline-none focus:ring-1 focus:ring-brand-300 focus:border-brand-300';
   const labelClass = 'block text-sm font-medium text-surface-700 mb-1.5';
 
-  const content = `
-    ${bc}
-    <div class="max-w-3xl mx-auto px-4 py-8">
-      <div class="bg-white rounded shadow-sm border border-surface-200 p-6 sm:p-8">
-        <h1 class="text-2xl sm:text-3xl font-bold mb-2">发布远程职位</h1>
-        <p class="text-surface-600 text-sm sm:text-base mb-2 leading-relaxed">
-          面向华人求职者免费发布远程岗位。提交后我们会在 <strong>1–2 个工作日</strong>内审核，通过后上线 30 天，并推送给订阅了相关职位的求职者。
-        </p>
-        <ul class="text-xs text-surface-500 mb-6 space-y-1 list-disc list-inside">
-          <li>仅接受可远程完成的岗位（全远程或以远程为主）</li>
-          <li>需提供可访问的申请链接或申请邮箱</li>
-          <li>审核结果会发送到你填写的联系邮箱</li>
-        </ul>
-
+  const formSection = `
         <form id="post-job-form" class="space-y-5">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
@@ -151,7 +143,56 @@ export function postJobPage(options: {
         <div id="post-job-success" class="hidden mt-6 rounded border border-green-200 bg-green-50 p-5 text-sm text-green-800">
           <p class="font-semibold mb-1">已收到，感谢投递！</p>
           <p>编号 <span id="post-job-id"></span>。我们会尽快审核，结果会发送到你的联系邮箱。想再发一条？<button type="button" id="post-job-again" class="text-brand-600 underline">继续发布</button></p>
+        </div>`;
+
+  const signInGate = `
+        <div class="rounded border border-brand-200 bg-brand-50 p-5 sm:p-6">
+          <p class="text-sm text-surface-700 leading-relaxed mb-4">
+            发布前需要先登录，我们用它把审核结果发给你，也方便你之后管理已发布的职位。登录后直接填写表单，大约 3 分钟。
+          </p>
+          <a href="/login?next=%2Fpost-job" class="inline-flex items-center bg-brand-500 text-white px-6 py-2.5 rounded font-semibold text-sm hover:bg-brand-600 transition no-underline">
+            登录后发布职位
+          </a>
         </div>
+
+        <div class="mt-8 pt-6 border-t border-surface-100">
+          <h2 class="text-lg font-bold text-surface-900 mb-3">发布后会发生什么</h2>
+          <ol class="text-sm text-surface-600 space-y-2 list-decimal list-inside leading-relaxed">
+            <li>我们在 1–2 个工作日内人工审核，确认是真实的远程岗位</li>
+            <li>通过后职位上线 30 天，出现在首页、对应职能与地区页</li>
+            <li>同步推送给订阅了该职能的求职者，并发布到 Telegram 频道</li>
+            <li>审核结果发送到你填写的联系邮箱，未通过会说明原因</li>
+          </ol>
+        </div>
+
+        <div class="mt-6">
+          <h2 class="text-lg font-bold text-surface-900 mb-3">需要准备的信息</h2>
+          <ul class="text-sm text-surface-600 space-y-2 list-disc list-inside leading-relaxed">
+            <li>职位名称、公司名称与公司官网</li>
+            <li>申请链接或申请邮箱（至少一项）</li>
+            <li>岗位描述，至少 50 字，中英文均可</li>
+            <li>可选：薪资区间、英语水平要求、可申请的国家或地区</li>
+          </ul>
+          <p class="text-xs text-surface-500 mt-4 leading-relaxed">
+            远程岛的读者以华人求职者为主，分布在国内与海外。如果岗位接受中文沟通或不要求英语流利，记得在描述里写明，这类岗位在站内有单独的入口。
+          </p>
+        </div>`;
+
+  const content = `
+    ${bc}
+    <div class="max-w-3xl mx-auto px-4 py-8">
+      <div class="bg-white rounded shadow-sm border border-surface-200 p-6 sm:p-8">
+        <h1 class="text-2xl sm:text-3xl font-bold mb-2">发布远程职位</h1>
+        <p class="text-surface-600 text-sm sm:text-base mb-2 leading-relaxed">
+          面向华人求职者免费发布远程岗位。提交后我们会在 <strong>1–2 个工作日</strong>内审核，通过后上线 30 天，并推送给订阅了相关职位的求职者。
+        </p>
+        <ul class="text-xs text-surface-500 mb-6 space-y-1 list-disc list-inside">
+          <li>仅接受可远程完成的岗位（全远程或以远程为主）</li>
+          <li>需提供可访问的申请链接或申请邮箱</li>
+          <li>审核结果会发送到你填写的联系邮箱</li>
+        </ul>
+
+        ${user ? formSection : signInGate}
       </div>
     </div>
     <script>
@@ -268,6 +309,8 @@ export function postJobPage(options: {
     gaId: options.gaId,
     description: '在远程岛免费发布远程职位，1–2 个工作日审核，通过后展示 30 天并推送给订阅了相关职位的华人求职者。',
     keywords: '发布职位,远程招聘,招聘远程员工,岗位发布,远程岛招聘',
+    canonical: options.siteUrl ? `${options.siteUrl}/post-job` : undefined,
+    jsonLd: breadcrumbJsonLd(crumbs, options.siteUrl),
     staticUrl: options.staticUrl,
     activePath: '/post-job',
     user,
