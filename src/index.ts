@@ -107,6 +107,19 @@ app.get('/robots.txt', (c) => {
   return c.text(lines.join('\n'));
 });
 
+/**
+ * Sitemaps are regenerated per request and were uncached, so every crawler hit
+ * re-ran the queries below. An hour is well inside the crawl cadence.
+ */
+function sitemapResponse(body: string): Response {
+  return new Response(body, {
+    headers: {
+      'Content-Type': 'application/xml',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  });
+}
+
 app.get('/sitemap.xml', (c) => {
   const site = c.env.SITE_URL;
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -118,8 +131,7 @@ app.get('/sitemap.xml', (c) => {
   <sitemap><loc>${site}/sitemap-jobs.xml</loc></sitemap>
   <sitemap><loc>${site}/sitemap-countries.xml</loc></sitemap>
 </sitemapindex>`;
-  c.header('Content-Type', 'application/xml');
-  return c.body(xml);
+  return sitemapResponse(xml);
 });
 
 app.get('/sitemap-pages.xml', (c) => {
@@ -138,8 +150,7 @@ app.get('/sitemap-pages.xml', (c) => {
   <url><loc>${site}/feedback</loc><changefreq>monthly</changefreq><priority>0.2</priority></url>
 ${ENGLISH_LEVEL_GROUPS.map((g) => `  <url><loc>${site}/jobs/english-${g.slug}</loc><changefreq>daily</changefreq><priority>0.8</priority></url>`).join('\n')}
 </urlset>`;
-  c.header('Content-Type', 'application/xml');
-  return c.body(xml);
+  return sitemapResponse(xml);
 });
 
 app.get('/sitemap-categories.xml', async (c) => {
@@ -154,15 +165,17 @@ app.get('/sitemap-categories.xml', async (c) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${urls}
 </urlset>`;
-  c.header('Content-Type', 'application/xml');
-  return c.body(xml);
+  return sitemapResponse(xml);
 });
 
 app.get('/sitemap-locations.xml', async (c) => {
   const site = c.env.SITE_URL;
   const locations = await c.env.DB.prepare(
-    `SELECT slug FROM locations WHERE is_active = 1 AND job_count > 0 ORDER BY job_count DESC`
-  ).all();
+    `SELECT lo.slug FROM locations lo
+     WHERE lo.is_active = 1
+       AND EXISTS (SELECT 1 FROM jobs j WHERE j.location_id = lo.id AND j.posted_at >= ?)
+     ORDER BY lo.job_count DESC`
+  ).bind(activeCutoff()).all();
   const urls = (locations.results || []).map((lo: Record<string, unknown>) =>
     `<url><loc>${site}/location/${lo.slug}</loc><changefreq>daily</changefreq><priority>0.7</priority></url>`
   ).join('\n');
@@ -170,15 +183,17 @@ app.get('/sitemap-locations.xml', async (c) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${urls}
 </urlset>`;
-  c.header('Content-Type', 'application/xml');
-  return c.body(xml);
+  return sitemapResponse(xml);
 });
 
 app.get('/sitemap-countries.xml', async (c) => {
   const site = c.env.SITE_URL;
   const countries = await c.env.DB.prepare(
-    'SELECT slug FROM countries WHERE is_active = 1 AND job_count > 0 ORDER BY job_count DESC'
-  ).all();
+    `SELECT ct.slug FROM countries ct
+     WHERE ct.is_active = 1
+       AND EXISTS (SELECT 1 FROM jobs j WHERE j.country_id = ct.id AND j.posted_at >= ?)
+     ORDER BY ct.job_count DESC`
+  ).bind(activeCutoff()).all();
   const urls = (countries.results || []).map((ct: Record<string, unknown>) =>
     `<url><loc>${site}/country/${ct.slug}</loc><changefreq>daily</changefreq><priority>0.8</priority></url>`
   ).join('\n');
@@ -186,15 +201,19 @@ app.get('/sitemap-countries.xml', async (c) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${urls}
 </urlset>`;
-  c.header('Content-Type', 'application/xml');
-  return c.body(xml);
+  return sitemapResponse(xml);
 });
 
 app.get('/sitemap-companies.xml', async (c) => {
   const site = c.env.SITE_URL;
+  // job_count is only decremented when a job is deleted at 90 days, while the
+  // company page lists the last 30 — so filtering on it advertised thousands of
+  // URLs that render an empty list. Ask the jobs table what is actually live.
   const companies = await c.env.DB.prepare(
-    'SELECT slug FROM companies WHERE job_count > 0 ORDER BY job_count DESC'
-  ).all();
+    `SELECT co.slug FROM companies co
+     WHERE EXISTS (SELECT 1 FROM jobs j WHERE j.company_id = co.id AND j.posted_at >= ?)
+     ORDER BY co.job_count DESC`
+  ).bind(activeCutoff()).all();
   const urls = (companies.results || []).map((co: Record<string, unknown>) =>
     `<url><loc>${site}/company/${co.slug}</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>`
   ).join('\n');
@@ -202,8 +221,7 @@ app.get('/sitemap-companies.xml', async (c) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${urls}
 </urlset>`;
-  c.header('Content-Type', 'application/xml');
-  return c.body(xml);
+  return sitemapResponse(xml);
 });
 
 app.get('/sitemap-jobs.xml', async (c) => {
@@ -214,7 +232,10 @@ app.get('/sitemap-jobs.xml', async (c) => {
   // have already told it not to keep.
   const cutoff = activeCutoff();
   const jobs = await c.env.DB.prepare(
-    'SELECT slug, updated_at FROM jobs WHERE posted_at >= ? ORDER BY created_at DESC LIMIT 5000'
+    // Was LIMIT 5000, and production sat at exactly 5000 — i.e. silently
+    // truncated. The sitemap format itself caps at 50,000 URLs per file; if this
+    // bound is ever reached, split this into /sitemap-jobs-N.xml instead.
+    'SELECT slug, updated_at FROM jobs WHERE posted_at >= ? ORDER BY created_at DESC LIMIT 45000'
   ).bind(cutoff).all();
   const urls = (jobs.results || []).map((j: Record<string, unknown>) => {
     const raw = (j.updated_at as string) || new Date().toISOString();
@@ -225,8 +246,7 @@ app.get('/sitemap-jobs.xml', async (c) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${urls}
 </urlset>`;
-  c.header('Content-Type', 'application/xml');
-  return c.body(xml);
+  return sitemapResponse(xml);
 });
 
 app.notFound((c) => {
