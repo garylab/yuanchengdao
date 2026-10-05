@@ -8,6 +8,9 @@ workers_dev = false
 SITE_URL = "https://yuanchengdao.com"
 STATIC_URL = "https://static.yuanchengdao.com"
 GA_ID = "G-MZGV7SFZ9F"
+# Used by /og/* to call the Browser Rendering REST API; pair with the
+# CF_API_TOKEN secret (`wrangler secret put CF_API_TOKEN`).
+CF_ACCOUNT_ID = "9a429384e601502567594df3cd611836"
 TELEGRAM_CHANNEL_CHAT_ID = "@yuanchengdao"
 FEISHU_GROUP_LINK = "https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=0b7pf9fc-2c26-41a2-8f91-eba312679c92"
 MAX_LIST_PAGE = "10"

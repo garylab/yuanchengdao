@@ -1,6 +1,7 @@
 import { AuthUser } from '../types';
 import { layout } from './layout';
 import { breadcrumb, escapeHtml } from '../utils/helpers';
+import { breadcrumbJsonLd } from '../utils/jsonLd';
 import type { WeeklyReport } from '../services/weekly';
 
 export function weeklyPage(
@@ -8,10 +9,11 @@ export function weeklyPage(
   weeks: string[],
   opts: { gaId?: string; siteUrl?: string; staticUrl?: string; user?: AuthUser | null; isLatest?: boolean },
 ): string {
-  const bc = breadcrumb([
+  const crumbs = [
     { label: '首页', href: '/' },
     { label: '周报', href: '/weekly-reports' },
-  ]);
+  ];
+  const bc = breadcrumb(crumbs);
 
   const weekNav = weeks.length > 0 ? `
     <div class="flex flex-wrap gap-2 text-xs mb-4">
@@ -93,6 +95,7 @@ export function weeklyPage(
       : '远程岛每周汇总远程职位市场变化：新增岗位、高薪机会、活跃职位与新入驻雇主。',
     keywords: '远程工作周报,远程职位汇总,remote jobs weekly,远程岛',
     canonical: opts.siteUrl ? `${opts.siteUrl}${opts.isLatest || !report ? '/weekly-reports' : `/weekly-reports/${report.weekStart}`}` : undefined,
+    jsonLd: breadcrumbJsonLd(crumbs, opts.siteUrl),
     staticUrl: opts.staticUrl,
     activePath: '/weekly-reports',
     user: opts.user,

@@ -197,3 +197,111 @@ export function detectLocationRequirement(description: string | null | undefined
 
   return null;
 }
+
+/**
+ * Reverse of the REGIONS table above: the Chinese label stored in
+ * jobs.location_requirement_label, mapped to something schema.org can express.
+ *
+ * Countries carry an ISO 3166-1 alpha-2 code, which is what Google for Jobs
+ * matches a searcher's location against. Supranational regions have no code and
+ * degrade to a named AdministrativeArea — less precise, but honest, which a
+ * single hardcoded country was not.
+ */
+const APPLICANT_AREA_BY_CN: Record<string, { type: 'Country' | 'AdministrativeArea'; name: string }> = {
+  // Supranational
+  'EMEA': { type: 'AdministrativeArea', name: 'EMEA' },
+  '亚太': { type: 'AdministrativeArea', name: 'Asia-Pacific' },
+  '欧洲': { type: 'AdministrativeArea', name: 'Europe' },
+  '亚洲': { type: 'AdministrativeArea', name: 'Asia' },
+  '非洲': { type: 'AdministrativeArea', name: 'Africa' },
+  '大洋洲': { type: 'AdministrativeArea', name: 'Oceania' },
+  '北美': { type: 'AdministrativeArea', name: 'North America' },
+  '南美': { type: 'AdministrativeArea', name: 'South America' },
+  '拉美': { type: 'AdministrativeArea', name: 'Latin America' },
+  '欧盟': { type: 'AdministrativeArea', name: 'European Union' },
+  '中美洲': { type: 'AdministrativeArea', name: 'Central America' },
+  '东亚': { type: 'AdministrativeArea', name: 'East Asia' },
+  '南亚': { type: 'AdministrativeArea', name: 'South Asia' },
+  '东南亚': { type: 'AdministrativeArea', name: 'Southeast Asia' },
+  '中东': { type: 'AdministrativeArea', name: 'Middle East' },
+
+  // Countries
+  '美国': { type: 'Country', name: 'US' },
+  // Narrower than the whole country, but the country is the closest thing
+  // schema.org can match on; the page itself names the states.
+  '美国部分州': { type: 'Country', name: 'US' },
+  '英国': { type: 'Country', name: 'GB' },
+  '加拿大': { type: 'Country', name: 'CA' },
+  '德国': { type: 'Country', name: 'DE' },
+  '法国': { type: 'Country', name: 'FR' },
+  '西班牙': { type: 'Country', name: 'ES' },
+  '葡萄牙': { type: 'Country', name: 'PT' },
+  '爱尔兰': { type: 'Country', name: 'IE' },
+  '荷兰': { type: 'Country', name: 'NL' },
+  '比利时': { type: 'Country', name: 'BE' },
+  '波兰': { type: 'Country', name: 'PL' },
+  '奥地利': { type: 'Country', name: 'AT' },
+  '瑞士': { type: 'Country', name: 'CH' },
+  '挪威': { type: 'Country', name: 'NO' },
+  '瑞典': { type: 'Country', name: 'SE' },
+  '丹麦': { type: 'Country', name: 'DK' },
+  '芬兰': { type: 'Country', name: 'FI' },
+  '意大利': { type: 'Country', name: 'IT' },
+  '希腊': { type: 'Country', name: 'GR' },
+  '安道尔': { type: 'Country', name: 'AD' },
+  '斯洛文尼亚': { type: 'Country', name: 'SI' },
+  '乌克兰': { type: 'Country', name: 'UA' },
+  '保加利亚': { type: 'Country', name: 'BG' },
+  '罗马尼亚': { type: 'Country', name: 'RO' },
+  '捷克': { type: 'Country', name: 'CZ' },
+  '匈牙利': { type: 'Country', name: 'HU' },
+  '土耳其': { type: 'Country', name: 'TR' },
+  '以色列': { type: 'Country', name: 'IL' },
+  '印度': { type: 'Country', name: 'IN' },
+  '中国': { type: 'Country', name: 'CN' },
+  '香港': { type: 'Country', name: 'HK' },
+  '台湾': { type: 'Country', name: 'TW' },
+  '日本': { type: 'Country', name: 'JP' },
+  '韩国': { type: 'Country', name: 'KR' },
+  '新加坡': { type: 'Country', name: 'SG' },
+  '马来西亚': { type: 'Country', name: 'MY' },
+  '越南': { type: 'Country', name: 'VN' },
+  '泰国': { type: 'Country', name: 'TH' },
+  '菲律宾': { type: 'Country', name: 'PH' },
+  '印度尼西亚': { type: 'Country', name: 'ID' },
+  '澳大利亚': { type: 'Country', name: 'AU' },
+  '新西兰': { type: 'Country', name: 'NZ' },
+  '墨西哥': { type: 'Country', name: 'MX' },
+  '巴西': { type: 'Country', name: 'BR' },
+  '阿根廷': { type: 'Country', name: 'AR' },
+  '哥伦比亚': { type: 'Country', name: 'CO' },
+  '智利': { type: 'Country', name: 'CL' },
+  '秘鲁': { type: 'Country', name: 'PE' },
+  '南非': { type: 'Country', name: 'ZA' },
+  '尼日利亚': { type: 'Country', name: 'NG' },
+  '埃及': { type: 'Country', name: 'EG' },
+  '阿联酋': { type: 'Country', name: 'AE' },
+};
+
+/**
+ * schema.org applicantLocationRequirements for a stored (requirement, label)
+ * pair, or null when we must not make a claim.
+ *
+ * Null is the right answer more often than it looks:
+ *   ANYWHERE  - no restriction to state; Google reads an absent property as
+ *               "unspecified", which is exactly the truth.
+ *   UNKNOWN   - the posting never said. Not the same as ANYWHERE.
+ *   TIMEZONE  - "must overlap UTC+8" is not a geography schema.org can express.
+ *   anything whose label we cannot resolve to a real place.
+ */
+export function applicantLocationRequirement(
+  requirement: number | null | undefined,
+  label: string | null | undefined,
+): { '@type': string; name: string } | null {
+  if (requirement !== LOCATION_REQ.COUNTRY && requirement !== LOCATION_REQ.REGION && requirement !== LOCATION_REQ.AUTHORIZED) {
+    return null;
+  }
+  const area = APPLICANT_AREA_BY_CN[(label || '').trim()];
+  if (!area) return null;
+  return { '@type': area.type, name: area.name };
+}

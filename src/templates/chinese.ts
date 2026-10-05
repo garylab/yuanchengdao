@@ -2,6 +2,7 @@ import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { renderJobRow } from './jobRow';
 import { breadcrumb, EAGER_LOGO_ROWS } from '../utils/helpers';
+import { breadcrumbJsonLd, jobItemListJsonLd } from '../utils/jsonLd';
 
 export function chineseJobsPage(
   jobs: Job[],
@@ -10,10 +11,11 @@ export function chineseJobsPage(
   total: number,
   opts: { gaId?: string; siteUrl?: string; staticUrl?: string; user?: AuthUser | null },
 ): string {
-  const bc = breadcrumb([
+  const crumbs = [
     { label: '首页', href: '/' },
     { label: '中文远程工作岗位', href: '/jobs/chinese' },
-  ]);
+  ];
+  const bc = breadcrumb(crumbs);
 
   const pagination = (page > 1 || hasMore) ? `
     <div class="flex justify-center gap-2 mt-6">
@@ -42,6 +44,10 @@ export function chineseJobsPage(
     description: `中文远程工作岗位汇总：职位要求或优先中文、普通话、粤语的全球远程职位，共 ${total} 个在招，每天更新，可直接申请。`,
     keywords: '中文远程工作,中文优先,普通话远程工作,Mandarin remote jobs,Chinese speaking remote jobs,远程岛',
     canonical: opts.siteUrl ? `${opts.siteUrl}/jobs/chinese${page > 1 ? `?page=${page}` : ''}` : undefined,
+    jsonLd: [
+      breadcrumbJsonLd(crumbs, opts.siteUrl),
+      jobItemListJsonLd(jobs.map((j) => j.slug), opts.siteUrl),
+    ],
     staticUrl: opts.staticUrl,
     activePath: '/jobs/chinese',
     user: opts.user,

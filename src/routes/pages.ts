@@ -306,8 +306,8 @@ pages.get('/job/:slug', async (c) => {
 
   const [companyRow, locationRow, countryRow] = await Promise.all([
     baseJob.company_id
-      ? c.env.DB.prepare('SELECT id, name, slug, thumbnail FROM companies WHERE id = ?').bind(baseJob.company_id).first<{
-        id: number; name: string; slug: string; thumbnail: string | null;
+      ? c.env.DB.prepare('SELECT id, name, slug, thumbnail, website FROM companies WHERE id = ?').bind(baseJob.company_id).first<{
+        id: number; name: string; slug: string; thumbnail: string | null; website: string | null;
       }>()
       : null,
     baseJob.location_id
@@ -327,6 +327,7 @@ pages.get('/job/:slug', async (c) => {
     company_name: companyRow?.name,
     company_slug: companyRow?.slug,
     company_thumbnail: companyRow?.thumbnail ? resolveThumbnail(companyRow.thumbnail, c.env.STATIC_URL) : undefined,
+    company_website: companyRow?.website ?? undefined,
     location_name: locationRow?.name,
     location_name_cn: locationRow?.name_cn,
     location_slug: locationRow?.slug,

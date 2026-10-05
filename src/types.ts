@@ -13,6 +13,10 @@ export interface Env {
   SITE_URL: string;
   STATIC_URL: string;
   GA_ID?: string;
+  /** Scoped API token with the Browser Rendering permission, used to render the
+   *  social share cards. Without it /og/* falls back to the static logo. */
+  CF_API_TOKEN?: string;
+  CF_ACCOUNT_ID?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHANNEL_CHAT_ID?: string;
   TELEGRAM_BOT_USERNAME?: string;
@@ -177,6 +181,7 @@ export interface Job {
   location_name?: string;
   location_name_cn?: string;
   location_slug?: string;
+  company_website?: string | null;
   country_code?: string;
   country_name_cn?: string;
   country_flag_emoji?: string;

@@ -1,6 +1,8 @@
 import { AuthUser, Job } from '../types';
 import { layout } from './layout';
-import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge, chineseFriendlyBadge } from '../utils/helpers';
+import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge, chineseFriendlyBadge, employmentTypes, toIsoDateTime } from '../utils/helpers';
+import { applicantLocationRequirement } from '../services/locationRequirement';
+import { breadcrumbJsonLd, serializeJsonLd } from '../utils/jsonLd';
 
 function payCycleToUnitText(cycle: string): string {
   switch (cycle) {
@@ -12,30 +14,56 @@ function payCycleToUnitText(cycle: string): string {
   }
 }
 
-function buildJobJsonLd(job: Job, siteUrl?: string): string {
-  const location = [job.location_name_cn, job.country_name_cn].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || '远程';
+/**
+ * Google stops showing a posting once validThrough has passed. Tie it to this
+ * site's own definition of "active" so a job leaves Google for Jobs on the same
+ * day the page starts showing "此职位已过期" — the previous fixed 60-day window
+ * kept advertising postings this site had already written off at 30 days.
+ */
+const ACTIVE_DAYS = 30;
 
-  const datePosted = jobDisplayTimestamp(job) || '';
-  const validThrough = new Date(new Date(datePosted).getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+function buildJobJsonLd(job: Job, descriptionHtml: string, siteUrl?: string): string {
+  const datePosted = toIsoDateTime(jobDisplayTimestamp(job));
 
   const ld: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
     title: job.title,
-    description: job.description,
-    datePosted,
-    validThrough,
+    // Google wants the description as HTML and expects it to match what the page
+    // renders, so this is the same markup the body shows.
+    description: descriptionHtml,
     jobLocationType: 'TELECOMMUTE',
-    employmentType: 'FULL_TIME',
-    applicantLocationRequirements: {
-      '@type': 'Country',
-      name: (job.country_code || 'CN').toUpperCase(),
+    identifier: {
+      '@type': 'PropertyValue',
+      name: '远程岛',
+      value: String(job.id),
     },
-    jobLocation: {
-      '@type': 'Place',
-      address: { '@type': 'PostalAddress', addressLocality: location },
-    },
+    // Applying always leaves for the employer's own form, so the posting URL is
+    // not directly applicable. This used to be set to true whenever any apply
+    // link existed, which is the opposite of what the property means.
+    directApply: false,
   };
+
+  if (datePosted) {
+    ld.datePosted = datePosted;
+    ld.validThrough = new Date(new Date(datePosted).getTime() + ACTIVE_DAYS * 86400000).toISOString();
+  }
+
+  // Only what the feed actually told us. The old markup hardcoded FULL_TIME on
+  // every posting, including the contract and internship ones.
+  const employment = employmentTypes(job.detected_extensions);
+  if (employment.length > 0) ld.employmentType = employment;
+
+  // Who may apply — the whole point of the field, and what Google matches a
+  // searcher's location against. It used to be filled from country_code (where
+  // the listing was crawled, not who can take it) and fell back to "CN", which
+  // told Google every job on the site was mainland-China-only.
+  //
+  // Absent means "unspecified", which is the honest reading of both an
+  // unrestricted posting and one that never stated a restriction, so neither
+  // emits the property.
+  const applicantArea = applicantLocationRequirement(job.location_requirement, job.location_requirement_label);
+  if (applicantArea) ld.applicantLocationRequirements = applicantArea;
 
   if (siteUrl && job.slug) {
     ld.url = `${siteUrl}/job/${job.slug}`;
@@ -47,6 +75,7 @@ function buildJobJsonLd(job: Job, siteUrl?: string): string {
       name: job.company_name,
     };
     if (job.company_thumbnail) org.logo = job.company_thumbnail;
+    if (job.company_website) org.sameAs = job.company_website;
     ld.hiringOrganization = org;
   }
 
@@ -63,12 +92,7 @@ function buildJobJsonLd(job: Job, siteUrl?: string): string {
     };
   }
 
-  const applyOptions = job.apply_options ? JSON.parse(job.apply_options) as Array<{ title: string; link: string }> : [];
-  if (applyOptions.length > 0) {
-    ld.directApply = true;
-  }
-
-  return JSON.stringify(ld);
+  return serializeJsonLd(ld);
 }
 
 export function jobDetailPage(
@@ -93,11 +117,22 @@ export function jobDetailPage(
     .replace(/\n\n/g, '</p><p class="mb-3">')
     .replace(/\n/g, '<br>');
 
-  const bc = breadcrumb([
+  // Same content as the body, as plain semantic HTML: Google reads the
+  // JobPosting description as HTML and requires it to match what the visitor
+  // sees, which includes the highlights the page renders above it.
+  const descriptionLd = [
+    ...highlights.map((h) =>
+      `<h3>${escapeHtml(h.title)}</h3><ul>${h.items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`
+    ),
+    `<p>${escapeHtml(job.description).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`,
+  ].join('');
+
+  const crumbs = [
     { label: '首页', href: '/' },
     { label: job.company_name || '', href: job.company_slug ? `/company/${job.company_slug}` : undefined },
     { label: job.title, href: `/job/${job.slug}` },
-  ]);
+  ];
+  const bc = breadcrumb(crumbs);
 
   const similarSection = similarJobs.length > 0 ? `
     <aside class="w-full lg:w-72 flex-shrink-0">
@@ -245,7 +280,7 @@ export function jobDetailPage(
   const salarySnippet = salary ? `，薪资 ${salary}` : '';
   const pageDesc = `${job.company_name || ''} 招聘 ${job.title}（远程）${locationLabel !== '远程' ? `，地点 ${locationLabel}` : ''}${salarySnippet}。查看完整职位描述、福利待遇，直接申请。`;
   const canonical = siteUrl ? `${siteUrl}/job/${job.slug}` : undefined;
-  const jsonLd = buildJobJsonLd(job, siteUrl);
+  const jsonLd = [buildJobJsonLd(job, descriptionLd, siteUrl), breadcrumbJsonLd(crumbs, siteUrl)];
 
   const pageTitle = [job.title, job.company_name ? `${job.company_name} 远程工作` : '远程工作', '远程岛'].filter(Boolean).join(' - ');
 
@@ -254,7 +289,13 @@ export function jobDetailPage(
     gaId,
     canonical,
     jsonLd,
-    ogImage: job.company_thumbnail || undefined,
+    // A posting past its active window still resolves (people have it bookmarked
+    // and it stays linked from Telegram), but it should stop competing in search
+    // for a vacancy that is almost certainly filled.
+    noindex: isExpired,
+    ogImage: siteUrl ? `${siteUrl}/og/job/${encodeURIComponent(job.slug)}.png` : undefined,
+    ogImageLarge: true,
+    ogType: 'article',
     keywords: [job.title, job.company_name, locationLabel, '远程工作', 'remote job'].filter(Boolean).join(','),
     staticUrl,
     activePath: '/',

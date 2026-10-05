@@ -8,7 +8,16 @@ export interface LayoutOptions {
   gaId?: string;
   canonical?: string;
   ogImage?: string;
-  jsonLd?: string;
+  /** Render the card as a large image rather than a thumbnail. Only set this
+   *  when the image really is ~1200x630; a small logo stretched into a wide card
+   *  looks worse than the thumbnail layout. */
+  ogImageLarge?: boolean;
+  ogType?: string;
+  /** One or more JSON-LD blocks. Falsy entries are dropped, so builders can
+   *  return '' when they have nothing to say. */
+  jsonLd?: string | string[];
+  /** Keep the page out of the index but let crawlers follow its links. */
+  noindex?: boolean;
   keywords?: string;
   staticUrl?: string;
   activePath?: string;
@@ -29,8 +38,19 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   ['pointerdown','keydown','touchstart'].forEach(function(ev){window.addEventListener(ev,load,{once:true,passive:true});});})();</script>` : '';
   const canonical = options?.canonical ? `\n  <link rel="canonical" href="${options.canonical}">` : '';
   const ogImage = options?.ogImage || '';
+  const ogType = options?.ogType || 'website';
+  const robots = options?.noindex ? 'noindex, follow' : 'index, follow';
+  // A 1200x630 card renders as a banner; anything else (a company logo, the
+  // default) stays a thumbnail.
+  const twitterCard = ogImage && options?.ogImageLarge ? 'summary_large_image' : 'summary';
+  const ogImageMeta = ogImage
+    ? `\n  <meta property="og:image" content="${ogImage}">${options?.ogImageLarge ? `\n  <meta property="og:image:width" content="1200">\n  <meta property="og:image:height" content="630">` : ''}\n  <meta property="og:image:alt" content="${escapeHtml(fullTitle)}">`
+    : '';
   const keywords = options?.keywords || '远程工作,远程岗位,remote jobs,海外远程,远程招聘,在家工作,远程办公,华人远程工作';
-  const jsonLd = options?.jsonLd ? `\n  <script type="application/ld+json">${options.jsonLd}</script>` : '';
+  const jsonLdBlocks = (Array.isArray(options?.jsonLd) ? options?.jsonLd : [options?.jsonLd])
+    .filter((block): block is string => typeof block === 'string' && block.length > 0);
+  const jsonLd = jsonLdBlocks.map((block) => `\n  <script type="application/ld+json">${block}</script>`).join('');
+
   const ap = options?.activePath || '/';
   const user = options?.user;
   const navItems = [
@@ -77,15 +97,16 @@ export function layout(title: string, content: string, options?: LayoutOptions):
   <title>${fullTitle}</title>
   <meta name="description" content="${desc}">
   <meta name="keywords" content="${keywords}">
-  <meta name="robots" content="index, follow">
-  <meta property="og:type" content="website">
+  <meta name="robots" content="${robots}">
+  <meta property="og:type" content="${ogType}">
   <meta property="og:title" content="${fullTitle}">
   <meta property="og:description" content="${desc}">
   <meta property="og:site_name" content="远程岛">
-  <meta property="og:locale" content="zh_CN">${ogImage ? `\n  <meta property="og:image" content="${ogImage}">` : ''}${canonical ? `\n  <meta property="og:url" content="${options?.canonical}">` : ''}
-  <meta name="twitter:card" content="summary">
+  <meta property="og:locale" content="zh_CN">${ogImageMeta}${canonical ? `\n  <meta property="og:url" content="${options?.canonical}">` : ''}
+  <meta name="twitter:card" content="${twitterCard}">
   <meta name="twitter:title" content="${fullTitle}">
   <meta name="twitter:description" content="${desc}">${canonical}${ga}${jsonLd}
+  <link rel="alternate" type="application/rss+xml" title="远程岛 - 最新远程职位" href="/feed.xml">
   <link rel="icon" href="/favicon.ico" type="image/x-icon">${cdnPreconnect}
   <link rel="stylesheet" href="/css/${appStylesAssetFilename}">
 </head>

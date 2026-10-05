@@ -1,6 +1,7 @@
 import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge, jobDescriptionPreview, EAGER_LOGO_ROWS } from '../utils/helpers';
+import { breadcrumbJsonLd, jobItemListJsonLd } from '../utils/jsonLd';
 
 interface LocationInfo {
   id: number;
@@ -89,11 +90,12 @@ export function locationDetailPage(location: LocationInfo, jobs: Job[], page: nu
     ? location.country_name_cn
     : '';
 
-  const bc = breadcrumb([
+  const crumbs = [
     { label: '首页', href: '/' },
     { label: '地区', href: '/locations' },
     { label: displayName, href: `/location/${location.slug}` },
-  ]);
+  ];
+  const bc = breadcrumb(crumbs);
 
   const pagination = (page > 1 || hasMore) ? `
     <div class="flex justify-center gap-2 mt-6">
@@ -127,6 +129,10 @@ export function locationDetailPage(location: LocationInfo, jobs: Job[], page: nu
     description: pageDesc,
     keywords: `${displayName},远程工作,${location.name},remote jobs,远程岛`,
     canonical: siteUrl ? `${siteUrl}/location/${location.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
+    jsonLd: [
+      breadcrumbJsonLd(crumbs, siteUrl),
+      jobItemListJsonLd(jobs.map((j) => j.slug), siteUrl),
+    ],
     staticUrl,
     activePath: '/locations',
     user,

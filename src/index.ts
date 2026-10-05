@@ -11,11 +11,13 @@ import feedback from './routes/feedback';
 import account from './routes/account';
 import jobSubmissions from './routes/jobSubmissions';
 import taxonomy from './routes/taxonomy';
+import feeds from './routes/feeds';
+import og from './routes/og';
 import { syncJobs } from './services/jobSync';
 import { deliverSubscriptionAlerts } from './services/subscriptions';
 import { runWeeklyDigest } from './services/weekly';
 import { ENGLISH_LEVEL_GROUPS } from './constants/englishLevel';
-import { expiredCutoff } from './utils/helpers';
+import { activeCutoff } from './utils/helpers';
 import { appScript, appScriptAssetFilename } from './public/app';
 import { appStyles, appStylesAssetFilename } from './public/styles';
 import { sessionMiddleware } from './middleware/session';
@@ -74,6 +76,8 @@ app.get(`/css/${appStylesAssetFilename}`, (c) => {
   return c.body(appStyles);
 });
 
+app.route('/', feeds);
+app.route('/', og);
 app.route('/', pages);
 app.route('/', api);
 app.route('/', auth);
@@ -86,7 +90,21 @@ app.route('/', jobSubmissions);
 app.route('/', taxonomy);
 
 app.get('/robots.txt', (c) => {
-  return c.text(`User-agent: *\nAllow: /\nSitemap: ${c.env.SITE_URL}/sitemap.xml`);
+  // Signed-in and admin surfaces render nothing a crawler can use, and every
+  // request they make costs crawl budget that should go to job pages instead.
+  const lines = [
+    'User-agent: *',
+    'Allow: /',
+    'Disallow: /api/',
+    'Disallow: /account',
+    'Disallow: /favorites',
+    'Disallow: /login',
+    'Disallow: /admin/',
+    'Disallow: /users',
+    '',
+    `Sitemap: ${c.env.SITE_URL}/sitemap.xml`,
+  ];
+  return c.text(lines.join('\n'));
 });
 
 app.get('/sitemap.xml', (c) => {
@@ -190,7 +208,11 @@ app.get('/sitemap-companies.xml', async (c) => {
 
 app.get('/sitemap-jobs.xml', async (c) => {
   const site = c.env.SITE_URL;
-  const cutoff = expiredCutoff();
+  // Only postings still inside the active window. Between 30 and 90 days a job
+  // page still resolves, but it renders an "已过期" banner and is served
+  // noindex — advertising those in the sitemap asks Google to crawl pages we
+  // have already told it not to keep.
+  const cutoff = activeCutoff();
   const jobs = await c.env.DB.prepare(
     'SELECT slug, updated_at FROM jobs WHERE posted_at >= ? ORDER BY created_at DESC LIMIT 5000'
   ).bind(cutoff).all();

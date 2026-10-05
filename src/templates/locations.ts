@@ -1,5 +1,6 @@
 import { layout } from './layout';
 import { escapeHtml, breadcrumb } from '../utils/helpers';
+import { breadcrumbJsonLd } from '../utils/jsonLd';
 import { AuthUser } from '../types';
 
 interface LocationItem {
@@ -43,10 +44,11 @@ export function locationsPage(locations: LocationItem[], page: number, hasMore: 
       ${hasMore ? `<a href="/locations${qs(page + 1)}" class="px-4 py-2 rounded bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
     </div>` : '';
 
-  const bc = breadcrumb([
+  const crumbs = [
     { label: '首页', href: '/' },
     { label: '地区', href: '/locations' },
-  ]);
+  ];
+  const bc = breadcrumb(crumbs);
 
   const content = `
     ${bc}
@@ -72,6 +74,7 @@ export function locationsPage(locations: LocationItem[], page: number, hasMore: 
     description: '按地区浏览全球远程工作机会，查看各地区在招职位数量，找到适合你的远程岗位。',
     keywords: '远程工作地区,远程岗位城市,全球远程工作,远程岛',
     canonical: siteUrl ? `${siteUrl}/locations${page > 1 ? `?page=${page}` : ''}` : undefined,
+    jsonLd: breadcrumbJsonLd(crumbs, siteUrl),
     staticUrl,
     activePath: '/locations',
     user,

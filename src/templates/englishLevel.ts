@@ -2,6 +2,7 @@ import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { renderJobRow } from './jobRow';
 import { breadcrumb, escapeHtml, EAGER_LOGO_ROWS } from '../utils/helpers';
+import { breadcrumbJsonLd, jobItemListJsonLd } from '../utils/jsonLd';
 import { ENGLISH_LEVEL_GROUPS } from '../constants/englishLevel';
 
 type Group = (typeof ENGLISH_LEVEL_GROUPS)[number];
@@ -14,11 +15,12 @@ export function englishLevelPage(
   counts: Record<string, number>,
   opts: { gaId?: string; siteUrl?: string; staticUrl?: string; user?: AuthUser | null },
 ): string {
-  const bc = breadcrumb([
+  const crumbs = [
     { label: '首页', href: '/' },
     { label: '英语要求', href: '/jobs/english-none' },
     { label: group.label, href: `/jobs/english-${group.slug}` },
-  ]);
+  ];
+  const bc = breadcrumb(crumbs);
 
   const tabs = ENGLISH_LEVEL_GROUPS.map((g) => {
     const active = g.slug === group.slug;
@@ -50,6 +52,10 @@ export function englishLevelPage(
     description: `${group.title}：${group.description} 每天更新，可直接申请。`,
     keywords: `${group.title},未标明英语要求的远程工作,英语要求,远程工作,远程岛`,
     canonical: opts.siteUrl ? `${opts.siteUrl}/jobs/english-${group.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
+    jsonLd: [
+      breadcrumbJsonLd(crumbs, opts.siteUrl),
+      jobItemListJsonLd(jobs.map((j) => j.slug), opts.siteUrl),
+    ],
     staticUrl: opts.staticUrl,
     activePath: '/jobs/english-',
     user: opts.user,

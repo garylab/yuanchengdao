@@ -1,5 +1,6 @@
 import { layout } from './layout';
 import { escapeHtml, breadcrumb, companyLogo } from '../utils/helpers';
+import { breadcrumbJsonLd } from '../utils/jsonLd';
 import { AuthUser } from '../types';
 
 interface CompanyItem {
@@ -45,10 +46,11 @@ export function companiesPage(companies: CompanyItem[], page: number, hasMore: b
       ${hasMore ? `<a href="/companies${qs(page + 1)}" class="px-4 py-2 rounded bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
     </div>` : '';
 
-  const bc = breadcrumb([
+  const crumbs = [
     { label: '首页', href: '/' },
     { label: '企业', href: '/companies' },
-  ]);
+  ];
+  const bc = breadcrumb(crumbs);
 
   const content = `
     ${bc}
@@ -74,6 +76,7 @@ export function companiesPage(companies: CompanyItem[], page: number, hasMore: b
     description: '哪些公司提供远程工作？浏览正在招聘远程岗位的全球企业，了解各家公司在招职位数量，找到你心仪的雇主。',
     keywords: '远程工作公司,远程招聘企业,海外远程公司,远程岛',
     canonical: siteUrl ? `${siteUrl}/companies${page > 1 ? `?page=${page}` : ''}` : undefined,
+    jsonLd: breadcrumbJsonLd(crumbs, siteUrl),
     staticUrl,
     activePath: '/companies',
     user,

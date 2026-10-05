@@ -219,8 +219,47 @@ export function formatEnglishLevelPlainText(level: EnglishLevel | string | null 
   return cfg ? `🗣️ ${cfg.label}` : '';
 }
 
-export function scheduleTypeBadge(detectedExtensions: string | null | undefined): string {
-  if (!detectedExtensions) return '';
+interface ScheduleType {
+  cn: string;
+  /** schema.org employmentType value, for the JobPosting markup. */
+  schemaOrg: string;
+  /** Feed spellings, already lowercased and with unicode dashes normalised. */
+  tokens: string[];
+}
+
+const SCHEDULE_TYPES: ScheduleType[] = [
+  {
+    cn: '全职',
+    schemaOrg: 'FULL_TIME',
+    tokens: ['full-time', 'fulltime', 'vollzeit', 'fuld tid', 'tiempo completo', 'a tiempo completo', 'tempo integral', 'à plein temps', 'fulltime en', 'フルタイム', 'دوام كامل'],
+  },
+  {
+    cn: '兼职',
+    schemaOrg: 'PART_TIME',
+    tokens: ['part-time', 'parttime', 'teilzeit', 'deltid', 'medio tiempo', 'a tiempo parcial', 'tempo partiel', 'à temps partiel', 'meio período', 'meio periodo', 'fulltime, parttime', 'parttime en', 'دوام جزئي'],
+  },
+  {
+    cn: '合同',
+    schemaOrg: 'CONTRACTOR',
+    tokens: ['contractor', 'contract', 'auftragnehmer', 'kontraktansat', 'prestataire', 'prestador de serviços', 'prestador de servicos', 'contratista', 'متعاقد', '契約社員', 'freelance'],
+  },
+  {
+    cn: '实习',
+    schemaOrg: 'INTERN',
+    tokens: ['internship', 'stage', 'praktik', 'praktikum', 'prácticas', 'practicas', 'pasantía', 'pasantia', 'estágio', 'estagio', 'インターン', 'فترة تدريب'],
+  },
+  {
+    cn: '临时',
+    schemaOrg: 'TEMPORARY',
+    tokens: ['temporary'],
+  },
+];
+
+function matchScheduleTypes(
+  detectedExtensions: string | null | undefined,
+): { raw: string; matched: ScheduleType[] } | null {
+  if (!detectedExtensions) return null;
+
   let scheduleType: string | undefined;
   try {
     const parsed = JSON.parse(detectedExtensions) as Record<string, unknown>;
@@ -228,36 +267,33 @@ export function scheduleTypeBadge(detectedExtensions: string | null | undefined)
   } catch {
     scheduleType = undefined;
   }
-  if (!scheduleType) return '';
+  if (!scheduleType) return null;
 
-  const normalized = scheduleType
-    .replace(/[‐‑‒–—−]/g, '-')
-    .toLowerCase();
+  const normalized = scheduleType.replace(/[‐‑‒–—−]/g, '-').toLowerCase();
+  return {
+    raw: scheduleType,
+    matched: SCHEDULE_TYPES.filter((t) => t.tokens.some((needle) => normalized.includes(needle))),
+  };
+}
 
-  const parts: string[] = [];
-  const add = (label: string) => { if (!parts.includes(label)) parts.push(label); };
-
-  const containsAny = (needles: string[]) => needles.some((needle) => normalized.includes(needle));
-
-  if (containsAny(['full-time', 'fulltime', 'vollzeit', 'fuld tid', 'tiempo completo', 'a tiempo completo', 'tempo integral', 'à plein temps', 'fulltime en', 'フルタイム', 'دوام كامل'])) {
-    add('全职');
-  }
-  if (containsAny(['part-time', 'parttime', 'teilzeit', 'deltid', 'medio tiempo', 'a tiempo parcial', 'tempo partiel', 'à temps partiel', 'meio período', 'meio periodo', 'fulltime, parttime', 'parttime en', 'دوام جزئي'])) {
-    add('兼职');
-  }
-  if (containsAny(['contractor', 'contract', 'auftragnehmer', 'kontraktansat', 'prestataire', 'prestador de serviços', 'prestador de servicos', 'contratista', 'متعاقد', '契約社員', 'freelance'])) {
-    add('合同');
-  }
-  if (containsAny(['internship', 'stage', 'praktik', 'praktikum', 'prácticas', 'practicas', 'pasantía', 'pasantia', 'estágio', 'estagio', 'インターン', 'فترة تدريب'])) {
-    add('实习');
-  }
-  if (containsAny(['temporary'])) {
-    add('临时');
-  }
-
-  const label = parts.length > 0 ? parts.join(' / ') : scheduleType;
-
+export function scheduleTypeBadge(detectedExtensions: string | null | undefined): string {
+  const match = matchScheduleTypes(detectedExtensions);
+  if (!match) return '';
+  // Nothing recognised still shows the feed's own wording rather than dropping it.
+  const label = match.matched.length > 0 ? match.matched.map((t) => t.cn).join(' / ') : match.raw;
   return `<span class="tag-pill bg-surface-100 text-surface-700 text-xs">⏱ ${escapeHtml(label)}</span>`;
+}
+
+/**
+ * schema.org employmentType values for a posting, or [] when the feed said
+ * nothing we can map. Defaulting to FULL_TIME — which is what the JobPosting
+ * markup used to do for every job — is a claim about the posting that the data
+ * does not support, so an unrecognised schedule now yields no claim at all.
+ */
+export function employmentTypes(detectedExtensions: string | null | undefined): string[] {
+  const match = matchScheduleTypes(detectedExtensions);
+  if (!match) return [];
+  return match.matched.map((t) => t.schemaOrg);
 }
 
 export function rewriteUtm(url: string): string {
@@ -282,6 +318,17 @@ export function formatDateCn(dateStr: string | null | undefined): string {
   const d = new Date(dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + 'Z');
   if (Number.isNaN(d.getTime())) return dateStr;
   return d.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+/**
+ * D1 stores timestamps as "2026-10-05 12:34:56" (datetime('now'), always UTC),
+ * which is not valid ISO 8601 — schema.org dates must be, so convert before
+ * emitting them into JSON-LD or a feed.
+ */
+export function toIsoDateTime(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + 'Z');
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
 export function isJobStale(postedAt: string | null | undefined, days = 30): boolean {

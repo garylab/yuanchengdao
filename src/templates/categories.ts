@@ -1,5 +1,6 @@
 import { layout } from './layout';
 import { escapeHtml, breadcrumb } from '../utils/helpers';
+import { breadcrumbJsonLd } from '../utils/jsonLd';
 import { AuthUser } from '../types';
 
 interface SearchTermItem {
@@ -11,10 +12,11 @@ interface SearchTermItem {
 }
 
 export function categoriesPage(terms: SearchTermItem[], query?: string, gaId?: string, siteUrl?: string, staticUrl?: string, user?: AuthUser | null): string {
-  const bc = breadcrumb([
+  const crumbs = [
     { label: '首页', href: '/' },
     { label: '职位', href: '/categories' },
-  ]);
+  ];
+  const bc = breadcrumb(crumbs);
 
   const content = `
     ${bc}
@@ -51,6 +53,7 @@ export function categoriesPage(terms: SearchTermItem[], query?: string, gaId?: s
     description: pageDesc,
     keywords: '远程职位,远程岗位,remote jobs,远程岛',
     canonical: siteUrl ? `${siteUrl}/categories` : undefined,
+    jsonLd: breadcrumbJsonLd(crumbs, siteUrl),
     staticUrl,
     activePath: '/categories',
     user,

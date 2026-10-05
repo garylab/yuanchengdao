@@ -1,6 +1,7 @@
 import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge, jobDescriptionPreview, EAGER_LOGO_ROWS } from '../utils/helpers';
+import { breadcrumbJsonLd, jobItemListJsonLd } from '../utils/jsonLd';
 
 interface SearchTermInfo {
   id: number;
@@ -97,11 +98,12 @@ export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, 
       ${hasMore ? `<a href="/category/${escapeHtml(term.slug)}?page=${page + 1}" class="px-4 py-2 rounded bg-white border border-surface-200 text-sm hover:bg-surface-50 transition no-underline text-surface-600">下一页 →</a>` : ''}
     </div>` : '';
 
-  const bc = breadcrumb([
+  const crumbs = [
     { label: '首页', href: '/' },
     { label: '职位', href: '/categories' },
     { label: `远程${term.term_cn}`, href: `/category/${term.slug}` },
-  ]);
+  ];
+  const bc = breadcrumb(crumbs);
 
   const content = `
     ${bc}
@@ -132,6 +134,10 @@ export function searchTermPage(term: SearchTermInfo, jobs: Job[], page: number, 
     description: pageDesc,
     keywords: `远程${term.term_cn},${term.term},remote ${term.term},远程工作,远程岛`,
     canonical: siteUrl ? `${siteUrl}/category/${term.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
+    jsonLd: [
+      breadcrumbJsonLd(crumbs, siteUrl),
+      jobItemListJsonLd(jobs.map((j) => j.slug), siteUrl),
+    ],
     staticUrl,
     activePath: '/categories',
     user,

@@ -8,7 +8,9 @@ function isSkippedPath(path: string): boolean {
     path.startsWith('/js/') ||
     path.startsWith('/css/') ||
     path === '/robots.txt' ||
-    path.startsWith('/sitemap')
+    path.startsWith('/sitemap') ||
+    path.startsWith('/og/') ||
+    path.endsWith('/feed.xml')
   );
 }
 

@@ -1,6 +1,7 @@
 import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, companyLogo, locationRequirementBadge, englishLevelBadge, scheduleTypeBadge, chineseFriendlyBadge, jobDescriptionPreview, EAGER_LOGO_ROWS } from '../utils/helpers';
+import { siteJsonLd } from '../utils/jsonLd';
 import { SALARY_OPTIONS } from '../constants/salary';
 
 function renderJobRow(job: Job, isNew: boolean = false, favorited = false, showFavorite = false, eagerLogo = false): string {
@@ -364,5 +365,9 @@ export function homePage(jobs: Job[], countries: CountryFilter[], locations: Loc
     query,
   ].filter(Boolean).join(',');
 
-  return layout(pageTitle, jobList + pagination, { gaId, description: pageDesc, canonical, keywords, staticUrl, activePath: '/', user });
+  // The sitelinks search box and publisher entity belong on the canonical
+  // homepage only — every filtered or paginated view canonicalises elsewhere.
+  const jsonLd = canonicalParams.length === 0 ? siteJsonLd(siteUrl) : '';
+
+  return layout(pageTitle, jobList + pagination, { gaId, description: pageDesc, canonical, keywords, jsonLd, staticUrl, activePath: '/', user });
 }

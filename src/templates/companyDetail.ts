@@ -1,6 +1,7 @@
 import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { timeAgo, jobDisplayTimestamp, formatSalary, escapeHtml, rewriteUtm, breadcrumb, companyLogo, locationRequirementBadge, englishLevelBadge, jobDescriptionPreview } from '../utils/helpers';
+import { breadcrumbJsonLd, jobItemListJsonLd } from '../utils/jsonLd';
 
 interface CompanyInfo {
   id: number;
@@ -124,11 +125,12 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
           ${stats.topLocations.length > 0 ? `<div class="flex flex-wrap items-center gap-1.5"><span class="font-semibold text-surface-600">地点：</span>${stats.topLocations.map((l) => `<a href="/location/${escapeHtml(l.slug)}" class="px-2 py-0.5 rounded bg-surface-100 hover:bg-brand-50 hover:text-brand-600 transition no-underline">${escapeHtml(l.name_cn)} ${l.count}</a>`).join('')}</div>` : ''}
         </div>` : ''}` : '';
 
-  const bc = breadcrumb([
+  const crumbs = [
     { label: '首页', href: '/' },
     { label: '企业', href: '/companies' },
     { label: company.name, href: `/company/${company.slug}` },
-  ]);
+  ];
+  const bc = breadcrumb(crumbs);
 
   const content = `
     ${bc}
@@ -176,6 +178,10 @@ export function companyDetailPage(company: CompanyInfo, jobs: Job[], page: numbe
     description: pageDesc,
     keywords: `${company.name},远程工作,远程招聘,远程岛`,
     canonical: siteUrl ? `${siteUrl}/company/${company.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
+    jsonLd: [
+      breadcrumbJsonLd(crumbs, siteUrl),
+      jobItemListJsonLd(jobs.map((j) => j.slug), siteUrl),
+    ],
     ogImage: company.thumbnail || undefined,
     staticUrl,
     activePath: '/companies',

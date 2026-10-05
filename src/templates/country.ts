@@ -2,6 +2,7 @@ import { AuthUser, Job } from '../types';
 import { layout } from './layout';
 import { renderJobRow } from './jobRow';
 import { breadcrumb, escapeHtml, EAGER_LOGO_ROWS } from '../utils/helpers';
+import { breadcrumbJsonLd, jobItemListJsonLd } from '../utils/jsonLd';
 
 export type CountryPageInfo = {
   id: number;
@@ -23,11 +24,12 @@ export function countryPage(
   opts: { gaId?: string; siteUrl?: string; staticUrl?: string; user?: AuthUser | null },
 ): string {
   const flag = country.flag_emoji || '🌍';
-  const bc = breadcrumb([
+  const crumbs = [
     { label: '首页', href: '/' },
     { label: '地区', href: '/locations' },
     { label: country.name_cn, href: `/country/${country.slug}` },
-  ]);
+  ];
+  const bc = breadcrumb(crumbs);
 
   const pagination = (page > 1 || hasMore) ? `
     <div class="flex justify-center gap-2 mt-6">
@@ -72,6 +74,10 @@ export function countryPage(
     description: `${country.name_cn}的远程工作机会，共 ${country.job_count} 个在招岗位，每天更新，支持按城市、薪资筛选并直接申请。`,
     keywords: `${country.name_cn}远程工作,${country.name} remote jobs,${country.name_cn}远程招聘,远程岛`,
     canonical: opts.siteUrl ? `${opts.siteUrl}/country/${country.slug}${page > 1 ? `?page=${page}` : ''}` : undefined,
+    jsonLd: [
+      breadcrumbJsonLd(crumbs, opts.siteUrl),
+      jobItemListJsonLd(jobs.map((j) => j.slug), opts.siteUrl),
+    ],
     staticUrl: opts.staticUrl,
     activePath: '/locations',
     user: opts.user,
