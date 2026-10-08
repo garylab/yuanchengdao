@@ -8,6 +8,12 @@ import { CrawledJob } from '../types';
  * often enough that either alone leaks:
  *   - `via`    matches the "via XXX" attribution SerpAPI returns.
  *   - `domain` matches the host of any apply_options link, subdomains included.
+ *
+ * A listing is only dropped when it has no first-party way in. Google usually
+ * returns several apply links for one posting, and a company's own careers
+ * page sitting next to a jobgether copy is the normal case, not the exception.
+ * So a tainted link is stripped rather than fatal; the job is blocked only when
+ * every link is tainted, or when it has no links and the `via` label is.
  */
 export type BlockMatchType = 'via' | 'domain';
 
@@ -16,6 +22,22 @@ export interface BlockedSource {
   pattern: string;
   match_type: BlockMatchType;
 }
+
+export interface SourceScreening {
+  /** The rule that leaves the listing with no first-party link, or null to keep it. */
+  blocked: BlockedSource | null;
+  /** apply_options with tainted links removed; unchanged when nothing was stripped. */
+  applyOptions: string | null;
+  /** Rules that removed a link from a listing we are still publishing. */
+  stripped: BlockedSource[];
+}
+
+/**
+ * Scraper farms hide behind hosts like
+ * `api.www.communication.coding.light.exam.novel.bsfootball.org`. No employer
+ * or ATS nests this deep, so such links are treated as tainted without a rule.
+ */
+const MAX_HOST_LABELS = 4;
 
 export function isBlockMatchType(value: string): value is BlockMatchType {
   return value === 'via' || value === 'domain';
@@ -52,47 +74,76 @@ function hostMatches(host: string, pattern: string): boolean {
   return host === pattern || host.endsWith(`.${pattern}`);
 }
 
-function applyHosts(applyOptionsJson: string | null): string[] {
-  if (!applyOptionsJson) return [];
-  let options: unknown;
+function linkHost(link: unknown): string | null {
+  if (typeof link !== 'string') return null;
   try {
-    options = JSON.parse(applyOptionsJson);
+    return new URL(link).hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return null;
+  }
+}
+
+function isDeepHost(host: string): boolean {
+  return host.split('.').length > MAX_HOST_LABELS;
+}
+
+function parseApplyOptions(applyOptionsJson: string | null): unknown[] {
+  if (!applyOptionsJson) return [];
+  try {
+    const parsed = JSON.parse(applyOptionsJson);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
-  if (!Array.isArray(options)) return [];
-
-  const hosts: string[] = [];
-  for (const opt of options) {
-    const link = (opt as { link?: unknown })?.link;
-    if (typeof link !== 'string') continue;
-    try {
-      hosts.push(new URL(link).hostname.toLowerCase().replace(/^www\./, ''));
-    } catch {
-      continue;
-    }
-  }
-  return hosts;
 }
 
-/** Returns the first rule the listing trips, or null when it is clean. */
-export function matchBlockedSource(
+export function screenSource(
   job: Pick<CrawledJob, 'via' | 'apply_options'>,
   rules: BlockedSource[],
-): BlockedSource | null {
-  if (rules.length === 0) return null;
+): SourceScreening {
+  const keep: SourceScreening = { blocked: null, applyOptions: job.apply_options, stripped: [] };
+  if (rules.length === 0) return keep;
 
+  const domainRules = rules
+    .map((rule) => ({ rule, pattern: normalizeDomainPattern(rule.pattern) }))
+    .filter((r) => r.rule.match_type === 'domain' && r.pattern);
   const via = normalizeViaPattern(job.via || '');
-  const hosts = applyHosts(job.apply_options);
+  const viaRule = via
+    ? rules.find((rule) => rule.match_type === 'via' && normalizeViaPattern(rule.pattern) === via) || null
+    : null;
 
-  for (const rule of rules) {
-    if (rule.match_type === 'via') {
-      if (via && normalizeViaPattern(rule.pattern) === via) return rule;
+  const options = parseApplyOptions(job.apply_options);
+  const clean: unknown[] = [];
+  const tainted: BlockedSource[] = [];
+  for (const opt of options) {
+    const host = linkHost((opt as { link?: unknown })?.link);
+    if (host === null) {
+      clean.push(opt);
       continue;
     }
-    const pattern = normalizeDomainPattern(rule.pattern);
-    if (pattern && hosts.some((host) => hostMatches(host, pattern))) return rule;
+    const hit = domainRules.find((r) => hostMatches(host, r.pattern));
+    if (hit) {
+      tainted.push(hit.rule);
+    } else if (!isDeepHost(host)) {
+      clean.push(opt);
+    }
   }
 
-  return null;
+  if (clean.length === 0 && (options.length > 0 || viaRule)) {
+    // Nothing first-party survives. Credit the via rule first, since that is
+    // what an admin would look up; a listing whose links are all deep hosts
+    // trips no stored rule and is attributed to the heuristic instead.
+    const blocked = viaRule || tainted[0] || DEEP_HOST_RULE;
+    return { blocked, applyOptions: job.apply_options, stripped: [] };
+  }
+
+  if (clean.length === options.length) return keep;
+  return {
+    blocked: null,
+    applyOptions: clean.length > 0 ? JSON.stringify(clean) : null,
+    stripped: [...new Map(tainted.map((rule) => [rule.id, rule])).values()],
+  };
 }
+
+/** Synthetic rule for the deep-subdomain heuristic; never stored, never counted. */
+export const DEEP_HOST_RULE: BlockedSource = { id: 0, pattern: 'deep-subdomain', match_type: 'domain' };

@@ -6,7 +6,7 @@ import { upsertJobVector, deleteJobVectors } from './vectorSearch';
 import { detectChineseFriendly } from '../constants/chineseFriendly';
 import { guessCompanyWebsite, enrichCompanies } from './companyEnrich';
 import { detectLocationRequirement, mergeLocationRequirement } from './locationRequirement';
-import { loadBlockedSources, matchBlockedSource } from './sourceBlocklist';
+import { loadBlockedSources, screenSource } from './sourceBlocklist';
 import { activeCutoff } from '../utils/helpers';
 
 export function toSlug(text: string): string {
@@ -279,18 +279,32 @@ async function processUnprocessedJobs(env: Env): Promise<number> {
       console.log(`  Skipped crawled #${crawled.id} — already in jobs table`);
       continue;
     }
-    // Before translating: a listing that reached us through an aggregator is
-    // already second-hand, so drop it rather than spend an OpenAI call on it.
-    const blocked = matchBlockedSource(crawled, blockedSources);
-    if (blocked) {
+    // Before translating: a listing with no first-party apply link is a
+    // second-hand copy, so drop it rather than spend an OpenAI call on it.
+    // Listings that keep a first-party link go through with the aggregator
+    // links stripped, so we never send readers to a reposter.
+    const screening = screenSource(crawled, blockedSources);
+    if (screening.blocked) {
+      const { blocked } = screening;
       await env.DB.prepare(
         'UPDATE jobs_crawled SET process_status = ?, failed_reason = ? WHERE id = ?'
       ).bind(PROCESS_STATUS_BLOCKED, `blocked source: ${blocked.match_type}:${blocked.pattern}`, crawled.id).run();
-      await env.DB.prepare(
-        "UPDATE blocked_sources SET blocked_count = blocked_count + 1, last_blocked_at = datetime('now') WHERE id = ?"
-      ).bind(blocked.id).run();
+      if (blocked.id > 0) {
+        await env.DB.prepare(
+          "UPDATE blocked_sources SET blocked_count = blocked_count + 1, last_blocked_at = datetime('now') WHERE id = ?"
+        ).bind(blocked.id).run();
+      }
       console.log(`  Skipped crawled #${crawled.id} — blocked source ${blocked.match_type}:${blocked.pattern}`);
       continue;
+    }
+    if (screening.stripped.length > 0) {
+      crawled.apply_options = screening.applyOptions;
+      await env.DB.batch(screening.stripped.map((rule) =>
+        env.DB.prepare(
+          "UPDATE blocked_sources SET stripped_count = stripped_count + 1, last_blocked_at = datetime('now') WHERE id = ?"
+        ).bind(rule.id),
+      ));
+      console.log(`  Stripped ${screening.stripped.length} aggregator link(s) from crawled #${crawled.id}`);
     }
     if (!isLikelyRemoteJob(crawled)) {
       await env.DB.prepare(

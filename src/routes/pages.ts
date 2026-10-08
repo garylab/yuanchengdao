@@ -1048,8 +1048,8 @@ pages.get('/admin/blocked-sources', async (c) => {
   if (user.role !== 'admin') return c.notFound();
 
   const result = await c.env.DB.prepare(
-    `SELECT id, pattern, match_type, note, blocked_count, last_blocked_at, is_active
-     FROM blocked_sources ORDER BY is_active DESC, blocked_count DESC, id ASC`
+    `SELECT id, pattern, match_type, note, blocked_count, stripped_count, last_blocked_at, is_active
+     FROM blocked_sources ORDER BY is_active DESC, blocked_count + stripped_count DESC, id ASC`
   ).all<TaxonomyRow>();
 
   return c.html(taxonomyPage({
@@ -1058,7 +1058,8 @@ pages.get('/admin/blocked-sources', async (c) => {
     path: '/admin/blocked-sources',
     apiBase: '/api/admin/blocked-sources',
     description: '管理员维护不予收录的职位来源站点。',
-    hint: '命中规则的职位在翻译入库前就被丢弃，不消耗翻译额度，也不会出现在前台。'
+    hint: '一条职位往往带多个投递链接。只要还剩一个未被屏蔽的链接，职位照常收录，被屏蔽的链接从投递入口里剔除；'
+      + '所有链接都命中（或没有链接且 via 命中）时，职位在翻译前整条丢弃，不消耗翻译额度。'
       + '「来源名称」比对 Google 给出的 via 标注，「域名」比对投递链接的域名（含子域名）。'
       + '规则只对之后采集的职位生效，已收录的历史职位不受影响。',
     countLabel: '共',
@@ -1074,7 +1075,8 @@ pages.get('/admin/blocked-sources', async (c) => {
         ],
       },
       { key: 'note', label: '备注', column: 'note', placeholder: '为什么屏蔽' },
-      { key: 'lastBlockedAt', label: '最近拦截', column: 'last_blocked_at', editable: false },
+      { key: 'strippedCount', label: '已剔除链接', column: 'stripped_count', editable: false },
+      { key: 'lastBlockedAt', label: '最近命中', column: 'last_blocked_at', editable: false },
     ],
     rows: (result.results || []) as TaxonomyRow[],
     gaId: c.env.GA_ID,

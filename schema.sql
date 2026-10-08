@@ -326,6 +326,7 @@ CREATE TABLE IF NOT EXISTS blocked_sources (
   match_type TEXT NOT NULL DEFAULT 'via' CHECK (match_type IN ('via', 'domain')),
   note TEXT,
   blocked_count INTEGER NOT NULL DEFAULT 0,
+  stripped_count INTEGER NOT NULL DEFAULT 0,
   last_blocked_at TEXT,
   is_active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
