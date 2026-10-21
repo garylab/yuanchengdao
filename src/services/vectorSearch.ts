@@ -25,14 +25,29 @@ export async function searchByVector(
   vectorize: VectorizeIndex,
   query: string,
   topK: number = 100,
+  filter?: VectorizeVectorMetadataFilter,
 ): Promise<number[]> {
   const queryVector = await generateEmbedding(ai, query);
   const results = await vectorize.query(queryVector, {
     topK,
     returnValues: false,
     returnMetadata: 'none',
+    ...(filter ? { filter } : {}),
   });
   return results.matches.map((match) => parseInt(match.id, 10));
+}
+
+// Only vectors upserted after the `created_at` metadata index exists carry the
+// field, so this never sees jobs indexed before that point. Callers that need
+// older jobs must fall back to another matcher.
+export async function searchRecentByVector(
+  ai: Ai,
+  vectorize: VectorizeIndex,
+  query: string,
+  createdSinceMs: number,
+  topK: number = 100,
+): Promise<number[]> {
+  return searchByVector(ai, vectorize, query, topK, { created_at: { $gte: createdSinceMs } });
 }
 
 export async function upsertJobVector(
@@ -44,7 +59,7 @@ export async function upsertJobVector(
 ): Promise<void> {
   const text = prepareSearchText(title, description);
   const vector = await generateEmbedding(ai, text);
-  await vectorize.upsert([{ id: String(jobId), values: vector }]);
+  await vectorize.upsert([{ id: String(jobId), values: vector, metadata: { created_at: Date.now() } }]);
 }
 
 export async function deleteJobVectors(

@@ -3,7 +3,7 @@ import { formatSalary } from '../utils/helpers';
 import { sendSubscriptionAlertEmail, SubscriptionJobAlert } from './email';
 import { sendTelegramDirectMessage } from './telegramDm';
 import { jobMatchesSalaryRange } from '../constants/salary';
-import { searchByVector } from './vectorSearch';
+import { searchRecentByVector } from './vectorSearch';
 import { SubscriptionKind } from '../constants/subscriptions';
 
 type NewJobRow = {
@@ -48,22 +48,36 @@ export function jobMatchesSubscriptionFilters(
   return true;
 }
 
+const KEYWORD_VECTOR_TOP_K = 100;
+
+function textMatchesKeyword(query: string, job: NewJobRow): boolean {
+  const needle = query.toLowerCase();
+  if (job.title.toLowerCase().includes(needle)) return true;
+  return !!job.company_name && job.company_name.toLowerCase().includes(needle);
+}
+
+// The vector index holds every job ever embedded, so a global top-K query
+// almost never lands on the handful created inside the alert window. Restrict
+// the vector search to the window via metadata and pair it with a plain
+// substring match so a literal keyword in the title always counts.
 async function keywordMatchIds(
   env: Env,
   queries: string[],
-  candidateIds: Set<number>,
+  jobs: NewJobRow[],
+  createdSinceMs: number,
 ): Promise<Map<string, Set<number>>> {
+  const candidateIds = new Set(jobs.map((job) => job.id));
   const result = new Map<string, Set<number>>();
   for (const query of queries) {
+    const hits = new Set<number>();
+    for (const job of jobs) if (textMatchesKeyword(query, job)) hits.add(job.id);
     try {
-      const ids = await searchByVector(env.AI, env.VECTORIZE, query, 100);
-      const hits = new Set<number>();
+      const ids = await searchRecentByVector(env.AI, env.VECTORIZE, query, createdSinceMs, KEYWORD_VECTOR_TOP_K);
       for (const id of ids) if (candidateIds.has(id)) hits.add(id);
-      result.set(query, hits);
     } catch (err) {
       console.error(`Keyword subscription search failed for "${query}":`, err instanceof Error ? err.message : err);
-      result.set(query, new Set());
     }
+    result.set(query, hits);
   }
   return result;
 }
@@ -76,6 +90,7 @@ export async function deliverSubscriptionAlerts(
   const channelColumn = channel === 'email' ? 'email_delivered_at' : 'telegram_delivered_at';
   const notifyFlag = channel === 'email' ? 'notify_email' : 'notify_telegram';
 
+  const createdSinceMs = Date.now() - windowHours * 60 * 60 * 1000;
   const idResult = await env.DB.prepare(
     `SELECT id FROM jobs WHERE created_at >= datetime('now', '-${windowHours} hours') ORDER BY created_at DESC`
   ).all<{ id: number }>();
@@ -120,7 +135,7 @@ export async function deliverSubscriptionAlerts(
     subscriptions.filter((s) => s.kind === 'keyword').map((s) => (s.query_text || '').trim()).filter(Boolean),
   )];
   const keywordHits = keywordQueries.length > 0
-    ? await keywordMatchIds(env, keywordQueries, new Set(jobs.map((j) => j.id)))
+    ? await keywordMatchIds(env, keywordQueries, jobs, createdSinceMs)
     : new Map<string, Set<number>>();
 
   type PendingDelivery = { subscription: MatchingSubscription; job: NewJobRow };
