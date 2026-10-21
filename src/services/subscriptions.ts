@@ -52,7 +52,11 @@ const KEYWORD_VECTOR_TOP_K = 100;
 // Cosine similarity a new job must reach against the keyword embedding. The
 // window-filtered query otherwise returns every job in the window (there are
 // fewer than top-K of them), which would push all new listings to everyone.
-const KEYWORD_SIMILARITY_THRESHOLD = 0.75;
+// Calibrated on live data (2026-10-21): bge-m3 scores short keywords against
+// job text in a narrow band, e.g. "DevOps工程师" vs "DevOps" is only 0.65 and
+// "工程经理" vs "产品经理" is 0.62, so 0.63 is the lowest cutoff that produced
+// no false positives. Literal title/company hits bypass this entirely.
+const KEYWORD_SIMILARITY_THRESHOLD = 0.63;
 
 function textMatchesKeyword(query: string, job: NewJobRow): boolean {
   const needle = query.toLowerCase();
