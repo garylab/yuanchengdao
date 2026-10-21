@@ -20,41 +20,6 @@ export async function generateEmbeddings(ai: Ai, texts: string[]): Promise<numbe
   return result.data;
 }
 
-export async function searchByVector(
-  ai: Ai,
-  vectorize: VectorizeIndex,
-  query: string,
-  topK: number = 100,
-  filter?: VectorizeVectorMetadataFilter,
-  minScore: number = 0,
-): Promise<number[]> {
-  const queryVector = await generateEmbedding(ai, query);
-  const results = await vectorize.query(queryVector, {
-    topK,
-    returnValues: false,
-    returnMetadata: 'none',
-    ...(filter ? { filter } : {}),
-  });
-  // The index uses the cosine metric, so `score` is cosine similarity in [-1, 1].
-  return results.matches
-    .filter((match) => match.score >= minScore)
-    .map((match) => parseInt(match.id, 10));
-}
-
-// Only vectors upserted after the `created_at` metadata index exists carry the
-// field, so this never sees jobs indexed before that point. Callers that need
-// older jobs must fall back to another matcher.
-export async function searchRecentByVector(
-  ai: Ai,
-  vectorize: VectorizeIndex,
-  query: string,
-  createdSinceMs: number,
-  topK: number = 100,
-  minScore: number = 0,
-): Promise<number[]> {
-  return searchByVector(ai, vectorize, query, topK, { created_at: { $gte: createdSinceMs } }, minScore);
-}
-
 export async function upsertJobVector(
   ai: Ai,
   vectorize: VectorizeIndex,

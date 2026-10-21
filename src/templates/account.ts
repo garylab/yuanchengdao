@@ -173,9 +173,9 @@ export function accountPage(options: {
           </div>
           <div data-kind-panel="keyword" class="hidden">
             <label class="block text-sm text-surface-600 mb-1">关键词（必填）</label>
-            <input type="text" name="queryText" maxlength="${KEYWORD_QUERY_MAX_LENGTH}" placeholder="例如：AI infra、日语、Rust、Web3 产品经理"
+            <input type="text" name="queryText" maxlength="${KEYWORD_QUERY_MAX_LENGTH}" placeholder="例如：DevOps、前端、Rust、产品经理"
               class="w-full border border-surface-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-400">
-            <p class="text-xs text-surface-400 mt-1">按语义匹配新职位的标题与描述，不局限于固定职位。</p>
+            <p class="text-xs text-surface-400 mt-1">新职位标题包含该关键词时推送，和站内搜索规则一致。</p>
           </div>
           <div data-kind-panel="company" class="hidden">
             <label class="block text-sm text-surface-600 mb-1">公司（必选）</label>

@@ -6,7 +6,7 @@ import { sendTelegramDirectMessage } from '../services/telegramDm';
 import { isKnownSalaryRange } from '../constants/salary';
 import { isSubscriptionKind, KEYWORD_QUERY_MAX_LENGTH, SubscriptionKind } from '../constants/subscriptions';
 import { buildTelegramAlert, jobMatchesSubscriptionFilters, toAlertJob } from '../services/subscriptions';
-import { searchByVector } from '../services/vectorSearch';
+import { titleLikePattern } from '../services/search';
 import { activeCutoff } from '../utils/helpers';
 
 const subscriptions = new Hono<{ Bindings: Env; Variables: AppVariables }>();
@@ -222,14 +222,10 @@ subscriptions.post('/api/subscriptions/:id/test', async (c) => {
     ).bind(subscription.company_id).all<JobCandidate>();
     candidates = result.results || [];
   } else if (subscription.kind === 'keyword' && subscription.query_text) {
-    const ids = await searchByVector(c.env.AI, c.env.VECTORIZE, subscription.query_text, 60).catch(() => [] as number[]);
-    if (ids.length > 0) {
-      const result = await c.env.DB.prepare(
-        `${jobBaseSelect} WHERE j.id IN (${ids.join(',')}) AND j.posted_at >= ?`
-      ).bind(activeCutoff()).all<JobCandidate>();
-      const map = new Map((result.results || []).map((r) => [r.id, r]));
-      candidates = ids.map((i) => map.get(i)).filter((r): r is JobCandidate => !!r);
-    }
+    const result = await c.env.DB.prepare(
+      `${jobBaseSelect} WHERE j.title LIKE ? ESCAPE '\\' AND j.posted_at >= ? ORDER BY j.posted_at DESC LIMIT 60`
+    ).bind(titleLikePattern(subscription.query_text), activeCutoff()).all<JobCandidate>();
+    candidates = result.results || [];
   }
 
   const job = candidates.find((candidate) => jobMatchesSubscriptionFilters(subscription, candidate));

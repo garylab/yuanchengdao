@@ -3,7 +3,6 @@ import { formatSalary } from '../utils/helpers';
 import { sendSubscriptionAlertEmail, SubscriptionJobAlert } from './email';
 import { sendTelegramDirectMessage } from './telegramDm';
 import { jobMatchesSalaryRange } from '../constants/salary';
-import { searchRecentByVector } from './vectorSearch';
 import { SubscriptionKind } from '../constants/subscriptions';
 
 type NewJobRow = {
@@ -48,46 +47,18 @@ export function jobMatchesSubscriptionFilters(
   return true;
 }
 
-const KEYWORD_VECTOR_TOP_K = 100;
-// Cosine similarity a new job must reach against the keyword embedding. The
-// window-filtered query otherwise returns every job in the window (there are
-// fewer than top-K of them), which would push all new listings to everyone.
-// Calibrated on live data (2026-10-21): bge-m3 scores short keywords against
-// job text in a narrow band, e.g. "DevOps工程师" vs "DevOps" is only 0.65 and
-// "工程经理" vs "产品经理" is 0.62, so 0.63 is the lowest cutoff that produced
-// no false positives. Literal title/company hits bypass this entirely.
-const KEYWORD_SIMILARITY_THRESHOLD = 0.63;
-
+// Keyword subscriptions are a plain substring match on the title, the same
+// rule the search page uses, so what a user finds by searching is exactly
+// what they get pushed.
 function textMatchesKeyword(query: string, job: NewJobRow): boolean {
-  const needle = query.toLowerCase();
-  if (job.title.toLowerCase().includes(needle)) return true;
-  return !!job.company_name && job.company_name.toLowerCase().includes(needle);
+  return job.title.toLowerCase().includes(query.toLowerCase());
 }
 
-// The vector index holds every job ever embedded, so a global top-K query
-// almost never lands on the handful created inside the alert window. Restrict
-// the vector search to the window via metadata, keep only matches above the
-// similarity threshold, and pair it with a plain substring match so a literal
-// keyword in the title always counts.
-async function keywordMatchIds(
-  env: Env,
-  queries: string[],
-  jobs: NewJobRow[],
-  createdSinceMs: number,
-): Promise<Map<string, Set<number>>> {
-  const candidateIds = new Set(jobs.map((job) => job.id));
+function keywordMatchIds(queries: string[], jobs: NewJobRow[]): Map<string, Set<number>> {
   const result = new Map<string, Set<number>>();
   for (const query of queries) {
     const hits = new Set<number>();
     for (const job of jobs) if (textMatchesKeyword(query, job)) hits.add(job.id);
-    try {
-      const ids = await searchRecentByVector(
-        env.AI, env.VECTORIZE, query, createdSinceMs, KEYWORD_VECTOR_TOP_K, KEYWORD_SIMILARITY_THRESHOLD,
-      );
-      for (const id of ids) if (candidateIds.has(id)) hits.add(id);
-    } catch (err) {
-      console.error(`Keyword subscription search failed for "${query}":`, err instanceof Error ? err.message : err);
-    }
     result.set(query, hits);
   }
   return result;
@@ -101,7 +72,6 @@ export async function deliverSubscriptionAlerts(
   const channelColumn = channel === 'email' ? 'email_delivered_at' : 'telegram_delivered_at';
   const notifyFlag = channel === 'email' ? 'notify_email' : 'notify_telegram';
 
-  const createdSinceMs = Date.now() - windowHours * 60 * 60 * 1000;
   const idResult = await env.DB.prepare(
     `SELECT id FROM jobs WHERE created_at >= datetime('now', '-${windowHours} hours') ORDER BY created_at DESC`
   ).all<{ id: number }>();
@@ -146,7 +116,7 @@ export async function deliverSubscriptionAlerts(
     subscriptions.filter((s) => s.kind === 'keyword').map((s) => (s.query_text || '').trim()).filter(Boolean),
   )];
   const keywordHits = keywordQueries.length > 0
-    ? await keywordMatchIds(env, keywordQueries, jobs, createdSinceMs)
+    ? keywordMatchIds(keywordQueries, jobs)
     : new Map<string, Set<number>>();
 
   type PendingDelivery = { subscription: MatchingSubscription; job: NewJobRow };

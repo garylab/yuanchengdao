@@ -25,7 +25,7 @@ import { adminSubmissionsPage } from '../templates/adminSubmissions';
 import { taxonomyPage, TaxonomyRow } from '../templates/adminTaxonomy';
 import { FavoriteRecord } from '../templates/favorites';
 import { CompanyStats } from '../templates/companyDetail';
-import { hybridSearchJobIds } from '../services/search';
+import { searchJobIdsByTitle } from '../services/search';
 import { recommendJobIdsForUser } from '../services/recommendations';
 import { listWeeklyReportWeeks, loadLatestWeeklyReport, loadWeeklyReport } from '../services/weekly';
 import { JobSubmissionRow } from '../services/jobSubmissions';
@@ -153,7 +153,7 @@ pages.get('/', async (c) => {
 
   if (valid) {
     if (query) {
-      const rankedIds = await hybridSearchJobIds(c.env, query, cutoff);
+      const rankedIds = await searchJobIdsByTitle(c.env, query, cutoff);
       if (rankedIds.length > 0) {
         const keepResult = await c.env.DB.prepare(
           `SELECT id FROM jobs WHERE id IN (${rankedIds.join(',')}) AND ${filterClauses.join(' AND ')}`

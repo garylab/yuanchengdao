@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { Env, Job } from '../types';
 import { syncJobs } from '../services/jobSync';
 import { resolveThumbnail, activeCutoff } from '../utils/helpers';
-import { searchByVector } from '../services/vectorSearch';
+import { searchJobIdsByTitle } from '../services/search';
 import { clampedListPage } from '../constants/listPagination';
 
 const api = new Hono<{ Bindings: Env }>();
@@ -21,14 +21,9 @@ api.get('/api/jobs', async (c) => {
   let orderedByRelevance = false;
 
   if (q) {
-    const vectorIds = await searchByVector(c.env.AI, c.env.VECTORIZE, q);
-    if (vectorIds.length > 0) {
-      const activeResult = await c.env.DB.prepare(
-        `SELECT id FROM jobs WHERE id IN (${vectorIds.join(',')}) AND posted_at >= ?`
-      ).bind(cutoff).all();
-      const activeIdSet = new Set((activeResult.results || []).map((r: Record<string, unknown>) => r.id as number));
-      const orderedActiveIds = vectorIds.filter((id) => activeIdSet.has(id));
-      jobIds = orderedActiveIds.slice(offset, offset + limit);
+    const rankedIds = await searchJobIdsByTitle(c.env, q, cutoff);
+    if (rankedIds.length > 0) {
+      jobIds = rankedIds.slice(offset, offset + limit);
       orderedByRelevance = true;
     }
   } else {
