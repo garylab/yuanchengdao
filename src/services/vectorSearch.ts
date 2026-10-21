@@ -26,6 +26,7 @@ export async function searchByVector(
   query: string,
   topK: number = 100,
   filter?: VectorizeVectorMetadataFilter,
+  minScore: number = 0,
 ): Promise<number[]> {
   const queryVector = await generateEmbedding(ai, query);
   const results = await vectorize.query(queryVector, {
@@ -34,7 +35,10 @@ export async function searchByVector(
     returnMetadata: 'none',
     ...(filter ? { filter } : {}),
   });
-  return results.matches.map((match) => parseInt(match.id, 10));
+  // The index uses the cosine metric, so `score` is cosine similarity in [-1, 1].
+  return results.matches
+    .filter((match) => match.score >= minScore)
+    .map((match) => parseInt(match.id, 10));
 }
 
 // Only vectors upserted after the `created_at` metadata index exists carry the
@@ -46,8 +50,9 @@ export async function searchRecentByVector(
   query: string,
   createdSinceMs: number,
   topK: number = 100,
+  minScore: number = 0,
 ): Promise<number[]> {
-  return searchByVector(ai, vectorize, query, topK, { created_at: { $gte: createdSinceMs } });
+  return searchByVector(ai, vectorize, query, topK, { created_at: { $gte: createdSinceMs } }, minScore);
 }
 
 export async function upsertJobVector(

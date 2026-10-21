@@ -49,6 +49,10 @@ export function jobMatchesSubscriptionFilters(
 }
 
 const KEYWORD_VECTOR_TOP_K = 100;
+// Cosine similarity a new job must reach against the keyword embedding. The
+// window-filtered query otherwise returns every job in the window (there are
+// fewer than top-K of them), which would push all new listings to everyone.
+const KEYWORD_SIMILARITY_THRESHOLD = 0.75;
 
 function textMatchesKeyword(query: string, job: NewJobRow): boolean {
   const needle = query.toLowerCase();
@@ -58,8 +62,9 @@ function textMatchesKeyword(query: string, job: NewJobRow): boolean {
 
 // The vector index holds every job ever embedded, so a global top-K query
 // almost never lands on the handful created inside the alert window. Restrict
-// the vector search to the window via metadata and pair it with a plain
-// substring match so a literal keyword in the title always counts.
+// the vector search to the window via metadata, keep only matches above the
+// similarity threshold, and pair it with a plain substring match so a literal
+// keyword in the title always counts.
 async function keywordMatchIds(
   env: Env,
   queries: string[],
@@ -72,7 +77,9 @@ async function keywordMatchIds(
     const hits = new Set<number>();
     for (const job of jobs) if (textMatchesKeyword(query, job)) hits.add(job.id);
     try {
-      const ids = await searchRecentByVector(env.AI, env.VECTORIZE, query, createdSinceMs, KEYWORD_VECTOR_TOP_K);
+      const ids = await searchRecentByVector(
+        env.AI, env.VECTORIZE, query, createdSinceMs, KEYWORD_VECTOR_TOP_K, KEYWORD_SIMILARITY_THRESHOLD,
+      );
       for (const id of ids) if (candidateIds.has(id)) hits.add(id);
     } catch (err) {
       console.error(`Keyword subscription search failed for "${query}":`, err instanceof Error ? err.message : err);
