@@ -18,7 +18,7 @@ export async function hybridSearchJobIds(
        LEFT JOIN companies co ON co.id = j.company_id
        WHERE j.posted_at >= ?
          AND (j.title LIKE ? ESCAPE '\\' OR co.name LIKE ? ESCAPE '\\')
-       ORDER BY j.created_at DESC
+       ORDER BY j.posted_at DESC
        LIMIT ${AGGREGATOR_LIKE_LIMIT}`
     ).bind(activeCutoff, likePattern, likePattern).all<{ id: number }>(),
     searchByVector(env.AI, env.VECTORIZE, trimmed).catch((err) => {
