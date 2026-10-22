@@ -19,6 +19,7 @@ export type AdminUserRow = {
   role: 'admin' | 'user';
   created_at: string;
   telegram_chat_id: string | null;
+  weekly_digest: number;
   favorite_count: number;
   subscriptions: AdminUserSubscription[];
 };
@@ -34,6 +35,8 @@ export function usersPage(options: {
     { label: '首页', href: '/' },
     { label: '所有用户', href: '/users' },
   ]);
+
+  const weeklyCount = users.filter((u) => u.weekly_digest).length;
 
   const rows = users.map((u) => {
     const subs = u.subscriptions.length > 0
@@ -62,6 +65,7 @@ export function usersPage(options: {
         <td class="py-3 pr-3">${roleBadge}</td>
         <td class="py-3 pr-3 text-xs text-surface-500 whitespace-nowrap">${escapeHtml(u.created_at)}</td>
         <td class="py-3 pr-3 text-xs">${u.telegram_chat_id ? '<span class="text-green-600">已绑</span>' : '<span class="text-surface-400">未绑</span>'}</td>
+        <td class="py-3 pr-3 text-xs">${u.weekly_digest ? '<span class="text-green-600">已订阅</span>' : '<span class="text-surface-400">已关闭</span>'}</td>
         <td class="py-3 pr-3 text-sm text-surface-700">${u.favorite_count}</td>
         <td class="py-3">${subs}</td>
       </tr>`;
@@ -71,7 +75,7 @@ export function usersPage(options: {
       <div class="bg-white rounded shadow-sm border border-surface-200 p-6">
         <div class="flex items-center justify-between mb-4">
           <h1 class="text-2xl font-bold">所有用户</h1>
-          <span class="text-sm text-surface-500">共 ${users.length} 位</span>
+          <span class="text-sm text-surface-500">共 ${users.length} 位 · 周报订阅 ${weeklyCount} 位</span>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left">
@@ -82,12 +86,13 @@ export function usersPage(options: {
                 <th class="py-2 pr-3 font-medium">角色</th>
                 <th class="py-2 pr-3 font-medium">注册时间</th>
                 <th class="py-2 pr-3 font-medium">TG</th>
+                <th class="py-2 pr-3 font-medium">周报</th>
                 <th class="py-2 pr-3 font-medium">收藏</th>
                 <th class="py-2 font-medium">订阅</th>
               </tr>
             </thead>
             <tbody>
-              ${rows || '<tr><td colspan="7" class="py-6 text-center text-sm text-surface-400">暂无用户</td></tr>'}
+              ${rows || '<tr><td colspan="8" class="py-6 text-center text-sm text-surface-400">暂无用户</td></tr>'}
             </tbody>
           </table>
         </div>

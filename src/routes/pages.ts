@@ -825,7 +825,7 @@ pages.get('/users', async (c) => {
   if (user.role !== 'admin') return c.notFound();
 
   const usersResult = await c.env.DB.prepare(
-    `SELECT u.id, u.email, u.name, u.role, u.created_at, u.telegram_chat_id,
+    `SELECT u.id, u.email, u.name, u.role, u.created_at, u.telegram_chat_id, u.weekly_digest,
        (SELECT COUNT(*) FROM favorites f WHERE f.user_id = u.id) as favorite_count
      FROM users u
      ORDER BY u.id ASC`
@@ -836,6 +836,7 @@ pages.get('/users', async (c) => {
     role: 'admin' | 'user';
     created_at: string;
     telegram_chat_id: string | null;
+    weekly_digest: number;
     favorite_count: number;
   }>();
 
